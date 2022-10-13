@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="admin_notiemetgency">
+ 
+	<insert id=  "setStartupNotiViewList"  parameterClass="java.util.HashMap">
+	    INSERT INTO
+	        PT_HDTV_STNOTIEST_HIST (REG_DT,REG_ID,STATUS,NET_TYPE,MESSAGE_YN,MESSAGE)
+	    VALUES (SYSDATE,#reg_Id#,#staTus#,#net_Type#,#message_Yn#,#messAge#)   
+	</insert>
+</sqlMap>

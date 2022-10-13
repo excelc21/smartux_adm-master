@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true" scanPeriod="30 seconds">
+
+	<property name="LOG_HOME" value="/app/smartux_adm/newlog/log${log.index:-1}"/>
+    <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger{36}[%method:%line] [%t] / %msg%n}"/>
+
+    <!-- 
+    <contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator">
+        <resetJUL>true</resetJUL>
+    </contextListener> 
+    -->
+
+    <!-- To enable JMX Management -->
+    <!-- <jmxConfigurator/> -->
+	<appender name="LOG_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/smartux_adm.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/smartux_adm.%d{yyyy-MM-dd}.zip</fileNamePattern>
+            <maxHistory>90</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+    
+    <appender name="adminApplyCacheHistroy_apr" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/adminApplyCacheHistroy.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/%d{yyyyMM,aux}/adminApplyCacheHistroy/adminApplyCacheHistroy.%d{yyyy-MM-dd}.zip</fileNamePattern>
+            <maxHistory>90</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+    <logger name="adminApplyCacheHistroy" level="INFO" additivity="true">
+        <appender-ref ref="adminApplyCacheHistroy_apr"/>
+    </logger>
+    
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>
+                ${LOG_PATTERN}
+            </pattern>
+        </encoder>
+    </appender>
+    
+    <!-- 공통 DB 로그 START-->
+    <logger name="java.sql.Connection" level="WARN" additivity="true"/>
+	<logger name="java.sql.Statement" level="WARN" additivity="true"/>
+	<logger name="java.sql.PreparedStatement" level="WARN" additivity="true"/>
+	<!-- 공통 DB 로그 END-->
+	
+	<!-- 공통 DB 로그 END-->
+	<logger name="org.springframework" level="WARN" additivity="true"/>
+    <!-- 공통 DB 로그 END-->
+    
+    <root level="INFO">
+        <appender-ref ref="STDOUT" />
+        <appender-ref ref="LOG_FILE" />
+    </root>
+	
+</configuration>

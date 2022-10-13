@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="noticeinfo">
+	<typeAlias alias="cachenoticeinfolistVo" type="com.dmi.smartux.noticeinfo.vo.CacheNoticeInfoListVo"/>
+	<typeAlias alias="notimaincodelistapiVo" type="com.dmi.smartux.noticeinfo.vo.NotiMainCodeListVo"/>
+	
+	<select id="cacheNoticeInfoList" parameterClass="String" resultClass="cachenoticeinfolistVo">
+		SELECT
+		     SERVICE
+		     ,NTYPE
+		     ,CATEGORY
+		     ,CASE WHEN NTYPE='IMG' THEN F_SERVER_URL('I')||NVALUE ELSE NVALUE END AS NVALUE
+		     ,DISPLAY_SEC
+		     ,TO_CHAR(UPDATED,'YYYYMMDD') AS REG_DATE
+		FROM PT_UX_4CH_NOTICE
+		WHERE USE_YN='Y'
+    	AND SERVICE=#service#
+		ORDER BY NTYPE ASC, ORDERED DESC
+	</select>
+	
+	<select id="getNotiMainCodeList" resultClass="notimaincodelistapiVo">
+		SELECT CODE,CODE_NM FROM PT_UX_CODE WHERE CODE LIKE 'N%' ORDER BY CODE ASC
+	</select>
+</sqlMap>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<result>
+ <emergency>
+  <status>1</status>
+  <message_yn>Y</message_yn>
+  <message>서비스 안정화 작업으로 세컨드TV서비스 이용이 일부 제한되었습니다. 10분 후에 다시 시도해주시기 바랍니다</message>
+  <net_type>0</net_type>
+ </emergency>
+ <noti>
+  <noti_tit>팝업 VOD 공지</noti_tit>
+  <noti_cont>팝업 VOD 공지테스트</noti_cont>
+  <s_date>2014081913</s_date>
+  <e_date>2014082613</e_date>
+  <model_cnt>0</model_cnt>
+  <models>
+   <model>ALL</model>
+  </models>
+  <noti_no>204</noti_no>
+ </noti>
+</result>

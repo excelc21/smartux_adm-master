@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="admin_startchannel">
+	<typeAlias alias="codeItemVO" type="com.dmi.smartux.admin.code.vo.CodeItemVO"/>
+    
+    <!-- 코드 조회  -->
+    <select id="getCodeItem" parameterClass="map" resultClass="codeItemVO">
+		SELECT CODE,
+		       ITEM_CODE,
+		       ITEM_NM,
+		       ORDERED,
+		       SS_GBN,
+		       APP_TYPE,
+		       USE_YN,
+		       CREATED,
+		       UPDATED,
+		       CREATE_ID,
+		       UPDATE_ID
+		FROM   PT_UX_CODE_ITEMS
+		WHERE  CODE='A0009'
+		AND ITEM_CODE=#item_code#
+	</select>
+	
+	<!-- 코드 수정  -->
+	<update id="updateCodeItem" parameterClass="map">
+		MERGE INTO PT_UX_CODE_ITEMS
+		USING DUAL ON 
+		( 
+				CODE ='A0009' 
+				AND ITEM_CODE = #item_code#
+		)
+		WHEN MATCHED THEN
+			UPDATE SET 
+					ITEM_NM   = #item_nm#,
+			    	UPDATED   = SYSDATE,
+			    	UPDATE_ID = #update_id#
+			WHERE
+					CODE ='A0009'
+			  		AND ITEM_CODE = #item_code#
+		WHEN NOT MATCHED THEN
+			INSERT
+			    (
+			        CODE,
+			    	ITEM_CODE,
+			        ITEM_NM,
+			        SS_GBN,
+			        APP_TYPE,
+			        ORDERED,
+			        USE_YN,
+			        CREATED,
+			        UPDATED,
+			        CREATE_ID,
+			        UPDATE_ID
+					)
+			    VALUES
+			    (
+			    	'A0009',
+			        #item_code#,
+			        #item_nm#,
+			        null,
+			        'ALL',
+			        (SELECT NVL(MAX(ORDERED), 0) + 1 FROM PT_UX_CODE_ITEMS WHERE CODE = 'A0009'),
+			        'Y',
+			        SYSDATE,
+			        SYSDATE,
+			        #update_id#,
+			        #update_id#
+			    )
+	</update>
+</sqlMap>

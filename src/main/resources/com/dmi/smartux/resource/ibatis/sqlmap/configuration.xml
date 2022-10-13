@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="configuration">
+	<typeAlias alias="configurationvo" type="com.dmi.smartux.configuration.vo.ConfigurationListVO"/>
+
+	<select id="getConfigurationList" parameterClass="map" resultClass="configurationvo" >
+		SELECT
+			A.CODE as config_code,
+		    A.CODE_NM as config_name,
+		    B.ITEM_CODE as config_id,
+		    B.APP_TYPE AS app_type,
+		    B.ITEM_NM as config_contents,		    
+		    TO_CHAR(B.CREATED,'YYYYMMDDHH24MISS') as regdate  
+		FROM 
+			PT_UX_CODE A, 
+			PT_UX_CODE_ITEMS B 
+		WHERE	1=1  
+			AND A.CODE = B.CODE	
+			AND B.USE_YN = 'Y'
+		<isNotEmpty property="config_prop_code">	
+			AND A.CODE = #config_prop_code#
+		</isNotEmpty>
+		<isNotEmpty property="app_type">
+	    	<isNotEqual  	property="app_type" compareValue="ALL">	
+				AND ( B.APP_TYPE = #app_type#	OR   B.APP_TYPE ='ALL')		
+			</isNotEqual>	
+		</isNotEmpty>
+		ORDER BY B.ORDERED
+	</select>		
+	
+	<select id="getConfigChecklist" resultClass="configurationvo">
+		SELECT  
+			ITEM_CODE as config_id,
+			APP_TYPE AS app_type,
+			ITEM_NM as config_contents	
+		FROM PT_UX_CODE_ITEMS
+		WHERE 1=1
+			<isNotEmpty property="config_type_code">	
+				AND CODE = #config_type_code#
+			</isNotEmpty>
+			<isNotEmpty property="app_type">	
+				AND ITEM_CODE = #app_type#
+			</isNotEmpty>
+	</select>	
+</sqlMap>

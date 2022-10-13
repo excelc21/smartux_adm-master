@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="admin_poster">
+	<typeAlias alias="postersearchvo" type="com.dmi.smartux.admin.poster.vo.PosterSearchVO"/>
+	<typeAlias alias="postervo" type="com.dmi.smartux.admin.poster.vo.PosterVO"/>
+	
+	<select id="getPosterList" parameterClass="postersearchvo" resultClass="postervo">
+		SELECT POSTER.*
+		FROM
+			(SELECT 
+				ROW_NUMBER() OVER(ORDER BY A.SERVICE_TYPE DESC, A.CREATED DESC) AS ROWNO,
+				A.ALBUM_ID,
+				A.WIDTH_IMG,
+				A.HEIGHT_IMG,
+				A.CREATED,
+				A.CREATE_ID,
+				A.SERVICE_TYPE,
+				A.ALBUM_NAME
+			FROM 
+				(SELECT 
+		  			A.ALBUM_ID AS ALBUM_ID, 
+					A.WIDTH_IMG AS WIDTH_IMG, 
+					A.HEIGHT_IMG AS HEIGHT_IMG, 
+					A.CREATED AS CREATED, 
+					A.CREATE_ID AS CREATE_ID, 
+					A.SERVICE_TYPE AS SERVICE_TYPE, 
+					M.ADI_ALBUM_NAME AS ALBUM_NAME
+				FROM 
+					PT_UX_PANEL_IMG A, 
+					PT_LA_ALBUM_MST M 
+				WHERE 
+					A.ALBUM_ID = ADI_ALBUM_ID 
+					AND EXISTS (SELECT 1 FROM PT_VO_CATEGORY_MAP CM WHERE CM.CONTENTS_ID = M.ADI_ALBUM_ID) 
+					ORDER BY SERVICE_TYPE DESC, CREATED DESC) A
+			WHERE 1=1
+			<isNotEmpty prepend="AND" property="findValue">
+				$findName$ LIKE '%$findValue$%'
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="findServiceType">
+				SERVICE_TYPE = #findServiceType#
+			</isNotEmpty>
+			) POSTER
+		WHERE ROWNO BETWEEN '$start_rnum$' AND '$end_rnum$'
+	</select>
+	
+	<select id="getPosterListCount" parameterClass="postersearchvo" resultClass="int">
+		SELECT COUNT(*)
+		FROM 
+			(SELECT 
+	  			ROW_NUMBER() OVER(ORDER BY A.SERVICE_TYPE DESC, A.CREATED DESC) AS ROWNO,
+				A.ALBUM_ID AS ALBUM_ID, 
+				A.WIDTH_IMG AS WIDTH_IMG, 
+				A.HEIGHT_IMG AS HEIGHT_IMG, 
+				A.CREATED AS CREATED, 
+				A.CREATE_ID AS CREATE_ID, 
+				A.SERVICE_TYPE AS SERVICE_TYPE, 
+				M.ADI_ALBUM_NAME AS ALBUM_NAME
+			FROM 
+				PT_UX_PANEL_IMG A, 
+				PT_LA_ALBUM_MST M 
+			WHERE 
+				A.ALBUM_ID = ADI_ALBUM_ID 
+				AND EXISTS (SELECT 1 FROM PT_VO_CATEGORY_MAP CM WHERE CM.CONTENTS_ID = M.ADI_ALBUM_ID) 
+				ORDER BY SERVICE_TYPE DESC, CREATED DESC) POSTER
+		WHERE 1=1
+		<isNotEmpty prepend="AND" property="findValue">
+			$findName$ LIKE '%$findValue$%'
+		</isNotEmpty>
+		<isNotEmpty prepend="AND" property="findServiceType">
+			SERVICE_TYPE = #findServiceType#
+		</isNotEmpty>
+	</select>
+	
+	<select id="getSelectPoster" resultClass="postervo">
+		SELECT 
+			A.ALBUM_ID AS ALBUM_ID, 
+			A.WIDTH_IMG AS WIDTH_IMG, 
+			A.HEIGHT_IMG AS HEIGHT_IMG, 
+			A.CREATED AS CREATED, 
+			A.CREATE_ID AS CREATE_ID, 
+			A.SERVICE_TYPE AS SERVICE_TYPE, 
+			M.ADI_ALBUM_NAME AS ALBUM_NAME
+		FROM 
+			PT_UX_PANEL_IMG A, 
+			PT_LA_ALBUM_MST M 
+		WHERE
+			1=1
+			AND A.ALBUM_ID = ADI_ALBUM_ID 
+			AND EXISTS (SELECT 1 FROM PT_VO_CATEGORY_MAP CM WHERE CM.CONTENTS_ID = M.ADI_ALBUM_ID) 
+			AND A.ALBUM_ID = #albumId#
+			AND A.SERVICE_TYPE = #serviceType#  
+	</select>
+	
+	<insert id="insertPoster" parameterClass="map">
+		INSERT INTO PT_UX_PANEL_IMG
+		(ALBUM_ID, WIDTH_IMG, HEIGHT_IMG, CREATED, CREATE_ID, SERVICE_TYPE)
+		VALUES(
+			  #albumId#
+    		, #widthImg#
+    		, #heightImg#
+    		, SYSDATE
+   	 		, #createId#
+   	 		, #serviceType#
+    	)
+	</insert>
+	
+	<update id="updatePoster" parameterClass="map">
+		UPDATE PT_UX_PANEL_IMG
+			SET 
+				WIDTH_IMG = #widthImg#,
+				HEIGHT_IMG = #heightImg#,
+				CREATED = SYSDATE,
+				CREATE_ID = #createId#
+		WHERE ALBUM_ID = #albumId#
+		AND SERVICE_TYPE = #serviceType#
+	</update>
+	
+	<delete id="deletePoster" parameterClass="map">
+		DELETE FROM PT_UX_PANEL_IMG
+		WHERE ALBUM_ID = #albumId#
+		AND SERVICE_TYPE = #serviceType#
+	</delete>
+</sqlMap>

@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="test_mainpanel">
+	<typeAlias alias="themeinfo" type="com.dmi.smartux.test.smartepg.vo.ThemeInfoVO"/>
+	<typeAlias alias="codeitem" type="com.dmi.smartux.test.smartepg.vo.CodeItemVO"/>
+	<typeAlias alias="realratinginfo" type="com.dmi.smartux.test.smartepg.vo.RealRatingInfoVO"/>
+	
+	<!-- 백업 테이블 create  -->
+	<statement id="create_main_panel_backup_table">
+		CREATE TABLE PT_UX_PANEL_BACKUP (
+  			PANNEL_ID    VARCHAR2(4)       NOT NULL, 
+  			PANNEL_NM    VARCHAR2(100)     NOT NULL, 
+  			USE_YN       VARCHAR2(1)       NOT NULL, 
+  			VERSION      VARCHAR2(20)      NOT NULL, 
+  			CREATED      DATE              DEFAULT SYSDATE              NOT NULL, 
+  			UPDATED      DATE              DEFAULT SYSDATE              NOT NULL, 
+  			CREATE_ID    VARCHAR2(30)      NOT NULL, 
+  			UPDATE_ID    VARCHAR2(30)      NOT NULL
+		)
+	</statement>
+	
+	<!-- 기존 테이블의 기존 데이터를 백업 테이블에 insert -->
+	<insert id="insert_main_panel_to_backup_table">
+		INSERT INTO PT_UX_PANEL_BACKUP
+		SELECT * FROM PT_UX_PANEL
+	</insert>
+	
+	<!-- 기존 테이블의 기존 데이터 삭제 -->
+	<delete id="delete_org_main_panel_data">
+		DELETE FROM PT_UX_PANEL
+	</delete>
+	
+	<!-- 테스트 데이터를 기존 테이블에 insert-->
+	<insert id="insert_test_data_to_org_main_panel_table" parameterClass="map">
+		INSERT INTO PT_UX_PANEL(PANNEL_ID, PANNEL_NM, USE_YN, VERSION, CREATE_ID, UPDATE_ID)
+		VALUES(
+			#pannel_id#
+			, #pannel_nm#
+    		, #use_yn#
+    		, #version#
+   	 		, #create_id#
+    		, #update_id#
+    	)
+	</insert>
+	
+	<!-- 기존 테이블의 테스트 데이터 삭제 -->
+	<delete id="delete_test_main_panel_data">
+		DELETE FROM PT_UX_PANEL
+	</delete>
+	
+	<!-- 백업 테이블에 보관된 데이터를 기존 테이블에 insert -->
+	<insert id="insert_main_panel_to_org_table">
+		INSERT INTO PT_UX_PANEL
+		SELECT * FROM PT_UX_PANEL_BACKUP
+	</insert>
+	
+	<!-- 백업 테이블 drop  -->
+	<statement id="drop_main_panel_backup_table">
+		DROP TABLE PT_UX_PANEL_BACKUP
+	</statement>
+	
+	
+	<select id="getMainPanelVersionInfo" resultClass="string">
+		SELECT MAX(VERSION) AS VERSION FROM PT_UX_PANEL
+	</select>
+	
+	
+	
+	
+	
+	
+	
+	<!-- 백업 테이블 create  -->
+	<statement id="create_real_rating_backup_table">
+		CREATE TABLE AVBM_QBIC_3MIN_TB_BACKUP (
+  			RANKING       NUMBER(5)        NOT NULL, 
+  			YMDHM         VARCHAR2(12)     NOT NULL, 
+  			CH_NO         VARCHAR2(10)     NOT NULL, 
+  			CH_NO_NAME    VARCHAR2(50)         NULL, 
+  			REG_DT        VARCHAR2(14)     NOT NULL
+		)
+	</statement>
+	
+	<!-- 기존 테이블의 기존 데이터를 백업 테이블에 insert -->
+	<insert id="insert_real_rating_to_backup_table">
+		INSERT INTO AVBM_QBIC_3MIN_TB_BACKUP
+		SELECT * FROM AVBM_QBIC_3MIN_TB
+	</insert>
+	
+	<!-- 기존 테이블의 기존 데이터 삭제 -->
+	<delete id="delete_org_real_rating_data">
+		DELETE FROM AVBM_QBIC_3MIN_TB 
+	</delete>
+	
+	<!-- 테스트 데이터를 기존 테이블에 insert-->
+	<insert id="insert_test_data_to_org_real_rating_table" parameterClass="map">
+		INSERT INTO AVBM_QBIC_3MIN_TB (RANKING, YMDHM, CH_NO, CH_NO_NAME, REG_DT)
+		VALUES(
+			#ranking#
+			, #ymdhm#
+    		, #ch_no#
+    		, #ch_no_name#
+    		, TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+    	)
+	</insert>
+	
+	<!-- 기존 테이블의 테스트 데이터 삭제 -->
+	<delete id="delete_test_real_rating_data">
+		DELETE FROM AVBM_QBIC_3MIN_TB
+	</delete>
+	
+	<!-- 백업 테이블에 보관된 데이터를 기존 테이블에 insert -->
+	<insert id="insert_real_rating_to_org_table">
+		INSERT INTO AVBM_QBIC_3MIN_TB
+		SELECT * FROM AVBM_QBIC_3MIN_TB_BACKUP
+	</insert>
+	
+	<!-- 백업 테이블 drop  -->
+	<statement id="drop_real_rating_backup_table">
+		DROP TABLE AVBM_QBIC_3MIN_TB_BACKUP
+	</statement>
+	
+	<select id="getRealRating" resultClass="realratinginfo">
+		SELECT CHANNEL_NO, CHANNEL_NAME, RANK_NO, SERVICE_ID
+		FROM (
+		    SELECT D.CHANNELNUMBER AS CHANNEL_NO,
+		         D.CHNL_NAME AS CHANNEL_NAME,
+		         TO_CHAR(E.RANKING) AS RANK_NO,
+		         D.SERVICE_ID AS SERVICE_ID
+		    FROM PT_CD_CHNL_INFO C,
+		         PT_CD_PLAY_CHNL D,
+		         AVBM_QBIC_3MIN_TB E
+		    WHERE C.SERVICE_ID = D.SERVICE_ID
+		        AND D.CHANNELNUMBER = E.CH_NO
+		        AND D.LOCALAREACODE IN ('011','013','012', '010')
+		        AND D.USE_YN = 'Y'
+		    ORDER BY E.RANKING
+		)
+		WHERE ROWNUM &lt; 19
+	</select>
+	
+</sqlMap>

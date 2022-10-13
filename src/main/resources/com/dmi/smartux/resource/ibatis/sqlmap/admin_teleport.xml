@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="admin_teleport">
+
+    <typeAlias alias="admin_viewvo" type="com.dmi.smartux.admin.mainpanel.vo.ViewVO"/>
+
+    <!-- 이미지 url 조회 -->
+    <select id="getImgServerUrl" resultClass="string">
+        SELECT
+        /*admin_teleport.getImgServerUrl*/
+        F_SERVER_URL(#VALUE#)
+        FROM DUAL
+    </select>
+
+    <select id="getPanelTitleTempList" parameterClass="string" resultClass="admin_viewvo">
+        SELECT /*admin_teleport.getPanelTitleTempList*/
+        A.*, DECODE(B.PANNEL_ID, NULL, 'N', 'Y') AS EXISTSUB, C.ITEM_NM AS CATEGORY_DESC, C.SS_GBN AS ALBUM_DESC
+        FROM (
+        SELECT PANNEL_ID, TITLE_ID, TITLE_NM, P_TITLE_ID, CATEGORY_ID, CATEGORY_TYPE, ALBUM_CNT, ORDERED, LEVEL, USE_YN, CREATED, UPDATED, CREATE_ID, UPDATE_ID, ROWNUM RN, PAGE_TYPE, PAGE_CODE, NVL(CATEGORY_GB, 'I20') AS CATEGORY_GB
+        FROM PT_UX_PANEL_TITLE_TEMP
+        START WITH P_TITLE_ID IS NULL
+        CONNECT BY PRIOR TITLE_ID = P_TITLE_ID
+        AND PRIOR PANNEL_ID = PANNEL_ID
+        ORDER SIBLINGS BY ORDERED
+        ) A, (SELECT PANNEL_ID, P_TITLE_ID FROM PT_UX_PANEL_TITLE_TEMP GROUP BY PANNEL_ID, P_TITLE_ID)  B
+        , (SELECT SS_GBN, ITEM_NM FROM PT_UX_CODE_ITEMS WHERE code='A0008') C
+        WHERE A.PANNEL_ID = B.PANNEL_ID(+)
+        AND   A.TITLE_ID  = B.P_TITLE_ID(+)
+        AND   A.CATEGORY_TYPE = C.SS_GBN(+)
+        ORDER BY DECODE(A.PANNEL_ID, #VALUE#, 1), RN
+    </select>
+</sqlMap>

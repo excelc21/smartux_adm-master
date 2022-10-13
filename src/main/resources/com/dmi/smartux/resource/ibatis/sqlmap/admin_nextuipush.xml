@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="admin_nextuipush">
+	<typeAlias alias="nextUiPushContentVO" type="com.dmi.smartux.push.vo.NextUiPushContentVO"/>
+	<typeAlias alias="nextUiPushUserParamVO" type="com.dmi.smartux.push.vo.NextUiPushUserParamVO"/>
+	<typeAlias alias="nextUiPushUserVO" type="com.dmi.smartux.push.vo.NextUiPushUserVO"/>
+	
+	<resultMap id="nextUiPushContentMap" class="com.dmi.smartux.push.vo.NextUiPushContentVO">
+		<result property="category_id"		column="CATEGORY_ID" />
+		<result property="contents_id"		column="CONTENTS_ID" />
+		<result property="type"				column="TYPE" />
+		<result property="category_gb"		column="CATEGORY_GB" />
+		<result property="contents_name"	column="CONTENTS_NAME" />
+		<result property="watch_end_date"	column="WATCH_END_DATE" />
+		<result property="series_yn"		column="SERIES_YN" />
+		<result property="series_no"		column="SERIES_NO" />
+		<result property="complete_yn"		column="COMPLETE_YN" />
+	</resultMap>
+	
+	<resultMap id="nextUiPushUserMap" class="com.dmi.smartux.push.vo.NextUiPushUserVO">
+		<result property="sa_id" column="SA_ID" />
+		<result property="buy_date" column="BUY_DATE" />
+		<result property="reg_id" column="REG_ID" />
+	</resultMap>
+		
+	<!-- 예약발송 푸쉬 컨텐츠 리스트 조회  -->
+	<select id="getNextUiPushContentList" resultMap="nextUiPushContentMap">
+		SELECT
+			CATEGORY_ID				AS CATEGORY_ID,
+			CONTENTS_ID				AS CONTENTS_ID,
+			TYPE					AS TYPE,
+			CATEGORY_GB				AS CATEGORY_GB,
+			CONTENTS_NAME			AS CONTENTS_NAME,
+			END_DATE				AS WATCH_END_DATE,
+			SERIES_YN				AS SERIES_YN,
+			SERIES_NO				AS SERIES_NO,
+			COMPLETE_YN				AS COMPLETE_YN
+		FROM
+			PT_HDTV_PROGRAM_SCHEDULE_P
+		WHERE TYPE = 'RP'
+		AND COMPLETE_YN = 'N'
+		AND CATEGORY_GB IN ('I20', 'I30')
+		AND SEND_DATE <![CDATA[<=]]> SYSDATE
+		AND P_KEY IN (0,1)
+	</select>
+	
+	<!-- 예약발송 푸쉬 사용자 리스트 총 건수 조회 -->
+	<!-- mims.xml로 이동 -->
+	<!-- <select id="getNextUiPushUserCount" parameterClass="nextUiPushContentVO" resultClass="int">
+		SELECT
+			COUNT(*)		AS NUM
+		FROM
+			PT_VO_PUSH_USER PU,
+      		PT_UX_PAIRING UP
+		WHERE PU.KEY_ID = #contents_id#
+		AND PU.USER_INFO2 = #category_gb#
+		AND	PU.PUSH_TYPE = 'RP'
+    	AND UP.APP_TYPE = 'UX'
+    	AND PU.SA_ID = UP.SA_ID
+    	AND PU.MAC_ADDR = UP.STB_MAC
+    	AND UP.REG_ID IS NOT NULL
+	</select> -->
+
+	<!-- 예약발송 푸쉬 사용자 리스트 조회  -->
+	<!-- mims.xml로 이동 -->
+	<!-- <select id="getNextUiPushUserList" parameterClass="nextUiPushUserParamVO" resultMap="nextUiPushUserMap">
+		SELECT
+			SA_ID,
+			BUY_DATE,
+			REG_ID
+		FROM
+		(	SELECT
+				ROWNUM			AS RNUM,
+				PU.SA_ID		AS SA_ID,
+				PU.BUY_DATE		AS BUY_DATE,
+        		UP.REG_ID 		AS REG_ID
+			FROM
+				PT_VO_PUSH_USER PU,
+      			PT_UX_PAIRING UP
+			WHERE PU.KEY_ID = #contents_id#
+			AND PU.USER_INFO2 = #category_gb#
+			AND	PU.PUSH_TYPE = 'RP'
+    		AND UP.APP_TYPE = 'UX'
+    		AND PU.SA_ID = UP.SA_ID
+    		AND PU.MAC_ADDR = UP.STB_MAC
+    		AND UP.REG_ID IS NOT NULL
+		) PUSH
+		WHERE PUSH.RNUM BETWEEN $start_num$ AND $end_num$
+	</select> -->
+	
+	<!-- Push 전송 후 컴플릿 -->
+	<!-- <update id="updatePushComplete" parameterClass="nextUiPushContentVO">
+		UPDATE PT_HDTV_PROGRAM_SCHEDULE_P
+		SET		PUSH_DATE   = SYSDATE,
+				COMPLETE_YN = #complete_yn#
+		WHERE	TYPE        = #type#
+		AND CATEGORY_GB = #category_gb#
+		AND CATEGORY_ID = #category_id#
+		AND CONTENTS_ID = #contents_id#
+		AND P_KEY IN (0,1)
+	</update> -->
+</sqlMap>

@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="hotvod_iptv">
+	<typeAlias alias="hotvodSearchVO" type="com.dmi.smartux.admin.hotvod.vo.HotvodSearchVO"/>
+	<typeAlias alias="hotvodSiteVO" type="com.dmi.smartux.admin.hotvod.vo.HotvodSiteVO"/>
+	<typeAlias alias="hotvodContentVO" type="com.dmi.smartux.admin.hotvod.vo.HotvodContentVO"/>
+	<typeAlias alias="hotvodHitstatsVO" type="com.dmi.smartux.admin.hotvod.vo.HotvodHitstatsVO"/>
+	<typeAlias alias="hotvodFileUploadVO" type="com.dmi.smartux.admin.hotvod.vo.HotvodFileUploadVO"/>
+	<typeAlias alias="hotvodExcelVo" type="com.dmi.smartux.admin.hotvod.vo.HotvodExcelVo"/>	
+	
+	<!-- 사이트 목록갯수 -->
+	<select id="siteListCnt" parameterClass="hotvodSearchVO" resultClass="int">
+		SELECT COUNT(SITE_ID)
+		  FROM PT_UX_HV_SITE
+		 WHERE NVL(DEL_YN, 'N') != 'Y'
+		 <isNotEmpty prepend="AND" property="findValue">
+		  	   $findName$ LIKE '%$findValue$%'
+		 </isNotEmpty>
+	</select>
+	
+	<!-- 사이트 목록 -->
+	<select id="siteList" parameterClass="hotvodSearchVO" resultClass="hotvodSiteVO">
+		SELECT A.*
+		  FROM (SELECT ROWNUM AS ROWNO ,
+			   		   SITE_ID ,
+					   SITE_NAME ,
+					   SITE_URL ,
+					   CASE WHEN SITE_IMG IS NOT NULL THEN F_SERVER_URL('I')||'iptv/hotvod/'||SITE_IMG ELSE NULL END AS SITE_IMG ,
+					   CASE WHEN SITE_IMG_TV IS NOT NULL THEN F_SERVER_URL('I')||'iptv/hotvod/'||SITE_IMG_TV ELSE NULL END AS SITE_IMG_TV ,
+					   REG_DT ,
+					   REG_ID 
+				  FROM PT_UX_HV_SITE
+				 WHERE NVL(DEL_YN, 'N') != 'Y'
+				  <isNotEmpty prepend="AND" property="findValue">
+				  	   $findName$ LIKE '%$findValue$%'
+				  </isNotEmpty>
+				) A
+		 WHERE ROWNO BETWEEN '$start_rnum$' AND '$end_rnum$' 
+	</select>
+	
+	<!-- 사이트 ID 중복검사 -->
+	<select id="siteIdChk" parameterClass="string" resultClass="int">
+		SELECT COUNT(SITE_ID)
+		  FROM PT_UX_HV_SITE
+		 WHERE SITE_ID = #site_id#
+	</select>
+	
+	<!-- 사이트 ID 채번 -->
+	<select id="getSiteId" resultClass="string">
+		SELECT 'S'||LPAD(DECODE(MAX(SUBSTR(SITE_ID,2,10))+1,'',1,MAX(SUBSTR(SITE_ID,2,10))+1),4,0) FROM PT_UX_HV_SITE WHERE LENGTH(SITE_ID) = 5
+	</select>
+	
+	<!-- 사이트 상세 -->
+	<select id="siteDetail" parameterClass="hotvodSearchVO" resultClass="hotvodSiteVO">
+		SELECT SITE_ID ,
+			   SITE_NAME ,
+			   SITE_URL ,
+			   SITE_IMG ,
+			   SITE_IMG_TV
+		  FROM PT_UX_HV_SITE
+		 WHERE SITE_ID = #site_id#
+	</select>
+	
+	<!-- 사이트 등록 -->
+	<insert id="siteInsert" parameterClass="hotvodSiteVO">
+		INSERT INTO PT_UX_HV_SITE(
+			   SITE_ID ,
+			   SITE_NAME ,
+			   SITE_URL ,
+			   SITE_IMG ,
+			   SITE_IMG_TV ,
+			   REG_DT ,
+			   REG_ID ,
+			   DEL_YN
+			) VALUES (
+			   #site_id# ,
+			   #site_name# ,
+			   #site_url# ,
+			   #site_img# ,
+			   #site_img_tv# ,
+			   SYSDATE ,
+			   #reg_id# ,
+			   'N' 
+			)
+	</insert>
+	
+	<!-- 사이트 수정 -->
+	<update id="siteUpdate" parameterClass="hotvodSiteVO">
+		UPDATE PT_UX_HV_SITE
+		   SET SITE_NAME 	= #site_name# ,
+			   SITE_URL  	= #site_url# ,
+			   SITE_IMG  	= #site_img# ,
+			   SITE_IMG_TV  = #site_img_tv# ,
+			   MOD_DT    	= SYSDATE ,
+			   MOD_ID    	= #mod_id#
+		 WHERE SITE_ID   	= #site_id#
+	</update>
+	
+	<!-- 사이트 삭제 -->
+	<update	id="siteDelete" parameterClass="string">
+		UPDATE PT_UX_HV_SITE SET DEL_YN = 'Y' WHERE SITE_ID = #site_id# 
+	</update>
+	
+	<!-- 사이트 목록 -->
+	<select id="getSiteList" resultClass="hotvodSiteVO">
+		SELECT SITE_ID ,
+			   SITE_NAME 
+		  FROM PT_UX_HV_SITE
+		 WHERE NVL(DEL_YN, 'N') != 'Y'
+	</select>
+	
+	<!-- 조회수 통계 목록 -->
+	<select id="getHitstatsList" parameterClass="hotvodSearchVO" resultClass="hotvodHitstatsVO">
+		SELECT AL.*
+		FROM   (SELECT <isEqual property="sortOrder" compareValue="I">
+				  		RANK() OVER(ORDER BY HIT_STATS.I_HIT_CNT DESC) AS RANKING,
+				  		</isEqual>
+		  				<isEqual property="sortOrder" compareValue="E">
+				  		RANK() OVER(ORDER BY HIT_STATS.E_HIT_CNT DESC) AS RANKING,
+				  		</isEqual>
+				  		HIT_STATS.*
+		        FROM   (SELECT A.CONTENT_ID,
+		                       A.CONTENT_NAME,
+		                       A.CONTENT_URL,
+		                       (SELECT CATEGORY_NAME
+		                        FROM   PT_UX_HV_CATEGORY CA
+		                        WHERE  CA.HV_CATEGORY_ID = CC.HV_CATEGORY_ID) AS PARENT_CATE,
+		                       B.SITE_NAME,
+		                       A.HIT_CNT-SUM(C.HIT_CNT) AS S_HIT_CNT,
+		                       SUM(C.HIT_CNT) AS I_HIT_CNT,
+		                       A.HIT_CNT AS E_HIT_CNT
+		                FROM   PT_UX_HV_CONT A ,
+		                       PT_UX_HV_CONT_EXT EXT,
+		                       PT_UX_HV_CATE_CONTENT CC,
+		                       PT_UX_HV_SITE B ,
+		                       PT_UX_HV_HITCNT_LOG C
+		                WHERE  EXT.SITE_ID = B.SITE_ID(+)
+		                AND    A.CONTENT_ID = EXT.CONTENT_ID(+)
+		                AND    A.CONTENT_ID = CC.CONTENT_ID
+		                AND    A.CONTENT_ID = C.CONTENT_ID
+		                AND C.HITCNT_YEAR || C.HITCNT_MONTH || C.HITCNT_DAY BETWEEN '$startDt$'  AND '$endDt$'
+		                GROUP BY A.CONTENT_NAME, A.CONTENT_ID, A.CONTENT_URL, CC.HV_CATEGORY_ID , A.HIT_CNT, B.SITE_NAME 
+		             ) HIT_STATS 
+		      ) AL
+		WHERE Al.RANKING BETWEEN 1 AND '$pageSize$'
+	</select>
+</sqlMap>

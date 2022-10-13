@@ -1,0 +1,420 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="test_notiapi">
+
+	<!-- 백업 테이블 create  -->
+	<statement id="create_notiapi_notiterm_backup_table">
+	CREATE TABLE PT_HDTV_NOTI_TERM_BACKUP
+	(
+	  REG_NO      NUMBER(12)                        NOT NULL,
+	  TERM_MODEL  VARCHAR2(20 BYTE)                 NOT NULL
+	)
+	</statement>
+
+	<statement id="create_notiapi_bbs_backup_table">
+	CREATE TABLE PT_HDTV_BBS_BACKUP
+	(
+	  REG_NO        NUMBER(15)                      NOT NULL,
+	  BBS_ID        VARCHAR2(20 BYTE)                NOT NULL,
+	  TITLE         VARCHAR2(50 BYTE)               NOT NULL,
+	  CONTENT       VARCHAR2(2000 BYTE)             NOT NULL,
+	  IS_FIXED      NUMBER(1)                       DEFAULT 0                     NOT NULL,
+	  S_DATE        DATE,
+	  E_DATE        DATE,
+	  N_DATE        DATE,
+	  EV_CONT_ID    VARCHAR2(200 BYTE),
+	  WIN_DT        DATE,
+	  ORG_FILE_NM   VARCHAR2(100 BYTE),
+	  SAVE_FILE_NM  VARCHAR2(22 BYTE),
+	  REG_DT        DATE                            DEFAULT SYSDATE               NOT NULL,
+	  REG_ID        VARCHAR2(20 BYTE)               NOT NULL,
+	  MOD_DT        DATE,
+	  MOD_ID        VARCHAR2(20 BYTE),
+	  IS_ADT        NUMBER(1)                       DEFAULT 0, 
+      EV_TYPE         CHAR(3), 
+      EV_STAT_ID      NUMBER(15), 
+      EV_DETAIL       VARCHAR2(3000),
+      SHOW_TYPE		VARCHAR2(5)
+	)
+	</statement>
+
+
+	<statement id="create_notiapi_bbs_master_backup_table">
+	CREATE TABLE  PT_HDTV_BBS_MASTER_BACKUP
+	(
+	  BBS_ID   VARCHAR2(20 BYTE)                     NOT NULL,
+	  BBS_GBN  VARCHAR2(2 BYTE)                     NOT NULL,
+	  BBS_NM   VARCHAR2(50 BYTE)                    NOT NULL,
+	  DEL_YN   NUMBER(1)                            DEFAULT 0                     NOT NULL,
+	  REG_DT   DATE                                 DEFAULT SYSDATE               NOT NULL,
+	  MOD_DT   DATE,
+	  VERSION  VARCHAR2(14 BYTE),
+	  REG_ID   VARCHAR2(20 BYTE),
+	  MOD_ID   VARCHAR2(20 BYTE),
+	  SCR_TP   VARCHAR2(1 BYTE)                     DEFAULT 'T'
+	)
+	</statement>
+
+
+	<statement id="create_notiapi_bbs_terminal_backup_table">
+	CREATE TABLE  PT_HDTV_TERMINAL_BACKUP
+	(
+	  TERM_MODEL  VARCHAR2(20 BYTE)                 NOT NULL,
+	  TERM_MAKE   VARCHAR2(20 BYTE)                 NOT NULL,
+	  LCD_SPEC    VARCHAR2(20 BYTE)                 NOT NULL,
+	  DEL_YN      NUMBER(1)                         DEFAULT 0                     NOT NULL,
+	  SCR_TP      VARCHAR2(1 BYTE)                  DEFAULT 'T'
+	)
+	</statement>
+	
+	<!-- 기존 테이블의 기존 데이터를 백업 테이블에 insert -->
+	<insert id="insert_notiapi_notiterm_backup_table" >
+		INSERT INTO PT_HDTV_NOTI_TERM_BACKUP			
+		SELECT * FROM PT_HDTV_NOTI_TERM 
+	</insert>
+	
+	<!-- 기존 테이블의 기존 데이터를 TEMP 테이블에 insert -->
+	<insert id="insert_notiapi_bbs_backup_table" >
+		INSERT INTO PT_HDTV_BBS_BACKUP			
+		SELECT * FROM PT_HDTV_BBS
+	</insert>
+	
+		<!-- 기존 테이블의 기존 데이터를 TEMP 테이블에 insert -->
+	<insert id="insert_notiapi_bbs_master_backup_table" >
+		INSERT INTO PT_HDTV_BBS_MASTER_BACKUP			
+		SELECT * FROM PT_HDTV_BBS_MASTER
+	</insert>
+	
+			<!-- 기존 테이블의 기존 데이터를 TEMP 테이블에 insert -->
+	<insert id="insert_notiapi_bbs_terminal_backup_table" >
+		INSERT INTO PT_HDTV_TERMINAL_BACKUP			
+		SELECT * FROM PT_HDTV_TERMINAL
+	</insert>
+	
+	
+	<!-- 기존 테이블의 기존 데이터 삭제 -->
+	<delete id="delete_notiapi_notiterm_table" >
+		DELETE FROM PT_HDTV_NOTI_TERM 
+	</delete>
+	
+		<!-- 기존 테이블의 기존 데이터 삭제 -->
+	<delete id="delete_notiapi_bbs_table" >
+		DELETE FROM PT_HDTV_BBS 
+	</delete>
+	
+		<!-- 기존 테이블의 기존 데이터 삭제 -->
+	<delete id="delete_notiapi_bbs_master_table" >
+		DELETE FROM PT_HDTV_BBS_MASTER 
+	</delete>
+	
+		<!-- 기존 테이블의 기존 데이터 삭제 -->
+	<delete id="delete_notiapi_bbs_terminal_table" >
+		DELETE FROM PT_HDTV_TERMINAL 
+	</delete>
+	
+
+	
+	<!-- 백업 테이블에 보관된 데이터를 기존 테이블에 insert -->
+
+	<insert id="restore_notiapi_notiterm_table" >
+		INSERT INTO PT_HDTV_NOTI_TERM			
+		SELECT * FROM PT_HDTV_NOTI_TERM_BACKUP
+	</insert>
+	
+	<!-- 백업 테이블에 보관된 데이터를 기존 테이블에 insert -->
+	<insert id="restore_notiapi_bbs_table" >
+		INSERT INTO PT_HDTV_BBS		
+		SELECT * FROM PT_HDTV_BBS_BACKUP	
+	</insert>
+	
+	<!-- 백업 테이블에 보관된 데이터를 기존 테이블에 insert -->
+	<insert id="restore_notiapi_bbs_master_table" >
+		INSERT INTO PT_HDTV_BBS_MASTER		
+		SELECT * FROM PT_HDTV_BBS_MASTER_BACKUP
+	</insert>
+	
+	<!-- 백업 테이블에 보관된 데이터를 기존 테이블에 insert -->
+	<insert id="restore_notiapi_bbs_terminal_table" >
+		INSERT INTO PT_HDTV_TERMINAL			
+		SELECT * FROM PT_HDTV_TERMINAL_BACKUP
+	</insert>
+	
+
+
+
+
+
+
+	
+	<!-- 백업 테이블 drop  -->
+	<statement id="drop_notiapi_notiterm_backup_table">
+		DROP TABLE PT_HDTV_NOTI_TERM_BACKUP
+	</statement>
+		<!-- 백업 테이블 drop  -->
+	<statement id="drop_notiapi_bbs_backup_table">
+		DROP TABLE PT_HDTV_BBS_BACKUP
+	</statement>
+		<!-- 백업 테이블 drop  -->
+	<statement id="drop_notiapi_bbsmaster_backup_table">
+		DROP TABLE PT_HDTV_BBS_MASTER_BACKUP
+	</statement>
+		<!-- 백업 테이블 drop  -->
+	<statement id="drop_notiapi_bbs_terminal_backup_table">
+		DROP TABLE PT_HDTV_TERMINAL_BACKUP
+	</statement>
+	
+	
+	
+	
+	
+	
+		<!-- NOTI_TERM   테스트 데이터를 기존 테이블에 insert-->
+	<insert id="insert_test_data_to_org_notiapi_notiterm_table1" >
+		Insert into PT_HDTV_NOTI_TERM Values
+	   (3,  'YP-GB70')
+    </insert>
+	<insert id="insert_test_data_to_org_notiapi_notiterm_table2" >    
+		Insert into PT_HDTV_NOTI_TERM Values
+	   (3,  'SHV-E210L16')
+    </insert>
+
+	<insert id="insert_test_data_to_org_notiapi_notiterm_table3" >     
+		Insert into PT_HDTV_NOTI_TERM Values
+	   (581, 
+	    'YP-GB70')
+    </insert>
+	<insert id="insert_test_data_to_org_notiapi_notiterm_table4" >     
+		Insert into PT_HDTV_NOTI_TERM Values
+	   (581,  'SHV-E210L16')
+	</insert>
+	<insert id="insert_test_data_to_org_notiapi_notiterm_table5" >    
+		Insert into PT_HDTV_NOTI_TERM Values
+	   (581,  'SHV-E250L')
+    </insert>    	
+	
+	
+	<!-- BBS   테스트 데이터를 기존 테이블에 insert-->
+	
+	<insert id="insert_test_data_to_org_notiapi_bbs_table1" >  
+	Insert into PT_HDTV_BBS values (
+	701,'ev001','테스트','테스트701',1,TO_DATE(TO_CHAR(SYSDATE-29,'YYYY-MM-DD'), 'YYYY-MM-DD'),TO_DATE(TO_CHAR(SYSDATE-22,'YYYY-MM-DD'), 'YYYY-MM-DD'),TO_DATE(TO_CHAR(SYSDATE-22,'YYYY-MM-DD'), 'YYYY-MM-DD'),NULL,NULL,NULL,NULL,TO_DATE(TO_CHAR(SYSDATE-29,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',NULL,NULL,1, 'ev3', 1, '',null
+	)
+	</insert>
+	<insert id="insert_test_data_to_org_notiapi_bbs_table2" >  
+	Insert into PT_HDTV_BBS values (
+	602,'gn001','test','test602',0,TO_DATE(TO_CHAR(SYSDATE-32,'YYYY-MM-DD'), 'YYYY-MM-DD'),TO_DATE(TO_CHAR(SYSDATE-25,'YYYY-MM-DD'), 'YYYY-MM-DD'),NULL,NULL,NULL,NULL,NULL,TO_DATE(TO_CHAR(SYSDATE-32,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',NULL,NULL,0, 'ev2', 2, '1025',null
+	)
+	</insert>
+	<insert id="insert_test_data_to_org_notiapi_bbs_table3" >  
+	Insert into PT_HDTV_BBS values (
+	705,'ev001','테스트3','테스트7053테스트3',1,TO_DATE(TO_CHAR(SYSDATE-29,'YYYY-MM-DD'), 'YYYY-MM-DD'),TO_DATE(TO_CHAR(SYSDATE-22,'YYYY-MM-DD'), 'YYYY-MM-DD'),TO_DATE(TO_CHAR(SYSDATE-28,'YYYY-MM-DD'), 'YYYY-MM-DD'),NULL,NULL,NULL,NULL,TO_DATE(TO_CHAR(SYSDATE-29,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',NULL,NULL,1, 'ev3', 1, '',null
+	)
+	</insert>
+	<insert id="insert_test_data_to_org_notiapi_bbs_table4" >  
+	Insert into PT_HDTV_BBS values (
+	706,'ev001','테스트4','706테스트4',1,TO_DATE(TO_CHAR(SYSDATE-29,'YYYY-MM-DD'), 'YYYY-MM-DD'),TO_DATE(TO_CHAR(SYSDATE-22,'YYYY-MM-DD'), 'YYYY-MM-DD'),TO_DATE(TO_CHAR(SYSDATE-29,'YYYY-MM-DD'), 'YYYY-MM-DD'),NULL,NULL,NULL,NULL,TO_DATE(TO_CHAR(SYSDATE-29,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',NULL,NULL,1, 'ev2', 2, '1025',null
+	)
+	</insert>
+	<insert id="insert_test_data_to_org_notiapi_bbs_table5" >  
+	Insert into PT_HDTV_BBS values (
+	687,'gn001','공지2','687공지 2 내용',0,NULL,NULL,TO_DATE(TO_CHAR(SYSDATE-30,'YYYY-MM-DD'), 'YYYY-MM-DD'),NULL,NULL,NULL,NULL,TO_DATE(TO_CHAR(SYSDATE-30,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',NULL,NULL,1, 'ev2', 2, '1025',null
+	)
+	</insert>
+	<insert id="insert_test_data_to_org_notiapi_bbs_table6" >  
+	Insert into PT_HDTV_BBS values (
+	686,'gn001','686전체 공지1','공지 전체 1 내용 내용',0,NULL,NULL,TO_DATE(TO_CHAR(SYSDATE,'YYYY-MM-DD'), 'YYYY-MM-DD'),NULL,NULL,NULL,NULL,TO_DATE(TO_CHAR(SYSDATE-30,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',TO_DATE(TO_CHAR(SYSDATE-30,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',1, 'ev4', 3, '',null
+	)
+	</insert>
+	<insert id="insert_test_data_to_org_notiapi_bbs_table7" >  
+	Insert into PT_HDTV_BBS values (
+	680,'gn001','테스트680 게시판 제목','테스트 게시판 제목 내용 내용2',0,TO_DATE(TO_CHAR(SYSDATE-30,'YYYY-MM-DD'), 'YYYY-MM-DD'),TO_DATE(TO_CHAR(SYSDATE-23,'YYYY-MM-DD'), 'YYYY-MM-DD'),NULL,NULL,NULL,NULL,NULL,TO_DATE(TO_CHAR(SYSDATE-30,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',TO_DATE(TO_CHAR(SYSDATE-30,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',0, 'ev4', 3, '',null
+	)
+	</insert>
+	<insert id="insert_test_data_to_org_notiapi_bbs_table8" >  
+	Insert into PT_HDTV_BBS values (
+	562,'ev001','테스트562 공지','테스트 이벤트 공지입니다.f',0,TO_DATE(TO_CHAR(SYSDATE-32,'YYYY-MM-DD'), 'YYYY-MM-DD'),TO_DATE(TO_CHAR(SYSDATE-31,'YYYY-MM-DD'), 'YYYY-MM-DD'),TO_DATE(TO_CHAR(SYSDATE-42,'YYYY-MM-DD'), 'YYYY-MM-DD'),NULL,TO_DATE(TO_CHAR(SYSDATE-32,'YYYY-MM-DD'), 'YYYY-MM-DD'),NULL,NULL,TO_DATE(TO_CHAR(SYSDATE-32,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',TO_DATE(TO_CHAR(SYSDATE-31,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',1, 'ev4', 3, '',null
+	)
+	</insert>
+	<insert id="insert_test_data_to_org_notiapi_bbs_table9" >  
+	Insert into PT_HDTV_BBS values (
+	563,'ev001','이벤트563 공지 테스트2 ALL','이벤트 공지 테스트2 ALLa',0,TO_DATE(TO_CHAR(SYSDATE-32,'YYYY-MM-DD'), 'YYYY-MM-DD'),TO_DATE(TO_CHAR(SYSDATE-25,'YYYY-MM-DD'), 'YYYY-MM-DD'),NULL,NULL,NULL,NULL,NULL,TO_DATE(TO_CHAR(SYSDATE-32,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',TO_DATE(TO_CHAR(SYSDATE-32,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',1, 'ev3', 1, '',null
+	)
+	</insert>
+	<insert id="insert_test_data_to_org_notiapi_bbs_table10" >  
+	Insert into PT_HDTV_BBS values (
+	581,'gn001','설정581 테스트','설정 테스트testtest',0,TO_DATE(TO_CHAR(SYSDATE-32,'YYYY-MM-DD'), 'YYYY-MM-DD'),TO_DATE(TO_CHAR(SYSDATE-25,'YYYY-MM-DD'), 'YYYY-MM-DD'),NULL,NULL,NULL,NULL,NULL,TO_DATE(TO_CHAR(SYSDATE-32,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',TO_DATE(TO_CHAR(SYSDATE-31,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',0, 'ev3', 1, '',null
+	)
+	</insert>
+	<insert id="insert_test_data_to_org_notiapi_bbs_table11" >  
+	Insert into PT_HDTV_BBS values (
+	688,'gn001','일반공지688 T','일반공지',1,NULL,NULL,TO_DATE(TO_CHAR(SYSDATE-52,'YYYY-MM-DD'), 'YYYY-MM-DD'),NULL,NULL,'관리게시판.PNG','1351743538459.PNG',TO_DATE(TO_CHAR(SYSDATE-30,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',TO_DATE(TO_CHAR(SYSDATE-29,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',1, 'ev3', 1, '',null
+	)
+	</insert>
+	<insert id="insert_test_data_to_org_notiapi_bbs_table12" >  
+	Insert into PT_HDTV_BBS values (
+	689,'gn001','단말기689 테스트','단말기 테스트 단말기 테스트단말기 테스트 단말기 테스트 단말기 테스트',1,NULL,NULL,TO_DATE(TO_CHAR(SYSDATE-30,'YYYY-MM-DD'), 'YYYY-MM-DD'),NULL,NULL,NULL,NULL,TO_DATE(TO_CHAR(SYSDATE-30,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',TO_DATE(TO_CHAR(SYSDATE-30,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',1, 'ev3', 1, '',null
+	)
+	</insert>
+	<insert id="insert_test_data_to_org_notiapi_bbs_table13" >  
+	Insert into PT_HDTV_BBS values (
+	3,'gn001','팝업공지2 수정3','팝업공지 테스트입니다. 수정입니다.',0,TO_DATE(TO_CHAR(SYSDATE-33,'YYYY-MM-DD'), 'YYYY-MM-DD'),TO_DATE(TO_CHAR(SYSDATE-33,'YYYY-MM-DD'), 'YYYY-MM-DD'),NULL,NULL,NULL,NULL,NULL,TO_DATE(TO_CHAR(SYSDATE-33,'YYYY-MM-DD'), 'YYYY-MM-DD'),'123',TO_DATE(TO_CHAR(SYSDATE-30,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',1, 'ev2', 2, '1023',null
+	)
+	</insert>
+	<insert id="insert_test_data_to_org_notiapi_bbs_table14" >  
+	Insert into PT_HDTV_BBS values (
+	702,'ev001','테스트2 702','테스트2',0,TO_DATE(TO_CHAR(SYSDATE-29,'YYYY-MM-DD'), 'YYYY-MM-DD'),TO_DATE(TO_CHAR(SYSDATE-22,'YYYY-MM-DD'), 'YYYY-MM-DD'),TO_DATE(TO_CHAR(SYSDATE-29,'YYYY-MM-DD'), 'YYYY-MM-DD'),NULL,NULL,NULL,NULL,TO_DATE(TO_CHAR(SYSDATE-29,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',TO_DATE(TO_CHAR(SYSDATE-29,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',1, 'ev2', 2, '1023',null
+	)
+	</insert>
+	<insert id="insert_test_data_to_org_notiapi_bbs_table15" >  
+	Insert into PT_HDTV_BBS values (
+	642,'gn001','공지 수정642','공지 수정내용 내용',1,TO_DATE(TO_CHAR(SYSDATE-31,'YYYY-MM-DD'), 'YYYY-MM-DD'),TO_DATE(TO_CHAR(SYSDATE-24,'YYYY-MM-DD'), 'YYYY-MM-DD'),NULL,NULL,NULL,NULL,NULL,TO_DATE(TO_CHAR(SYSDATE-31,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',TO_DATE(TO_CHAR(SYSDATE-30,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',1, 'ev3', 1, '',null
+	)
+	</insert>	
+	<insert id="insert_test_data_to_org_notiapi_bbs_table16" >  
+	Insert into PT_HDTV_BBS values (
+	21,'ev001','21테스트','테스트',1,TO_DATE(TO_CHAR(SYSDATE-29,'YYYY-MM-DD'), 'YYYY-MM-DD'),TO_DATE(TO_CHAR(SYSDATE-22,'YYYY-MM-DD'), 'YYYY-MM-DD'),TO_DATE(TO_CHAR(SYSDATE-22,'YYYY-MM-DD'), 'YYYY-MM-DD'),NULL,NULL,NULL,NULL,TO_DATE(TO_CHAR(SYSDATE-29,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',NULL,NULL,1, 'ev4', 3, '',null
+	)
+	</insert>
+	<insert id="insert_test_data_to_org_notiapi_bbs_table17" >  
+	Insert into PT_HDTV_BBS values (
+	22,'gn001','22test','test',0,TO_DATE(TO_CHAR(SYSDATE-32,'YYYY-MM-DD'), 'YYYY-MM-DD'),TO_DATE(TO_CHAR(SYSDATE-25,'YYYY-MM-DD'), 'YYYY-MM-DD'),NULL,NULL,NULL,NULL,NULL,TO_DATE(TO_CHAR(SYSDATE-32,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',NULL,NULL,1, 'ev3', 1, '',null
+	)
+	</insert>
+	<insert id="insert_test_data_to_org_notiapi_bbs_table18" >  
+	Insert into PT_HDTV_BBS values (
+	23,'ev001','23테스트3','테스트3테스트3',1,TO_DATE(TO_CHAR(SYSDATE-29,'YYYY-MM-DD'), 'YYYY-MM-DD'),TO_DATE(TO_CHAR(SYSDATE-22,'YYYY-MM-DD'), 'YYYY-MM-DD'),TO_DATE(TO_CHAR(SYSDATE-28,'YYYY-MM-DD'), 'YYYY-MM-DD'),NULL,NULL,NULL,NULL,TO_DATE(TO_CHAR(SYSDATE-29,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',NULL,NULL,1, 'ev4', 3, '',null
+	)
+	</insert>
+	<insert id="insert_test_data_to_org_notiapi_bbs_table19" >  
+	Insert into PT_HDTV_BBS values (
+	24,'ev001','24테스트4','테스트4',1,TO_DATE(TO_CHAR(SYSDATE-29,'YYYY-MM-DD'), 'YYYY-MM-DD'),TO_DATE(TO_CHAR(SYSDATE-22,'YYYY-MM-DD'), 'YYYY-MM-DD'),TO_DATE(TO_CHAR(SYSDATE-29,'YYYY-MM-DD'), 'YYYY-MM-DD'),NULL,NULL,NULL,NULL,TO_DATE(TO_CHAR(SYSDATE-29,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',NULL,NULL,1, 'ev2', 2, '1077',null
+	)
+	</insert>
+	<insert id="insert_test_data_to_org_notiapi_bbs_table20" >  
+	Insert into PT_HDTV_BBS values (
+	25,'gn001','25공지2','공지 2 내용',0,NULL,NULL,TO_DATE(TO_CHAR(SYSDATE-30,'YYYY-MM-DD'), 'YYYY-MM-DD'),NULL,NULL,NULL,NULL,TO_DATE(TO_CHAR(SYSDATE-30,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',NULL,NULL,1, 'ev4', 3, '',null
+	)
+	</insert>
+	<insert id="insert_test_data_to_org_notiapi_bbs_table21" >  
+	Insert into PT_HDTV_BBS values (
+	26,'gn001','26전체 공지1','공지 전체 1 내용 내용',0,NULL,NULL,TO_DATE(TO_CHAR(SYSDATE,'YYYY-MM-DD'), 'YYYY-MM-DD'),NULL,NULL,NULL,NULL,TO_DATE(TO_CHAR(SYSDATE-30,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',TO_DATE(TO_CHAR(SYSDATE-30,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',1, 'ev2', 2, '1077',null
+	)
+	</insert>
+	<insert id="insert_test_data_to_org_notiapi_bbs_table22" >  
+	Insert into PT_HDTV_BBS values (
+	27,'gn001','27테스트 게시판 제목','테스트 게시판 제목 내용 내용2',0,TO_DATE(TO_CHAR(SYSDATE-30,'YYYY-MM-DD'), 'YYYY-MM-DD'),TO_DATE(TO_CHAR(SYSDATE-23,'YYYY-MM-DD'), 'YYYY-MM-DD'),NULL,NULL,NULL,NULL,NULL,TO_DATE(TO_CHAR(SYSDATE-30,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',TO_DATE(TO_CHAR(SYSDATE-30,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',0, 'ev2', 2, '1077',null
+	)
+	</insert>
+	<insert id="insert_test_data_to_org_notiapi_bbs_table23" >  
+	Insert into PT_HDTV_BBS values (
+	28,'ev001','28테스트 공지','테스트 이벤트 공지입니다.f',0,TO_DATE(TO_CHAR(SYSDATE-32,'YYYY-MM-DD'), 'YYYY-MM-DD'),TO_DATE(TO_CHAR(SYSDATE-31,'YYYY-MM-DD'), 'YYYY-MM-DD'),TO_DATE(TO_CHAR(SYSDATE-42,'YYYY-MM-DD'), 'YYYY-MM-DD'),NULL,TO_DATE(TO_CHAR(SYSDATE-32,'YYYY-MM-DD'), 'YYYY-MM-DD'),NULL,NULL,TO_DATE(TO_CHAR(SYSDATE-32,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',TO_DATE(TO_CHAR(SYSDATE-31,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',1, 'ev3', 1, '',null
+	)
+	</insert>
+	<insert id="insert_test_data_to_org_notiapi_bbs_table24" >  
+	Insert into PT_HDTV_BBS values (
+	29,'ev001','29이벤트 공지 테스트2 ALL','이벤트 공지 테스트2 ALLa',0,TO_DATE(TO_CHAR(SYSDATE-32,'YYYY-MM-DD'), 'YYYY-MM-DD'),TO_DATE(TO_CHAR(SYSDATE-25,'YYYY-MM-DD'), 'YYYY-MM-DD'),NULL,NULL,NULL,NULL,NULL,TO_DATE(TO_CHAR(SYSDATE-32,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',TO_DATE(TO_CHAR(SYSDATE-32,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',1, 'ev3', 1, '',null
+	)
+	</insert>
+	<insert id="insert_test_data_to_org_notiapi_bbs_table25" >  
+	Insert into PT_HDTV_BBS values (
+	30,'gn001','설정 30테스트','설정 테스트testtest',0,TO_DATE(TO_CHAR(SYSDATE-32,'YYYY-MM-DD'), 'YYYY-MM-DD'),TO_DATE(TO_CHAR(SYSDATE-25,'YYYY-MM-DD'), 'YYYY-MM-DD'),NULL,NULL,NULL,NULL,NULL,TO_DATE(TO_CHAR(SYSDATE-32,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',TO_DATE(TO_CHAR(SYSDATE-31,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',1, 'ev2', 2, '1077',null
+	)
+	</insert>
+	<insert id="insert_test_data_to_org_notiapi_bbs_table26" >  
+	Insert into PT_HDTV_BBS values (
+	31,'gn001','일반공지 31T','일반공지',1,NULL,NULL,TO_DATE(TO_CHAR(SYSDATE-52,'YYYY-MM-DD'), 'YYYY-MM-DD'),NULL,NULL,'관리게시판.PNG','1351743538459.PNG',TO_DATE(TO_CHAR(SYSDATE-30,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',TO_DATE(TO_CHAR(SYSDATE-29,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',1, 'ev3', 1, '',null
+	)
+	</insert>
+	<insert id="insert_test_data_to_org_notiapi_bbs_table27" >  
+	Insert into PT_HDTV_BBS values (
+	32,'gn001','단말기 32테스트','단말기 테스트 단말기 테스트단말기 테스트 단말기 테스트 단말기 테스트',1,NULL,NULL,TO_DATE(TO_CHAR(SYSDATE-30,'YYYY-MM-DD'), 'YYYY-MM-DD'),NULL,NULL,NULL,NULL,TO_DATE(TO_CHAR(SYSDATE-30,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',TO_DATE(TO_CHAR(SYSDATE-30,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',1, 'ev4', 3, '',null
+	)
+	</insert>
+	<insert id="insert_test_data_to_org_notiapi_bbs_table28" >  
+	Insert into PT_HDTV_BBS values (
+	33,'gn001','팝업공지2 33수정','팝업공지 테스트입니다. 수정입니다.',0,TO_DATE(TO_CHAR(SYSDATE-33,'YYYY-MM-DD'), 'YYYY-MM-DD'),TO_DATE(TO_CHAR(SYSDATE-33,'YYYY-MM-DD'), 'YYYY-MM-DD'),NULL,NULL,NULL,NULL,NULL,TO_DATE(TO_CHAR(SYSDATE-33,'YYYY-MM-DD'), 'YYYY-MM-DD'),'123',TO_DATE(TO_CHAR(SYSDATE-30,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',0, 'ev4', 3, '',null
+	)
+	</insert>
+	<insert id="insert_test_data_to_org_notiapi_bbs_table29" >  
+	Insert into PT_HDTV_BBS values (
+	34,'ev001','테스트2 34','테스트2',0,TO_DATE(TO_CHAR(SYSDATE-29,'YYYY-MM-DD'), 'YYYY-MM-DD'),TO_DATE(TO_CHAR(SYSDATE-22,'YYYY-MM-DD'), 'YYYY-MM-DD'),TO_DATE(TO_CHAR(SYSDATE-29,'YYYY-MM-DD'), 'YYYY-MM-DD'),NULL,NULL,NULL,NULL,TO_DATE(TO_CHAR(SYSDATE-29,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',TO_DATE(TO_CHAR(SYSDATE-29,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',1, 'ev2', 2, '1033',null
+	)
+	</insert>
+	<insert id="insert_test_data_to_org_notiapi_bbs_table30" >  
+	Insert into PT_HDTV_BBS values (
+	35,'gn001','공지 수정35','공지 수정내용 내용',1,TO_DATE(TO_CHAR(SYSDATE-31,'YYYY-MM-DD'), 'YYYY-MM-DD'),TO_DATE(TO_CHAR(SYSDATE-24,'YYYY-MM-DD'), 'YYYY-MM-DD'),NULL,NULL,NULL,NULL,NULL,TO_DATE(TO_CHAR(SYSDATE-31,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',TO_DATE(TO_CHAR(SYSDATE-30,'YYYY-MM-DD'), 'YYYY-MM-DD'),'admin',1, 'ev4', 3, '',null
+	)
+	</insert>	
+
+	
+
+
+	
+	
+	<!--  BBS_MASTER  테스트 데이터를 기존 테이블에 insert  -->
+	<insert id="insert_test_data_to_org_notiapi_bbsmaster_table1" >    
+	Insert into PT_HDTV_BBS_MASTER Values (
+		'gn002','GN','공지',1,TO_DATE(TO_CHAR(SYSDATE-35,'YYYY-MM-DD'), 'YYYY-MM-DD'),NULL,'2012090101001','관리자',NULL,'T')
+    </insert>
+	<insert id="insert_test_data_to_org_notiapi_bbsmaster_table2" >  
+	Insert into PT_HDTV_BBS_MASTER Values (
+		'ev001','EV','이벤트 공지입니다.',0,TO_DATE(TO_CHAR(SYSDATE-32,'YYYY-MM-DD'), 'YYYY-MM-DD'),TO_DATE(TO_CHAR(SYSDATE-31,'YYYY-MM-DD'), 'YYYY-MM-DD'),'2012090101001','관리자','admin','T')
+    </insert>
+	<insert id="insert_test_data_to_org_notiapi_bbsmaster_table3" >  
+	Insert into PT_HDTV_BBS_MASTER Values (
+		'gn003','GN','일반공지',0,TO_DATE(TO_CHAR(SYSDATE-33,'YYYY-MM-DD'), 'YYYY-MM-DD'),NULL,'2012090101001','관리자',NULL,'T')
+    </insert>
+	<insert id="insert_test_data_to_org_notiapi_bbsmaster_table4" >  
+	Insert into PT_HDTV_BBS_MASTER Values (
+		'gn001','GN','notice',0,TO_DATE(TO_CHAR(SYSDATE-35,'YYYY-MM-DD'), 'YYYY-MM-DD'),TO_DATE(TO_CHAR(SYSDATE-33,'YYYY-MM-DD'), 'YYYY-MM-DD'),'2012090101001','관리자','관리자','T')
+    </insert>
+	<insert id="insert_test_data_to_org_notiapi_bbsmaster_table5" >  
+	Insert into PT_HDTV_BBS_MASTER Values (
+		'pu001','PU','팝업공지1',0,TO_DATE(TO_CHAR(SYSDATE-32,'YYYY-MM-DD'), 'YYYY-MM-DD'),TO_DATE(TO_CHAR(SYSDATE-31,'YYYY-MM-DD'), 'YYYY-MM-DD'),'2012090101001','관리자','admin','T')
+    </insert>
+	<insert id="insert_test_data_to_org_notiapi_bbsmaster_table6" >  
+	Insert into PT_HDTV_BBS_MASTER Values (
+		'ev002','EV','이벤트',1,TO_DATE(TO_CHAR(SYSDATE-31,'YYYY-MM-DD'), 'YYYY-MM-DD'),NULL,'2012090101001','admin',NULL,'S')
+    </insert>
+		
+	<insert id="insert_test_data_to_org_notiapi_terminal_table1" >  
+	Insert into PT_HDTV_TERMINAL Values (
+	'YP-GB70','삼성','480X800',0,'T')
+	</insert>
+	<insert id="insert_test_data_to_org_notiapi_terminal_table2" >
+	Insert into PT_HDTV_TERMINAL Values (
+	'YP-GP1','삼성','64X32',0,'T')
+	</insert>
+	<insert id="insert_test_data_to_org_notiapi_terminal_table3" >
+	Insert into PT_HDTV_TERMINAL Values (
+	'SHV-E210L16','삼성','1280X720',0,'T')
+	</insert>
+	<insert id="insert_test_data_to_org_notiapi_terminal_table4" >
+	Insert into PT_HDTV_TERMINAL Values (
+	'SHV-E250L','삼성','1280X720',0,'T')
+	</insert>
+	<insert id="insert_test_data_to_org_notiapi_terminal_table5" >
+	Insert into PT_HDTV_TERMINAL Values (
+	'SHV-E120L','삼성','1280X720',0,'T')
+	</insert>
+	<insert id="insert_test_data_to_org_notiapi_terminal_table6" >
+	Insert into PT_HDTV_TERMINAL Values (
+	'SHV-E120LS','삼성','1280X720',0,'T')
+	</insert>
+	<insert id="insert_test_data_to_org_notiapi_terminal_table7" >
+	Insert into PT_HDTV_TERMINAL Values (
+	'SHV-E120LW','삼성','1280X720',0,'T')
+	</insert>
+	<insert id="insert_test_data_to_org_notiapi_terminal_table8" >
+	Insert into PT_HDTV_TERMINAL Values (
+	'SHV-E140L-2','삼성','1280X800',0,'T')
+	</insert>
+	<insert id="insert_test_data_to_org_notiapi_terminal_table9" >
+	Insert into PT_HDTV_TERMINAL Values (
+	'SHV-E160L','삼성','1280X800',0,'T')
+	</insert>
+
+	
+	
+		
+</sqlMap>

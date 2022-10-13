@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="board">
+	<typeAlias alias="samplevo" type="com.dmi.smartux.sample.vo.SampleVO"/>
+	<typeAlias alias="samplevo2" type="com.dmi.smartux.sample.vo.SampleVO2"/>
+	<typeAlias alias="resultone" type="com.dmi.smartux.sample.vo.ResultOne"/>
+	<typeAlias alias="ehcachevo" type="com.dmi.smartux.sample.vo.EHCacheVO"/>
+	
+	<select id="list" parameterClass="map" resultClass="samplevo" >
+		SELECT IDX, NAME 
+		FROM SAMPLETABLE
+		WHERE IDX between #start# and #end#
+		ORDER BY IDX
+	</select>
+	
+	<select id="list2" parameterClass="map" resultClass="samplevo2" >
+		SELECT IDX, NAME 
+		FROM SAMPLETABLE
+		WHERE IDX between #start# and #end#
+		ORDER BY IDX
+	</select>
+	
+	<select id="oneselect" parameterClass="map" resultClass="resultone">
+		SELECT IDX, NAME 
+		FROM SAMPLETABLE
+		WHERE IDX = #idx#
+	</select>
+	
+	<insert id="insert" parameterClass="map">
+		INSERT INTO SAMPLETABLE(IDX, NAME)
+		VALUES(#idx#, #name#)
+	</insert>
+	
+	<update id="update" parameterClass="map">
+		UPDATE 
+			SAMPLETABLE
+		SET
+			NAME = #name#
+		WHERE 
+			IDX = #idx#
+	</update>
+	
+	<delete id="delete" parameterClass="map">
+		DELETE FROM 
+			SAMPLETABLE
+		WHERE 
+			IDX = #idx#
+	</delete>
+	
+	<select id="ehcache" resultClass="ehcachevo">
+		SELECT B.THEME_CODE AS THEME_CODE, A.THEME_NAME AS THEME_NAME, B.PRO_CD AS PRO_CD
+			, B.SERVICE_ID AS SERVICE_ID, B.EVENT_NAME AS EVENT_NAME, B.START_TIME AS START_TIME, B.END_TIME AS END_TIME
+			, B.RATING AS RATING, B.AV_RESOLUTION AS AV_RESOLUTION
+		FROM T_PROGRAM_THEME A, T_PROGRAM_REAL_RATING B
+		WHERE A.THEME_CODE = B.THEME_CODE
+		ORDER BY B.THEME_CODE, B.PRO_CD
+	</select>
+	
+	<select id="ehcacheCustom" resultClass="ehcachevo" parameterClass="map">
+		SELECT B.THEME_CODE AS THEME_CODE, A.THEME_NAME AS THEME_NAME, B.PRO_CD AS PRO_CD
+			, B.SERVICE_ID AS SERVICE_ID, B.EVENT_NAME AS EVENT_NAME, B.START_TIME AS START_TIME, B.END_TIME AS END_TIME
+			, B.RATING AS RATING, B.AV_RESOLUTION AS AV_RESOLUTION
+		FROM T_PROGRAM_THEME A, T_PROGRAM_REAL_RATING B
+		WHERE A.THEME_CODE = B.THEME_CODE
+		AND A.THEME_CODE=#category#
+		ORDER BY B.THEME_CODE, B.PRO_CD
+	</select>
+</sqlMap>

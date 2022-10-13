@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="admin_retry">
+	<select id="getRetryString" resultClass="string">
+		SELECT
+		  NVL((SELECT     
+		    ITEM_NM
+		  FROM PT_UX_CODE_ITEMS   
+		  WHERE CODE=#code_id#
+		  AND USE_YN = 'Y'
+		  AND ROWNUM = 1),'0') AS retry_num
+		FROM DUAL
+	</select>
+</sqlMap>

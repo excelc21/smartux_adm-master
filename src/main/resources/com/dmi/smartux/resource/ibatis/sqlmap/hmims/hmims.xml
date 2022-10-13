@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="hmims">
+	<typeAlias alias="newsVO" type="com.dmi.smartux.admin.news.vo.NewsVO"/>
+	<typeAlias alias="latestContentVO" type="com.dmi.smartux.admin.secondtv_push.vo.LatestContentVO"/>
+	<typeAlias alias="nextUiPushContentVO" type="com.dmi.smartux.push.vo.NextUiPushContentVO"/>
+		
+	<resultMap id="newsMap" class="newsVO">
+		<result property="regNumber" column="REG_NO" />
+		<result property="title" column="TITLE" />
+		<result property="content" column="CONTENT" />
+		<result property="notiType" column="NOTI_TYPE" />
+		<result property="notiDetail" column="NOTI_DETAIL" />
+		<result property="notiDetailName" column="NOTI_DETAIL_NAME" />
+		<result property="sendingStatus" column="SEND_YN" />
+		<result property="sendDate" column="S_DATE" />
+		<result property="regDate" column="R_DATE" />
+		<result property="netType" column="NET_TYPE" />
+		<result property="imageName" column="IMAGE_NAME" />
+		<result property="pushType" column="PUSH_TYPE" />
+		<result property="showType" column="SHOW_TYPE" />
+		<result property="screenType" column="SCR_TYPE" />
+		<result property="notiGB" column="NOTI_GB" />
+		<result property="resultCode" column="RESULT_CODE" />
+	</resultMap>
+
+	<resultMap id="newsUrlMap" class="newsVO" extends="newsMap">
+		<result property="imageURL" column="IMAGE_URL" />
+	</resultMap>
+	
+	<!-- 새소식 등록 -->
+	<!-- /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/admin_news.xml -->
+	<insert id="insert" parameterClass="newsVO" >
+		<selectKey keyProperty="regNumber" resultClass="int">
+			SELECT NVL(MAX(REG_NO),0)+1 FROM PT_HDTV_NEWS
+		</selectKey>
+
+		INSERT INTO PT_HDTV_NEWS(
+			REG_NO,
+			TITLE,
+			CONTENT,
+			NOTI_TYPE,
+			NOTI_DETAIL,
+			NOTI_DETAIL_NAME,
+			SEND_YN,
+			S_DATE,
+			R_DATE,
+			NET_TYPE,
+			IMAGE_NAME,
+			PUSH_TYPE,
+			SHOW_TYPE,
+			SCR_TYPE,
+			NOTI_GB)
+		VALUES(
+			#regNumber#,
+			#title#,
+			#content#,
+			#notiType#,
+			#notiDetail#,
+			#notiDetailName#,
+			#sendingStatus#,
+			#sendDate#,
+			SYSDATE,
+			#netType#,
+			#imageName#,
+			#pushType#,
+			#showType#,
+			#screenType#,
+			#notiGB#)
+	</insert>
+
+	<!-- 새소식 로그 등록 -->
+	<!-- /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/admin_news.xml -->
+	<insert id="insertLog" parameterClass="newsVO" >
+		INSERT INTO PT_HDTV_NEWS_LOG(
+			REG_NO,
+			TITLE,
+			CONTENT,
+			NOTI_TYPE,
+			NOTI_DETAIL,
+			NOTI_DETAIL_NAME,
+			SEND_YN,
+			S_DATE,
+			R_DATE,
+			ACT_DT,
+			ACT_ID,
+			ACT_IP,
+			ACT_GBN,
+			NET_TYPE,
+			IMAGE_NAME,
+			PUSH_TYPE,
+			SHOW_TYPE,
+			SCR_TYPE,
+			RESULT_CODE,
+			NOTI_GB)
+		VALUES(
+			#regNumber#,
+			#title#,
+			#content#,
+			#notiType#,
+			#notiDetail#,
+			#notiDetailName#,
+			#sendingStatus#,
+			#sendDate#,
+			SYSDATE,
+			SYSDATE,
+            #actID#,
+            #actIP#,
+            #actGbn#,
+            #netType#,
+			#imageName#,
+			#pushType#,
+			#showType#,
+			#screenType#,
+			#resultCode#,
+			#notiGB#)
+	</insert>
+
+	<!--  새소식 수정 -->
+	<!-- /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/admin_news.xml -->
+	<update id="update" parameterClass="newsVO">
+		UPDATE PT_HDTV_NEWS SET
+			TITLE = #title#,
+			CONTENT = #content#,
+			NOTI_TYPE = #notiType#,
+			NOTI_DETAIL = #notiDetail#,
+			NOTI_DETAIL_NAME = #notiDetailName#,
+			S_DATE = #sendDate#,
+			R_DATE = SYSDATE,
+			NET_TYPE = #netType#,
+			IMAGE_NAME = #imageName#,
+			PUSH_TYPE = #pushType#,
+			SHOW_TYPE = #showType#
+		WHERE REG_NO = #regNumber#
+	</update>
+
+	<!--  새소식 삭제 -->
+	<!-- /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/admin_news.xml -->
+	<delete id="delete" parameterClass="int">
+		DELETE FROM PT_HDTV_NEWS
+		WHERE REG_NO = #regNumber#
+	</delete>
+
+	<!-- 현재 대기중인 새소식중 순번이 먼저인 데이터 하나를 체크한다.(해당WAS번호로) -->
+	<!-- /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/admin_news.xml -->
+	<update id="markNews" parameterClass="String">
+		UPDATE PT_HDTV_NEWS SET SEND_YN=#index#
+		WHERE REG_NO=
+			(
+			SELECT
+				MIN(REG_NO) AS REG_NO
+			FROM PT_HDTV_NEWS
+			WHERE SEND_YN='N'
+			AND SCR_TYPE='T'
+			AND S_DATE <![CDATA[<=]]> SYSDATE
+			)
+	</update>
+	
+	<!-- 마킹한 데이터를 가져온다. -->
+	<!-- /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/admin_news.xml -->
+	<select id="getMarkingNews" parameterClass="String" resultMap="newsUrlMap">
+		SELECT
+			REG_NO,
+			TITLE,
+			CONTENT,
+			NOTI_TYPE,
+			NOTI_DETAIL,
+			NOTI_DETAIL_NAME,
+			SEND_YN,
+			S_DATE,
+			R_DATE,
+			NET_TYPE,
+			CASE WHEN IMAGE_NAME IS NOT NULL THEN F_SERVER_URL('I')||IMAGE_NAME ELSE NULL END AS IMAGE_URL,
+			IMAGE_NAME,
+			PUSH_TYPE,
+			SHOW_TYPE,
+			SCR_TYPE,
+			RESULT_CODE,
+			NOTI_GB
+		FROM PT_HDTV_NEWS
+		WHERE SEND_YN=#index#
+		AND SCR_TYPE='T'
+		AND ROWNUM = 1
+	</select>
+	
+	<!-- 스케쥴링한 새소식 상태변경 -->
+	<!-- /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/admin_news.xml -->
+	<update id="updateNewsStatus" parameterClass="HashMap">
+		UPDATE PT_HDTV_NEWS SET
+			SEND_YN=#result#
+			<isNotEmpty property="result_code">
+				, RESULT_CODE=#result_code#
+			</isNotEmpty>
+		 	, R_DATE=SYSDATE
+		WHERE SEND_YN=#index#
+		AND REG_NO=#regNumber#
+		AND SCR_TYPE='T'
+	</update>
+	
+	<!-- Push 전송 후 컴플릿 -->
+	<!-- /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/admin_latest.xml -->
+	<update id="updatePushComplete" parameterClass="latestContentVO">
+		UPDATE PT_HDTV_PROGRAM_SCHEDULE_P SET
+			COMPLETE_YN='Y'
+		WHERE TYPE='MI'
+		AND CATEGORY_GB = 'I20'
+		AND CATEGORY_ID=#categoryID#
+		AND CONTENTS_ID=#contentID#
+		AND P_KEY IN (0,1)
+	</update>
+	
+	<!-- Push 전송 후 컴플릿 -->
+	<!-- /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/admin_nextuipush.xml -->
+	<!-- 동일한 이름이 존재하여 updatePushComplete ->  updatePushComplete_nextui 로 변경 -->
+	<update id="updatePushComplete_nextui" parameterClass="nextUiPushContentVO">
+		UPDATE PT_HDTV_PROGRAM_SCHEDULE_P
+		SET		PUSH_DATE   = SYSDATE,
+				COMPLETE_YN = #complete_yn#
+		WHERE	TYPE        = #type#
+		AND CATEGORY_GB = #category_gb#
+		AND CATEGORY_ID = #category_id#
+		AND CONTENTS_ID = #contents_id#
+		AND P_KEY IN (0,1)
+	</update>
+	
+</sqlMap>

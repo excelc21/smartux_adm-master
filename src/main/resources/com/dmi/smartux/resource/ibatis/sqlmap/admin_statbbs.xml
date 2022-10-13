@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="admin_statbbs">
+	<typeAlias alias="statbbsinsertprocVo" type="com.dmi.smartux.admin.statbbsAdmin.vo.StatbbsInsertProcVo"/>
+	<typeAlias alias="statbbslistvo" type="com.dmi.smartux.admin.statbbsAdmin.vo.StatbbsListVo"/>
+	<typeAlias alias="statbbslistarrvo" type="com.dmi.smartux.admin.statbbsAdmin.vo.StatbbsListArrVo"/>
+	<typeAlias alias="statbbsupdateprocVo" type="com.dmi.smartux.admin.statbbsAdmin.vo.StatbbsUpdateProcVo"/>
+	<typeAlias alias="statbbsupdateVo" type="com.dmi.smartux.admin.statbbsAdmin.vo.StatbbsUpdateVo"/>
+	<typeAlias alias="statpaticipantlistVo" type="com.dmi.smartux.admin.statbbsAdmin.vo.StatPaticipantListVo"/>
+	<typeAlias alias="statpaticipantlistarrVo" type="com.dmi.smartux.admin.statbbsAdmin.vo.StatPaticipantListArrVo"/>
+	<typeAlias alias="statbbsminilistVo" type="com.dmi.smartux.admin.statbbsAdmin.vo.StatbbsMiniListVo"/>
+	
+	<!-- 참여통계 리스트 -->
+	<select id="getStatbbsList" parameterClass="statbbslistvo" resultClass="statbbslistarrvo">
+		SELECT
+		  Ma.STAT_NO
+		  ,Ma.TITLE
+		  ,Ma.CONTENT
+		  ,Ma.E_DATE
+		  ,Ma.USE_YN
+		FROM (
+			SELECT
+			   ROW_NUMBER() OVER(ORDER BY STAT_NO DESC) AS RNUM
+			  ,STAT_NO
+			  ,TITLE
+			  ,CONTENT
+			  ,TO_CHAR(E_DATE,'YYYY-MM-DD HH24') AS E_DATE
+			  ,USE_YN
+			FROM PT_HDTV_STAT_BBS
+			WHERE 1=1 
+		<isNotEmpty prepend="AND" property="findValue">
+			<isNotNull property="findName">
+				$findName$ LIKE '%$findValue$%'
+			</isNotNull>
+		</isNotEmpty>
+		<isNotEmpty prepend="AND" property="use_yn">
+			USE_YN=#use_yn#
+		</isNotEmpty>
+		) Ma
+		WHERE RNUM BETWEEN #start_rnum# AND #end_rnum#
+		ORDER BY RNUM ASC
+	</select>
+	
+	<!-- 참여통계 총 갯수 -->
+	<select id="getStatbbsListTotalCnt" parameterClass="statbbslistvo" resultClass="int">
+		   SELECT
+			   COUNT(*)
+		   FROM PT_HDTV_STAT_BBS
+		   WHERE 1=1
+		<isNotEmpty prepend="AND" property="findValue">
+			<isNotNull property="findName">
+				$findName$ LIKE '%$findValue$%'
+			</isNotNull>
+		</isNotEmpty>
+		<isNotEmpty prepend="AND" property="use_yn">
+			USE_YN=#use_yn#
+		</isNotEmpty>
+	</select>
+	
+	<!-- StatBbs 등록 -->
+	<insert id="setStatbbsInsertProc" parameterClass="statbbsinsertprocVo">
+		<selectKey keyProperty="stat_no" resultClass="String">
+			SELECT NVL(MAX(STAT_NO),0)+1 FROM PT_HDTV_STAT_BBS
+		</selectKey>
+		
+		INSERT INTO PT_HDTV_STAT_BBS(
+			STAT_NO
+			,TITLE
+			,CONTENT
+			,E_DATE
+			,USE_YN
+			,STAT_FILE_PATH
+		)VALUES(
+			#stat_no#
+			,#title#
+			,#content#
+			,TO_DATE(#e_date#, 'YYYY-MM-DD HH24:MI')
+			,#use_yn#
+			,#stat_file_path#
+		)
+	</insert>
+	
+	<!-- StatBbs 등록 로그 -->
+	<insert id="setStatbbsInsertLog" parameterClass="statbbsinsertprocVo">
+		INSERT INTO PT_HDTV_STAT_BBS_LOG(
+			STAT_NO
+			,TITLE
+			,CONTENT
+			,E_DATE
+			,USE_YN
+			,STAT_FILE_PATH
+			,ACT_DT
+			,ACT_ID
+			,ACT_IP 
+			,ACT_GBN
+		)VALUES(
+			#stat_no#
+			,#title#
+			,#content#
+			,TO_DATE(#e_date#, 'YYYY-MM-DD HH24:MI')
+			,#use_yn#
+			,#stat_file_path#
+			,SYSDATE
+			,#act_id#
+			,#act_ip#
+			,#act_gbn#
+		)
+	</insert>
+	
+	<!-- StatBbs 보기-->
+	<select id="setStatbbsUpdate" parameterClass="String" resultClass="statbbsupdateVo">
+		SELECT 
+			STAT_NO
+			,TITLE
+			,CONTENT
+			,TO_CHAR(E_DATE, 'YYYY-MM-DD HH24:MI') AS E_DATE
+			,USE_YN
+			,STAT_FILE_PATH
+		FROM PT_HDTV_STAT_BBS
+		WHERE STAT_NO=#stat_no#
+	</select>
+	
+	<!-- StatBbs 수정 -->
+	<update id="setStatbbsUpdateProc" parameterClass="statbbsupdateprocVo">
+		UPDATE PT_HDTV_STAT_BBS
+		SET TITLE=#title#
+		, CONTENT=#content#
+		, E_DATE=TO_DATE(#e_date#, 'YYYY-MM-DD HH24:MI')
+		, USE_YN=#use_yn#
+		WHERE STAT_NO=#stat_no#
+	</update>
+	
+	<!-- StatBbs 수정 로그 -->
+	<insert id="statbbsUpdateLog" parameterClass="statbbsupdateprocVo">
+		INSERT INTO PT_HDTV_STAT_BBS_LOG(STAT_NO,TITLE,CONTENT,E_DATE,USE_YN,STAT_FILE_PATH,ACT_DT,ACT_ID,ACT_IP,ACT_GBN)
+		SELECT
+		   STAT_NO
+		  ,TITLE
+		  ,CONTENT
+		  ,E_DATE
+		  ,USE_YN
+		  ,STAT_FILE_PATH
+		  ,SYSDATE AS ACT_DT
+		  ,'$act_id$'
+		  ,'$act_ip$'
+		  ,'$act_gbn$'
+		FROM PT_HDTV_STAT_BBS WHERE STAT_NO=#stat_no#
+	</insert>
+	
+	<!-- StatBbs 삭제 -->
+	<delete id="setStatbbsDelete" parameterClass="String">
+		DELETE FROM PT_HDTV_STAT_BBS
+		WHERE STAT_NO=#stat_no#
+	</delete>
+	
+	<!-- 참여한 데이터 리스트 : 파일형식 저장으로 바뀌면서 안쓰게 됨. -->
+	<select id="getStatPaticipantList" parameterClass="statpaticipantlistVo" resultClass="statpaticipantlistarrVo">
+		SELECT
+		  Ma.STAT_NO
+		  ,Ma.SA_ID
+		  ,Ma.MAC
+		  ,Ma.CTN
+      	  ,Ma.TITLE
+		  ,TO_CHAR(Ma.R_DATE, 'YYYY-MM-DD HH24:MI') AS R_DATE
+		FROM (
+			SELECT
+			  ROWNUM AS RNUM
+			  ,A.STAT_NO
+			  ,A.SA_ID
+			  ,A.MAC
+			  ,A.CTN
+			  ,A.R_DATE
+        	  ,B.TITLE
+			FROM PT_HDTV_STAT A,
+      		PT_HDTV_STAT_BBS B
+			WHERE A.STAT_NO=B.STAT_NO
+			AND A.STAT_NO=#stat_no#
+		<isNotEmpty prepend="AND" property="findValue">
+			<isNotNull property="findName">
+				A.$findName$ LIKE '%$findValue$%'
+			</isNotNull>
+		</isNotEmpty>
+		) Ma
+		WHERE RNUM BETWEEN #start_rnum# AND #end_rnum#
+		ORDER BY RNUM ASC
+	</select>
+	
+	<!-- 참여한 데이터 리스트 : 파일형식 저장으로 바뀌면서 안쓰게 됨. -->
+	<select id="excelPaticipantList" parameterClass="statpaticipantlistVo" resultClass="statpaticipantlistarrVo">
+		SELECT
+		  Ma.STAT_NO
+		  ,Ma.SA_ID
+		  ,Ma.MAC
+		  ,Ma.CTN
+      	  ,Ma.TITLE
+		  ,TO_CHAR(Ma.R_DATE, 'YYYY-MM-DD HH24:MI') AS R_DATE
+		FROM (
+			SELECT
+			  ROWNUM AS RNUM
+			  ,A.STAT_NO
+			  ,A.SA_ID
+			  ,A.MAC
+			  ,A.CTN
+			  ,A.R_DATE
+        	  ,B.TITLE
+			FROM PT_HDTV_STAT A,
+      		PT_HDTV_STAT_BBS B
+			WHERE A.STAT_NO=B.STAT_NO
+			AND A.STAT_NO=#stat_no#
+		<isNotEmpty prepend="AND" property="findValue">
+			<isNotNull property="findName">
+				A.$findName$ LIKE '%$findValue$%'
+			</isNotNull>
+		</isNotEmpty>
+		) Ma
+		ORDER BY RNUM ASC
+	</select>
+	
+	<!-- 참여한 데이터 총 갯수 -->
+	<select id="getStatPaticipantListCnt" parameterClass="statpaticipantlistVo" resultClass="int">
+		SELECT
+		  COUNT(*)
+		FROM PT_HDTV_STAT
+		WHERE STAT_NO=#stat_no#
+		<isNotEmpty prepend="AND" property="findValue">
+			<isNotNull property="findName">
+				$findName$ LIKE '%$findValue$%'
+			</isNotNull>
+		</isNotEmpty>
+	</select>
+	
+	<!-- 참여한 데이터 리스트 -->
+	<select id="getStatbbsMiniList" parameterClass="String" resultClass="statbbsminilistVo">
+		SELECT
+		  Ma.STAT_NO
+		  ,Ma.TITLE
+		FROM (
+		  SELECT
+		     ROW_NUMBER() OVER(ORDER BY STAT_NO DESC) AS RNUM
+		    ,STAT_NO
+		    ,TITLE
+		  FROM PT_HDTV_STAT_BBS
+		) Ma
+		WHERE Ma.RNUM <![CDATA[<=]]> #list_Cnt#
+	</select>
+	
+	<!-- 참여하기 활성화 된 리스트 -->
+	<select id="getStatbbsActive" parameterClass="String" resultClass="statbbsminilistVo">
+		SELECT
+		  Ma.STAT_NO
+		  ,Ma.TITLE
+		FROM (
+		  SELECT
+		     ROW_NUMBER() OVER(ORDER BY STAT_NO DESC) AS RNUM
+		    ,STAT_NO
+		    ,TITLE
+		  FROM PT_HDTV_STAT_BBS
+		  WHERE USE_YN='Y'
+		) Ma
+		WHERE Ma.RNUM <![CDATA[<=]]> #list_Cnt#
+	</select>
+	
+</sqlMap>

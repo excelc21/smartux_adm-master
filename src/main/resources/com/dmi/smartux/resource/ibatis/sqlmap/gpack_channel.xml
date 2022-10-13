@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="gpack_channel">
+	<typeAlias alias="gpackChannelVO" type="com.dmi.smartux.admin.gpack.channel.vo.GpackChannelVO"/>
+	<typeAlias alias="gpackChannelDetailVO" type="com.dmi.smartux.admin.gpack.channel.vo.GpackChannelDetailVO"/>
+	<typeAlias alias="tvChannelVO" type="com.dmi.smartux.admin.gpack.channel.vo.TVChannelVO"/>
+	
+	<resultMap id="gpackChannelVOMap" class="com.dmi.smartux.admin.gpack.channel.vo.GpackChannelVO"> 
+		<result property="pack_id"				column="PACK_ID" />
+		<result property="chnl_grp_id"			column="CHNL_GRP_ID" />
+		<result property="chnl_nm"				column="CHNL_NM" />
+		<result property="applydate_gb"			column="APPLYDATE_GB" />
+		<result property="applydate"			column="APPLYDATE" />
+		<result property="apply_yn"				column="APPLY_YN" />
+		<result property="version"				column="VERSION" />
+		<result property="created"				column="CREATED" />
+		<result property="updated"				column="UPDATED" />
+		<result property="create_id"			column="CREATE_ID" />
+		<result property="update_id"			column="UPDATE_ID" />
+	</resultMap>
+	
+	<resultMap id="gpackChannelDetailVOMap" class="com.dmi.smartux.admin.gpack.channel.vo.GpackChannelDetailVO"> 
+		<result property="pack_id"				column="PACK_ID" />
+		<result property="chnl_grp_id"			column="CHNL_GRP_ID" />
+		<result property="chnl_id"				column="CHNL_ID" />
+		<result property="chnl_detail_nm"		column="CHNL_DETAIL_NM" />
+		<result property="chnl_no"				column="CHANNEL_NO" />
+		<result property="service_id"			column="SERVICE_ID" />
+		<result property="represent_chnl_yn"	column="REPRESENT_CHNL_YN" />
+		<result property="ordered"				column="ORDERED" />
+		<result property="use_yn"				column="USE_YN" />
+		<result property="created"				column="CREATED" />
+		<result property="updated"				column="UPDATED" />
+		<result property="create_id"			column="CREATE_ID" />
+		<result property="update_id"			column="UPDATE_ID" />
+	</resultMap>
+	
+	<resultMap id="tvChannelVOMap" class="com.dmi.smartux.admin.gpack.channel.vo.TVChannelVO"> 
+		<result property="service_id"			column="SERVICE_ID" />
+		<result property="channel_no"			column="CHANNEL_NO" />
+		<result property="channel_name"			column="CHANNEL_NAME" />
+	</resultMap>
+	
+	<!-- 채널 정보 목록 조회  -->
+	<select id="getGpackChannel" parameterClass="gpackChannelVO" resultClass="gpackChannelVO">
+		SELECT
+			PACK_ID
+			, CHNL_GRP_ID
+			, CHNL_NM
+			, APPLYDATE_GB
+			, APPLYDATE
+			, APPLY_YN
+			, VERSION
+			, CREATED
+			, UPDATED
+			, CREATE_ID
+			, UPDATE_ID
+		FROM
+			PT_GP_CHNL_INFO
+		 WHERE 
+		 	PACK_ID = #pack_id#
+	</select>
+	
+	<!-- 채널 상세 정보 목록 조회  -->
+	<select id="getGpackChannelDetailList" parameterClass="gpackChannelDetailVO" resultMap="gpackChannelDetailVOMap">
+		SELECT
+            GP.PACK_ID
+            , GP.CHNL_GRP_ID
+            , GP.CHNL_ID
+            , CD.CHANNELNUMBER AS CHANNEL_NO
+            , CD.CHNL_NAME AS CHNL_DETAIL_NM
+            , GP.SERVICE_ID
+            , GP.REPRESENT_CHNL_YN
+            , GP.ORDERED
+            , GP.USE_YN
+            , GP.CREATED
+            , GP.UPDATED
+            , GP.CREATE_ID
+            , GP.UPDATE_ID
+        FROM
+            PT_GP_CHNL_DETAIL_INFO GP
+            , PT_CD_PLAY_CHNL CD
+        WHERE
+             GP.SERVICE_ID = CD.SERVICE_ID
+		 <isNotEmpty property="pack_id">
+		   AND GP.PACK_ID = #pack_id#
+		 </isNotEmpty>
+		 <isNotEmpty property="chnl_grp_id">
+		   AND GP.CHNL_GRP_ID = #chnl_grp_id#
+		 </isNotEmpty>
+		ORDER BY
+			GP.ORDERED, GP.PACK_ID DESC, GP.CHNL_GRP_ID DESC, GP.CHNL_ID DESC
+	</select>
+	
+	<!-- TV 채널 목록 조회  -->
+	<select id="getTVChannelList" parameterClass="tvChannelVO" resultClass="tvChannelVO">
+		SELECT B.* FROM(SELECT ROWNUM RNUM,A.* FROM(
+				SELECT 
+					D.CHANNELNUMBER AS CHANNEL_NO
+		     		, D.CHNL_NAME AS CHANNEL_NAME
+		     		, D.SERVICE_ID AS SERVICE_ID
+				FROM 
+					PT_CD_CHNL_INFO C,
+		     		PT_CD_PLAY_CHNL D
+				WHERE 
+					C.SERVICE_ID = D.SERVICE_ID
+		    		AND D.USE_YN = 'Y' 
+				<isNotEmpty property="srch_channel_name">
+				   	AND D.CHNL_NAME LIKE '%$srch_channel_name$%'
+				</isNotEmpty> 
+				ORDER BY 
+					D.SERVICE_ID
+		        ) A 
+		) B
+		WHERE RNUM BETWEEN '$start_rnum$' AND '$end_rnum$'
+	</select>
+	
+	<!-- TV 채널 카운트  -->
+    <select id="countTVChannelList" parameterClass="tvChannelVO" resultClass="int">
+        SELECT 
+        	COUNT(D.SERVICE_ID) 
+        FROM 
+			PT_CD_CHNL_INFO C,
+     		PT_CD_PLAY_CHNL D
+		WHERE 
+			C.SERVICE_ID = D.SERVICE_ID
+    		AND D.USE_YN = 'Y' 
+		<isNotEmpty property="srch_channel_name">
+		   	AND D.CHNL_NAME LIKE '%$srch_channel_name$%'
+		</isNotEmpty> 
+		ORDER BY 
+			D.SERVICE_ID
+    </select>
+	
+	<!-- 채널 정보 등록  -->
+	<insert id="insertChannel" parameterClass="gpackChannelVO">
+		<selectKey resultClass="string" keyProperty="chnl_grp_id">
+			SELECT SEQ_PT_GP_CHNL_INFO.NEXTVAL AS CHNL_GRP_ID FROM DUAL
+		</selectKey>
+		INSERT INTO PT_GP_CHNL_INFO(
+			PACK_ID
+			, CHNL_GRP_ID
+			, VERSION
+			, CREATED
+			, UPDATED
+			, CREATE_ID
+			, UPDATE_ID
+			)
+		VALUES(
+			#pack_id#
+    		, #chnl_grp_id#
+    		, TO_CHAR(SYSDATE, 'YYYYMMDD') || '001'
+    		, SYSDATE
+    		, SYSDATE
+    		, #create_id#
+    		, #update_id#
+    	)
+	</insert>
+	
+	<!-- 채널 상세 정보 등록  -->
+	<insert id="insertChannelDetail" parameterClass="GpackChannelDetailVO">
+		<selectKey resultClass="string" keyProperty="chnl_id">
+			SELECT SEQ_PT_GP_CHNL_DETAIL_INFO.NEXTVAL AS CHNL_ID FROM DUAL
+		</selectKey>
+		INSERT INTO PT_GP_CHNL_DETAIL_INFO(
+			PACK_ID
+			, CHNL_GRP_ID
+			, CHNL_ID
+			, CHNL_DETAIL_NM
+			, SERVICE_ID
+			, REPRESENT_CHNL_YN
+			, ORDERED
+			, CREATED
+			, UPDATED
+			, CREATE_ID
+			, UPDATE_ID
+			)
+		VALUES(
+			#pack_id#
+    		, #chnl_grp_id#
+    		, #chnl_id#
+    		, #chnl_detail_nm#
+    		, #service_id#
+    		, 'N'
+    		, NVL((SELECT MAX(ORDERED) FROM PT_GP_CHNL_DETAIL_INFO WHERE PACK_ID = #pack_id# AND CHNL_GRP_ID = #chnl_grp_id#), 0)+1
+    		, SYSDATE
+    		, SYSDATE
+    		, #create_id#
+    		, #update_id#
+    	)
+	</insert>
+	
+	<!-- 채널 수정  -->
+	<update id="updateChannel" parameterClass="gpackChannelVO">
+		UPDATE PT_GP_CHNL_INFO
+		SET    
+				VERSION = TO_CHAR(SYSDATE, 'YYYYMMDD') || LPAD(TO_NUMBER(CASE WHEN LENGTH(VERSION) <![CDATA[<]]> 9 THEN '0' ELSE SUBSTR(VERSION, 9, 3) END)+1, 3, '0'),
+			<isNotEmpty property="chnl_nm">
+		   		CHNL_NM = #chnl_nm#,
+			</isNotEmpty>
+		       	UPDATED = SYSDATE,
+		       	UPDATE_ID = #update_id#
+		WHERE 
+			PACK_ID = #pack_id#
+			AND CHNL_GRP_ID = #chnl_grp_id#
+	</update>
+	
+	<!-- 최초 채널 수정  -->
+	<update id="updateChannelDetail" parameterClass="gpackChannelDetailVO">
+		UPDATE PT_GP_CHNL_DETAIL_INFO
+		SET    
+			<isNotEmpty property="represent_chnl_yn">
+		       REPRESENT_CHNL_YN = #represent_chnl_yn#,
+			</isNotEmpty>   
+			<isNotEmpty property="ordered">
+		       ORDERED = #ordered#,
+			</isNotEmpty>   
+			<isNotEmpty property="service_id">
+		       SERVICE_ID = #service_id#,
+			</isNotEmpty>
+		       UPDATED = SYSDATE,
+		       UPDATE_ID = #update_id#
+		WHERE 1 = 1  
+			<isNotEmpty property="pack_id">
+				AND PACK_ID = #pack_id#
+			</isNotEmpty>
+			<isNotEmpty property="chnl_grp_id">
+				AND CHNL_GRP_ID = #chnl_grp_id#
+			</isNotEmpty>
+			<isNotEmpty property="chnl_id">
+				AND CHNL_ID = #chnl_id#
+			</isNotEmpty>
+			<isEqual property="represent_chnl_yn" compareValue="N">
+				AND REPRESENT_CHNL_YN = 'Y'
+			</isEqual>
+	</update>
+	
+	<!-- 채널 상세 순번 수정  -->
+	<update id="updateChannelDetailOrderby" parameterClass="gpackChannelDetailVO">
+		UPDATE PT_GP_CHNL_DETAIL_INFO
+		SET    ORDERED = #ordered#,
+		       UPDATED = SYSDATE,
+		       UPDATE_ID = #update_id#
+		WHERE 1 = 1  
+			AND PACK_ID = #pack_id#
+			AND CHNL_GRP_ID = #chnl_grp_id#
+			AND CHNL_ID = #chnl_id#
+	</update>
+	
+	<!-- 채널 정보 삭제  -->
+	<delete id="deleteChannel" parameterClass="gpackChannelVO">
+		DELETE FROM PT_GP_CHNL_INFO
+		WHERE PACK_ID = #pack_id#
+	</delete>
+	
+	<!-- 채널 상세 정보 삭제  -->
+	<delete id="deleteChannelDetailAllbyPackId" parameterClass="string">
+		DELETE FROM PT_GP_CHNL_DETAIL_INFO
+		WHERE  PACK_ID = #pack_id#
+	</delete>
+	
+	<!-- 채널 상세 정보 삭제  -->
+	<delete id="deleteChannelDetail" parameterClass="gpackChannelDetailVO">
+		DELETE FROM PT_GP_CHNL_DETAIL_INFO
+		WHERE 1 = 1  
+			AND PACK_ID = #pack_id#
+			AND CHNL_GRP_ID = #chnl_grp_id#
+			AND CHNL_ID = #chnl_id#
+	</delete>
+	
+</sqlMap>

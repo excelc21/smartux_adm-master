@@ -1,0 +1,390 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="admin_common">
+	<typeAlias alias="flatRateVO" type="com.dmi.smartux.admin.commonMng.vo.FlatRateVO"/>
+	<typeAlias alias="channelVO" type="com.dmi.smartux.admin.commonMng.vo.ChannelVO"/>
+	<typeAlias alias="eventcategoryalbumvo" type="com.dmi.smartux.admin.commonMng.vo.EventCategoryAlbumVo"/>
+	<typeAlias alias="categoryalbumlistVo" type="com.dmi.smartux.admin.commonMng.vo.CategoryAlbumListVo"/>
+	<typeAlias alias="menuTreeVo" type="com.dmi.smartux.admin.commonMng.vo.MenuTreeVo"/>
+
+	<!-- 월정액 상품 리스트 조회 -->
+	<select id="getFlatRateList" resultClass="flatRateVO">
+		SELECT
+			PRODUCT_ID	AS productID,
+			PRODUCT_NAME AS productName
+		FROM
+			IMCSUSER.PT_PD_PACKAGE
+		WHERE (PRODUCT_TYPE = '4' OR PRODUCT_TYPE = '5')
+		AND (NSC_PROD_KIND = '0' OR NSC_PROD_KIND IS NULL)
+		AND PRODUCT_START_DATETIME <![CDATA[<=]]> TO_CHAR (SYSDATE, 'yyyymmdd')
+		AND PRODUCT_EXPIRY_DATETIME <![CDATA[>=]]> TO_CHAR (SYSDATE, 'yyyymmdd')
+		ORDER BY PRODUCT_NAME ASC
+	</select>
+	
+	<select id="getFlatRateList2" resultClass="flatRateVO">
+        SELECT
+            PRODUCT_ID AS productID,
+            PRODUCT_NAME AS productName
+        FROM
+            IMCSUSER.PT_PD_PACKAGE
+        WHERE PRODUCT_TYPE in ( '4','3')
+        AND NVL(NSC_PROD_KIND,'0')=0
+        AND PRODUCT_START_DATETIME <![CDATA[<=]]> TO_CHAR (SYSDATE, 'yyyymmdd')
+        AND PRODUCT_EXPIRY_DATETIME <![CDATA[>=]]> TO_CHAR (SYSDATE, 'yyyymmdd')
+        ORDER BY PRODUCT_ID DESC
+    </select>
+
+	<!-- 실시간 채널 리스트 조회 -->
+	<select id="getLiveCHList" resultClass="channelVO">
+		SELECT
+			SERVICE_ID AS serviceID,
+			CHNL_NAME AS channelName
+		FROM
+			IMCSUSER.PT_CD_PLAY_CHNL
+		WHERE (FILTERING_CODE NOT IN ('9') OR FILTERING_CODE IS NULL)
+		ORDER BY CHNL_NAME ASC
+	</select>
+	
+	<select id="getEventCategoryAlbumList" parameterClass="categoryalbumlistVo" resultClass="eventcategoryalbumvo">
+		SELECT RANK_NO, ALBUM_ID, ALBUM_NAME, CATEGORY_ID, CATEGORY_NAME, SERIES_NO, CATEGORY_NO, SERIES_YN, MYTYPE, SUB_CNT
+        FROM(
+            SELECT SORT_NO AS RANK_NO, '' AS ALBUM_ID, '' AS ALBUM_NAME, A.CATEGORY_ID AS CATEGORY_ID, A.CATEGORY_NAME AS CATEGORY_NAME, '' AS SERIES_NO, '' AS CATEGORY_NO, A.SERIES_YN, 1 AS MYTYPE,
+            (SELECT COUNT(CATEGORY_ID) FROM PT_VO_CATEGORY WHERE A.CATEGORY_ID = PARENT_CATEGORY_ID AND CATEGORY_GB = #type# ) AS SUB_CNT
+            FROM  PT_VO_CATEGORY A
+            WHERE A.CATEGORY_GB = #type# 
+            AND   A.PARENT_CATEGORY_ID = #categoryId#   
+            GROUP BY A.SORT_NO, A.CATEGORY_ID, A.CATEGORY_NAME, A.SERIES_YN
+            UNION
+            SELECT B.RANK_NO AS RANK_NO, B.CONTENTS_ID AS ALBUM_ID, D.ASSET_NAME AS ALBUM_NAME, '' AS CATEGORY_ID, '' AS CATEGORY_NAME, C.SERIES_NO, B.SERIES_NO AS CATEGORY_NO, A.SERIES_YN, 2 AS MYTYPE,
+            0 AS SUB_CNT
+            FROM  PT_VO_CATEGORY A, PT_VO_CATEGORY_MAP B, PT_LA_ALBUM_MST C, PT_LA_PACKAGE_ASSET D
+            WHERE A.CATEGORY_GB = #type# 
+       		AND A.CATEGORY_ID = B.CATEGORY_ID 
+       		AND B.CONTENTS_ID = C.ADI_ALBUM_ID 
+			<isNotNull property="type">
+				<isEqual property="type" compareValue="NSC">
+       				AND C.ADI_ALBUM_ID = D.NSC_ALBUM_ID
+				</isEqual>
+				<isEqual property="type" compareValue="I20">
+       				AND C.ADI_ALBUM_ID = D.ADI_ALBUM_ID
+				</isEqual>
+				<isEqual property="type" compareValue="I30">
+       				AND C.ADI_ALBUM_ID = D.ADI_ALBUM_ID
+				</isEqual>
+			</isNotNull>
+			<isNull property="type">
+       			AND C.ADI_ALBUM_ID = D.NSC_ALBUM_ID
+			</isNull>
+            AND   A.CATEGORY_ID = #categoryId#
+            AND
+                (
+                    (
+                        (C.PRE_MAPPING_YN IS NULL OR C.PRE_MAPPING_YN = 'N') AND (B.VIEWING_FLAG = 'V' OR B.VIEWING_FLAG IS NULL)
+                    )
+                OR
+                    (
+                        C.PRE_MAPPING_YN = 'Y' AND B.VIEWING_FLAG = 'V'
+                    )
+                )
+        )
+        ORDER BY MYTYPE, RANK_NO, ALBUM_ID, ALBUM_NAME, CATEGORY_ID, CATEGORY_NAME
+	</select>
+	
+	<select id="searchEventCategoryAlbumList" parameterClass="map" resultClass="eventcategoryalbumvo">
+		SELECT 
+			MAX(B.CONTENTS_ID) AS ALBUM_ID,
+			MAX(B.RANK_NO) AS RANK_NO,
+			CASE WHEN MAX(C.SERIES_NO) IS NULL THEN MAX(D.ASSET_NAME) ELSE '('||MAX(C.SERIES_NO)||')'||MAX(D.ASSET_NAME) END ALBUM_NAME,
+<!-- 			MAX(D.ASSET_NAME) AS ALBUM_NAME, -->
+	        MIN(A.CATEGORY_ID) AS CATEGORY_ID,
+	        MAX(A.FULL_CATEGORY_NAME)  AS CATEGORY_NAME,
+	        MAX(C.SERIES_NO) AS SERIES_NO,
+            MAX(B.SERIES_NO) AS CATEGORY_NO,
+            MAX(A.SERIES_YN) AS SERIES_YN
+	     FROM ( SELECT A.*, 
+	     	CONNECT_BY_ROOT(CATEGORY_ID) AS P_CATEGORY_ID,
+	        SYS_CONNECT_BY_PATH(CATEGORY_ID,'&gt;&gt;') CATEGORY_ID_LST,
+            SYS_CONNECT_BY_PATH(CATEGORY_NAME,'&gt;&gt;') FULL_CATEGORY_NAME
+           	FROM PT_VO_CATEGORY A
+            WHERE 1 = 1
+            AND CATEGORY_GB  = #type#
+            AND (TEST_SBC IS NULL OR TEST_SBC='N' OR TRIM(TEST_SBC)='')
+	        START WITH PARENT_CATEGORY_ID = 'VC'
+	  		CONNECT BY PRIOR CATEGORY_ID = PARENT_CATEGORY_ID
+	     ) A, 
+	     PT_VO_CATEGORY_MAP B, 
+	     PT_LA_ALBUM_MST C,
+	     PT_LA_PACKAGE_ASSET D
+	     WHERE A.CATEGORY_ID = B.CATEGORY_ID
+	     AND B.CONTENTS_ID = C.ADI_ALBUM_ID             
+	     <isNotNull property="type">
+		 	<isEqual property="type" compareValue="NSC">
+		    	 AND C.ADI_ALBUM_ID = D.NSC_ALBUM_ID
+			</isEqual>
+		  	<isEqual property="type" compareValue="I20">
+		    	AND C.ADI_ALBUM_ID = D.ADI_ALBUM_ID
+			</isEqual>
+			<isEqual property="type" compareValue="I30">
+		    	AND C.ADI_ALBUM_ID = D.ADI_ALBUM_ID
+			</isEqual>
+		</isNotNull>
+		<isNull property="type">
+			AND C.ADI_ALBUM_ID = D.NSC_ALBUM_ID
+		</isNull>
+		<isNotNull property="searchType">
+			<isEqual property="searchType" compareValue="C">
+				AND LOWER(A.CATEGORY_NAME) LIKE LOWER('%' || #searchVal# || '%')
+			</isEqual>
+	  		<isEqual property="searchType" compareValue="A">
+				AND LOWER(D.ASSET_NAME) LIKE LOWER('%' || #searchVal# || '%')
+			</isEqual>
+			<isEqual property="searchType" compareValue="I">
+				AND LOWER(B.CONTENTS_ID) = LOWER(#searchVal#)
+			</isEqual>
+		 </isNotNull>
+		<!-- 
+		<isEmpty property="specifyCatList">
+			<iterate property="categoryList">
+				AND A.CATEGORY_ID_LST NOT LIKE '%'|| #categoryList[]# ||'%'
+       		</iterate>
+		</isEmpty>
+	  	<isNotEmpty property="specifyCatList">
+	  		<iterate property="specifyCatList" open="AND (" close=")" conjunction="OR">
+  				A.CATEGORY_ID_LST LIKE '%'|| #specifyCatList[]# ||'%'
+	  		</iterate>
+	  	</isNotEmpty>
+	  	
+	  	 -->
+        AND (B.QD_FLAG IS NULL OR B.QD_FLAG ='2')
+        AND (B.VIEWING_FLAG IS NULL OR B.VIEWING_FLAG ='V')
+      	GROUP BY A.CATEGORY_ID, B.CONTENTS_ID
+<!--       	ORDER BY CATEGORY_NAME, RANK_NO, ALBUM_ID, ALBUM_NAME -->
+	  </select>
+
+	<!-- 컨텐츠명 조회 -->
+	<select id="getContentsView" parameterClass="map" resultClass="eventcategoryalbumvo">
+		SELECT MAX(B.CATEGORY_ID) AS CATEGORY_ID
+		     , MAX(B.CONTENTS_ID) AS ALBUM_ID
+		     , MAX(D.ASSET_NAME) AS ALBUM_NAME
+		  FROM PT_VO_CATEGORY_MAP B
+		     , PT_LA_PACKAGE_ASSET D
+		 WHERE B.CONTENTS_ID = D.ADI_ALBUM_ID
+		   AND B.CATEGORY_ID = #categoryId#
+		   AND B.CONTENTS_ID = #contentsId#
+	</select>
+
+	<!-- 카테고리명 조회 -->
+	<select id="getCategoryView" resultClass="eventcategoryalbumvo">
+		SELECT CATEGORY_ID
+		     , CATEGORY_NAME
+		  FROM PT_VO_CATEGORY
+		 WHERE CATEGORY_ID = #categoryId#
+	</select>
+
+  	<!-- 배너마스터 조회 -->
+  	<select id="getBannerMasterPop"  resultClass="hashmap">
+        SELECT ADS_ID
+		     , ADS_NM
+		  FROM PT_HDTV_ADS_MASTER
+		 WHERE SERVICE_TYPE = 'I'
+		 ORDER BY REG_DT DESC
+  	</select>
+	
+	<!-- 메뉴 상세 조회 -->    
+	<select id="selectMenuTreeInfo" parameterClass="string" resultClass="menuTreeVo">		
+		SELECT
+			/*admin_commonMng.selectMenuTreeInfo*/
+			  MENU_ID
+			, MENU_NM
+			, MENU_PARENT_ID
+			, DEPTH
+			, ORDERED
+			, DATA_VAL
+			, USE_YN
+			, SIDE_MENU_YN
+			, CREATED
+			, UPDATED
+			, CREATE_ID
+			, UPDATE_ID
+			, MENU_TYPE
+			, DATA_TYPE
+			, FRAME_TYPE_CODE
+			, MENU_IMG_FILE
+			, NVL((SELECT MAX('N') FROM PT_VL_MENU_CATE WHERE MENU_PARENT_ID=A.MENU_ID AND DEL_YN='N'),'Y') LEAF_NODE_YN
+			, FRAME_LIST_ORDER
+			, CHCK_YN
+			, CLONE_PARENT_ID
+			, TOP_IMG
+			, OS_GB
+			, TEST_YN
+			, PRODUCT_CODE
+			, UI_TYPE
+			, MENU_NOTI  /* 메뉴 공지사항 컬럼 추가 */
+			, MENU_FLOAT
+			, BANNER_VAL /* 배너 정보 추가 */
+		 FROM 
+		 	PT_VL_MENU_CATE A
+		 WHERE
+		 	MENU_ID=#VALUE#
+    </select>
+    
+    
+    <!--
+	MIMS 메뉴 트리 조회 2016.01.28 카테고리 count, 앨범 count 추가
+	 -->
+	<select id="getMimsCategoryList" parameterClass="map" resultClass="hashmap">
+		SELECT
+			/*admin_commonMng.getMimsCategoryList*/
+			' ' ALBUM_ID
+			,Q.CONTENT_NAME||
+			(
+			 CASE
+				WHEN Q.SUB_CATE>0 THEN '(C:'||Q.SUB_CATE||')'
+				WHEN Q.SUB_CONTENTS>0 THEN '(A:'||SUB_CONTENTS||')'
+				ELSE ''
+			   END) CATEGORY_NAME
+			,Q.CONTENT_ID CATEGORY_ID
+			,Q.CONTENT_ID||'|'||Q.SUB_CATE CATE_INFO
+			,'1' MYTYPE
+			,Q.SUB_CATE SUB_CATE
+			,Q.SUB_CONTENTS SUB_CONTENTS
+		FROM (
+
+			SELECT
+			       CATEGORY_NAME AS CONTENT_NAME
+			      ,HV_CATEGORY_ID AS CONTENT_ID
+			  ,(
+			        SELECT
+			            COUNT( *)
+			        FROM
+			            PT_HDTV_HV_CATEGORY
+			        WHERE
+			            PARENT_ID        = C.HV_CATEGORY_ID
+			            AND NVL(DEL_YN, 'N') = 'N'
+			    ) AS SUB_CATE
+			    ,(
+                SELECT
+                    COUNT( *)
+                FROM
+                    PT_HDTV_HV_CONT H,
+                    PT_HDTV_HV_CATE_CONTENT CONT
+                WHERE
+                	H.CONTENT_ID = CONT.CONTENT_ID                    
+                AND CONT.HV_CATEGORY_ID = C.HV_CATEGORY_ID
+                    <isNotEmpty property="contentType">
+                    	AND H.CONTENT_TYPE=#contentType#
+                    </isNotEmpty>
+                    <isEmpty property="contentType">
+                   		AND H.CONTENT_TYPE NOT IN ('C','H')
+                   	</isEmpty>
+                    AND NVL(CONT.DEL_YN, 'N') = 'N'
+            ) AS SUB_CONTENTS
+			FROM
+			      PT_HDTV_HV_CATEGORY C
+			WHERE NVL(DEL_YN, 'N') = 'N'
+			    <isNotEmpty property="categoryId">
+            		AND C.PARENT_ID=#categoryId#
+            	</isNotEmpty>
+          	 	<isEmpty property="categoryId">
+            		AND C.PARENT_ID IS NULL
+           		</isEmpty>
+			    START WITH PARENT_ID IS NULL
+			CONNECT BY PRIOR HV_CATEGORY_ID = PARENT_ID
+			ORDER SIBLINGS BY CATEGORY_ORDER, REG_DT DESC
+		) Q 
+    </select>
+    
+    <!--
+	MIMS 하위 카테고리가 있는 카테고리 아이디 인지 확인
+	 -->
+	<select id="getMimsCategorySubYn" parameterClass="map" resultClass="string">
+		SELECT 
+		        /*admin_commonMng.getMimsCategorySubYn*/
+		        CASE WHEN COUNT(*)>0 THEN 'Y' ELSE 'N' END SUB_CATE_EX
+		    FROM
+		        PT_HDTV_HV_CATEGORY
+		    WHERE
+		        PARENT_ID        = #categoryId#
+		        AND NVL(DEL_YN, 'N') = 'N'
+    </select>
+    
+      <!--
+	IPTV MIMS 메뉴 트리 조회
+	 -->
+	<select id="getMimsIptvCategoryList" parameterClass="map" resultClass="hashmap">
+		SELECT
+			/*admin_commonMng.getMimsCategoryList*/
+			' ' ALBUM_ID
+			,Q.CONTENT_NAME||
+			(
+			 CASE
+				WHEN Q.SUB_CATE>0 THEN '(C:'||Q.SUB_CATE||')'
+				WHEN Q.SUB_CONTENTS>0 THEN '(A:'||SUB_CONTENTS||')'
+				ELSE ''
+			   END) CATEGORY_NAME
+			,Q.CONTENT_ID CATEGORY_ID
+			,Q.CONTENT_ID||'|'||Q.SUB_CATE CATE_INFO
+			,'1' MYTYPE
+			,Q.SUB_CATE SUB_CATE
+			,Q.SUB_CONTENTS SUB_CONTENTS
+		FROM (
+
+			SELECT
+			       CATEGORY_NAME AS CONTENT_NAME
+			      ,HV_CATEGORY_ID AS CONTENT_ID
+			  ,(
+			        SELECT
+			            COUNT( *)
+			        FROM
+			            PT_UX_HV_CATEGORY
+			        WHERE
+			            PARENT_ID        = C.HV_CATEGORY_ID
+			            AND NVL(DEL_YN, 'N') = 'N'
+			    ) AS SUB_CATE
+			    ,(
+                SELECT
+                    COUNT( *)
+                FROM
+                    PT_UX_HV_CONT H,
+                    PT_UX_HV_CATE_CONTENT CONT
+                WHERE
+                	H.CONTENT_ID = CONT.CONTENT_ID                    
+                AND CONT.HV_CATEGORY_ID = C.HV_CATEGORY_ID
+                    <isNotEmpty property="contentType">
+                    	AND H.CONTENT_TYPE=#contentType#
+                    </isNotEmpty>
+                    <isEmpty property="contentType">
+                   		AND H.CONTENT_TYPE NOT IN ('C','H')
+                   	</isEmpty>
+                    AND NVL(CONT.DEL_YN, 'N') = 'N'
+            ) AS SUB_CONTENTS
+			FROM
+			      PT_UX_HV_CATEGORY C
+			WHERE NVL(DEL_YN, 'N') = 'N'
+			    <isNotEmpty property="categoryId">
+            		AND C.PARENT_ID=#categoryId#
+            	</isNotEmpty>
+          	 	<isEmpty property="categoryId">
+            		AND C.PARENT_ID IS NULL
+           		</isEmpty>
+			    START WITH PARENT_ID IS NULL
+			CONNECT BY PRIOR HV_CATEGORY_ID = PARENT_ID
+			ORDER SIBLINGS BY CATEGORY_ORDER, REG_DT DESC
+		) Q 
+    </select>
+    
+    <!--
+	IPTV MIMS 하위 카테고리가 있는 카테고리 아이디 인지 확인
+	 -->
+	<select id="getMimsIptvCategorySubYn" parameterClass="map" resultClass="string">
+		SELECT 
+		        /*admin_commonMng.getMimsCategorySubYn*/
+		        CASE WHEN COUNT(*)>0 THEN 'Y' ELSE 'N' END SUB_CATE_EX
+		    FROM
+		        PT_UX_HV_CATEGORY
+		    WHERE
+		        PARENT_ID        = #categoryId#
+		        AND NVL(DEL_YN, 'N') = 'N'
+    </select>
+	
+</sqlMap>

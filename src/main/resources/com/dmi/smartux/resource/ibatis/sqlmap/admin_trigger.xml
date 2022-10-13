@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="admin_trigger">
+	<typeAlias alias="codeItemVO" type="com.dmi.smartux.admin.code.vo.CodeItemVO"/>
+	<typeAlias alias="tvChannelVO" type="com.dmi.smartux.admin.gpack.event.vo.TVChannelVO"/>
+	
+	<!-- TV 채널 목록 조회  -->
+	<select id="getTVChannelList" parameterClass="tvChannelVO" resultClass="tvChannelVO">
+		SELECT B.* FROM(SELECT ROWNUM RNUM,A.* FROM(
+				SELECT 
+					D.CHANNELNUMBER AS CHANNEL_NO
+		     		, D.CHNL_NAME AS CHANNEL_NAME
+		     		, D.SERVICE_ID AS SERVICE_ID
+		     		, C.CHNL_CD AS CHANNEL_ID
+				FROM 
+					PT_CD_CHNL_INFO C,
+		     		PT_CD_PLAY_CHNL D
+				WHERE 
+					C.SERVICE_ID = D.SERVICE_ID
+		    		AND D.USE_YN = 'Y' 
+				<isNotEmpty property="srch_channel_name">
+					AND UPPER(D.CHNL_NAME) LIKE '%'||UPPER('$srch_channel_name$')||'%'
+				</isNotEmpty> 
+				ORDER BY 
+					D.CHANNELNUMBER
+		        ) A 
+		) B
+		WHERE RNUM BETWEEN '$start_rnum$' AND '$end_rnum$'
+	</select>
+	
+	<!-- TV 채널 카운트  -->
+    <select id="getTVChannelCount" parameterClass="tvChannelVO" resultClass="int">
+        SELECT 
+        	COUNT(D.SERVICE_ID) 
+        FROM 
+			PT_CD_CHNL_INFO C,
+     		PT_CD_PLAY_CHNL D
+		WHERE 
+			C.SERVICE_ID = D.SERVICE_ID
+    		AND D.USE_YN = 'Y' 
+		<isNotEmpty property="srch_channel_name">
+			AND UPPER(D.CHNL_NAME) LIKE '%'||UPPER('$srch_channel_name$')||'%'
+		</isNotEmpty> 
+		ORDER BY 
+			D.SERVICE_ID
+    </select>
+    
+    <!-- 코드 조회  -->
+    <select id="getCodeItem" parameterClass="map" resultClass="codeItemVO">
+		SELECT CODE,
+		       ITEM_CODE,
+		       ITEM_NM,
+		       ORDERED,
+		       SS_GBN,
+		       APP_TYPE,
+		       USE_YN,
+		       CREATED,
+		       UPDATED,
+		       CREATE_ID,
+		       UPDATE_ID
+		FROM   PT_UX_CODE_ITEMS
+		WHERE  CODE='A0009'
+		AND ITEM_CODE=#item_code#
+	</select>
+	
+	<!-- 코드 수정  -->
+	<update id="updateCodeItem" parameterClass="map">
+		MERGE INTO PT_UX_CODE_ITEMS
+		USING DUAL ON 
+		( 
+				CODE ='A0009' 
+				AND ITEM_CODE = #item_code#
+		)
+		WHEN MATCHED THEN
+			UPDATE SET 
+					ITEM_NM   = #item_nm#,
+			    	UPDATED   = SYSDATE,
+			    	UPDATE_ID = #update_id#
+			WHERE
+					CODE ='A0009'
+			  		AND ITEM_CODE = #item_code#
+		WHEN NOT MATCHED THEN
+			INSERT
+			    (
+			        CODE,
+			    	ITEM_CODE,
+			        ITEM_NM,
+			        SS_GBN,
+			        APP_TYPE,
+			        ORDERED,
+			        USE_YN,
+			        CREATED,
+			        UPDATED,
+			        CREATE_ID,
+			        UPDATE_ID
+					)
+			    VALUES
+			    (
+			    	'A0009',
+			        #item_code#,
+			        #item_nm#,
+			        null,
+			        'ALL',
+			        (SELECT NVL(MAX(ORDERED), 0) + 1 FROM PT_UX_CODE_ITEMS WHERE CODE = 'A0009'),
+			        'Y',
+			        SYSDATE,
+			        SYSDATE,
+			        #update_id#,
+			        #update_id#
+			    )
+	</update>
+</sqlMap>

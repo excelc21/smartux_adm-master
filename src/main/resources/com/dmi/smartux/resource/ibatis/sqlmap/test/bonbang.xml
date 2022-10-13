@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="test_bonbang">
+
+	<!--
+	################################################################################### 
+	Before Query
+	###################################################################################-->
+
+	<!-- 백업 테이블 create  -->
+	<statement id="create_reserved_backup_table">
+		CREATE TABLE PT_UX_EPG_REV_MGT_BACKUP (
+		  SA_ID            VARCHAR2(20)      NOT NULL, 
+		  STB_MAC          VARCHAR2(38)      NOT NULL, 
+		  EVENT_ID         VARCHAR2(5)       NOT NULL, 
+		  SMA_MAC          VARCHAR2(38)          NULL, 
+		  APP_TYPE         VARCHAR2(5)       NOT NULL, 
+		  SERVICE_ID       VARCHAR2(5)       NOT NULL, 
+		  CHANNEL_NO       VARCHAR2(5)       NOT NULL, 
+		  CHANNEL_NAME     VARCHAR2(50)      NOT NULL, 
+		  EVENT_NAME       VARCHAR2(100)     NOT NULL, 
+		  START_TIME       VARCHAR2(20)      NOT NULL, 
+		  RATING           VARCHAR2(2)       NOT NULL, 
+		  AV_RESOLUTION    VARCHAR2(2)       NOT NULL, 
+		  CREATED          DATE              NOT NULL, 
+		  UPDATED          DATE              NOT NULL,
+		  REPEAT_DAY       VARCHAR2(7)           NULL
+		)
+	</statement>
+	
+	<!-- 기존 테이블의 기존 데이터를 백업 테이블에 insert -->
+	<insert id="insert_reserved_to_backup_table">
+		INSERT INTO PT_UX_EPG_REV_MGT_BACKUP
+		SELECT * FROM PT_UX_EPG_REV_MGT
+	</insert>
+		
+	<!-- 기존 테이블의 기존 데이터 삭제 -->
+	<delete id="delete_reserved_org_data">
+		DELETE FROM PT_UX_EPG_REV_MGT
+	</delete>
+	
+	<!--
+	################################################################################### 
+	Data Insert Query
+	###################################################################################-->
+	
+	<insert id="insert_reserved_to_backup_table_1">
+		INSERT INTO PT_UX_EPG_REV_MGT
+		(	
+			 SA_ID        
+			,STB_MAC      
+			,EVENT_ID     
+			,SMA_MAC       
+			,APP_TYPE     
+			,SERVICE_ID   
+			,CHANNEL_NO   
+			,CHANNEL_NAME 
+			,EVENT_NAME   
+			,START_TIME   
+			,RATING       
+			,AV_RESOLUTION
+			,CREATED      
+			,UPDATED      
+		) VALUES (
+			 '200000000000'
+			,'001C62704959'
+			,'M1111'     
+			,NULL       
+			,'UX'     
+			,'S1111'   
+			,'011'   
+			,'MBC' 
+			,'무한도전'   
+			,'20130503190000'   
+			,'15'       
+			,'HD'
+			,SYSDATE      
+			,SYSDATE
+		)
+	</insert>
+	
+	<insert id="insert_reserved_to_backup_table_2">
+		INSERT INTO PT_UX_EPG_REV_MGT
+		(	
+			 SA_ID        
+			,STB_MAC      
+			,EVENT_ID     
+			,SMA_MAC       
+			,APP_TYPE     
+			,SERVICE_ID   
+			,CHANNEL_NO   
+			,CHANNEL_NAME 
+			,EVENT_NAME   
+			,START_TIME   
+			,RATING       
+			,AV_RESOLUTION
+			,CREATED      
+			,UPDATED      
+		) VALUES (
+			 '200000000000'
+			,'001C62704959'
+			,'M2222'     
+			,'222262704959'       
+			,'SMA'     
+			,'S2222'   
+			,'019'   
+			,'TV조선' 
+			,'프로포즈대작전'   
+			,'20130503210000'   
+			,'15'       
+			,'SD'
+			,SYSDATE      
+			,SYSDATE
+		)
+	</insert>
+	
+	<insert id="insert_reserved_to_backup_table_3">
+		INSERT INTO PT_UX_EPG_REV_MGT
+		(	
+			 SA_ID        
+			,STB_MAC      
+			,EVENT_ID     
+			,SMA_MAC       
+			,APP_TYPE     
+			,SERVICE_ID   
+			,CHANNEL_NO   
+			,CHANNEL_NAME 
+			,EVENT_NAME   
+			,START_TIME   
+			,RATING       
+			,AV_RESOLUTION
+			,CREATED      
+			,UPDATED      
+		) VALUES (
+			 '200000000000'
+			,'001C62704959'
+			,'M3333'     
+			,'333362704959'       
+			,'SMA'     
+			,'S3333'   
+			,'005'   
+			,'SBS' 
+			,'SBS 뉴스'   
+			,'20130503080000'   
+			,'07'       
+			,'HD'
+			,SYSDATE      
+			,SYSDATE
+		)
+	</insert>
+	
+	<insert id="insert_reserved_to_backup_table_4">
+		INSERT INTO PT_UX_EPG_REV_MGT
+		(	
+			 SA_ID        
+			,STB_MAC      
+			,EVENT_ID     
+			,SMA_MAC       
+			,APP_TYPE     
+			,SERVICE_ID   
+			,CHANNEL_NO   
+			,CHANNEL_NAME 
+			,EVENT_NAME   
+			,START_TIME   
+			,RATING       
+			,AV_RESOLUTION
+			,CREATED      
+			,UPDATED      
+		) VALUES (
+			 '200000000002'
+			,'001C62704959'
+			,'M4444'     
+			,NULL       
+			,'UX'     
+			,'S4444'   
+			,'030'   
+			,'OCN' 
+			,'성인영화 '   
+			,'20130503230000'   
+			,'19'       
+			,'3D'
+			,SYSDATE      
+			,SYSDATE
+		)
+	</insert>
+	
+	<!--
+	################################################################################### 
+	After Query
+	###################################################################################-->
+	<!-- 기존 테이블의 테스트 데이터 삭제 -->
+	<delete id="delete_reserved_test_data">
+		DELETE FROM PT_UX_EPG_REV_MGT
+	</delete>
+	
+	<!-- 백업 테이블에 보관된 데이터를 기존 테이블에 insert -->
+	<insert id="insert_reserved_to_org_table">
+		INSERT INTO PT_UX_EPG_REV_MGT
+		SELECT * FROM PT_UX_EPG_REV_MGT_BACKUP
+	</insert>
+	
+	<!-- 백업 테이블 drop  -->
+	<statement id="drop_reserved_backup_table">
+		DROP TABLE PT_UX_EPG_REV_MGT_BACKUP
+	</statement>
+			
+</sqlMap>

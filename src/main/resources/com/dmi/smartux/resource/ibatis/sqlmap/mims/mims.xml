@@ -1,0 +1,622 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="mims">
+
+	<typeAlias alias="nextUiPushContentVO" type="com.dmi.smartux.push.vo.NextUiPushContentVO"/>
+	<typeAlias alias="nextUiPushUserParamVO" type="com.dmi.smartux.push.vo.NextUiPushUserParamVO"/>
+	
+	<typeAlias alias="hotvodContentVO" type="com.dmi.smartux.admin.hotvod.vo.HotvodContentVO"/>
+	<typeAlias alias="latestContentVO" type="com.dmi.smartux.admin.secondtv_push.vo.LatestContentVO"/>
+	<typeAlias alias="hotvodFileUploadVO" type="com.dmi.smartux.admin.hotvod.vo.HotvodFileUploadVO"/>
+
+	<resultMap id="pushUserMap" class="com.dmi.smartux.admin.secondtv_push.vo.PushUserVO">
+		<result property="regID" column="REG_ID" />
+	</resultMap>
+	
+	<resultMap id="listRegistrationIDMap" class="com.dmi.smartux.bonbang.vo.RegistrationIDParamVO">
+		<result property="sa_id" column="SA_ID" />
+		<result property="stb_mac" column="STB_MAC" />
+		<result property="sma_mac" column="SMA_MAC" /> 
+		<result property="reg_id" column="REG_ID" nullValue="" />
+	</resultMap>
+	
+	<resultMap id="nextUiPushUserMap" class="com.dmi.smartux.push.vo.NextUiPushUserVO">
+		<result property="sa_id" column="SA_ID" />
+		<result property="buy_date" column="BUY_DATE" />
+		<result property="reg_id" column="REG_ID" />
+	</resultMap>
+	
+	<typeAlias alias="admin_viewvo" type="com.dmi.smartux.admin.mainpanel.vo.ViewVO"/>
+	<typeAlias alias="admin_previewvo" type="com.dmi.smartux.admin.mainpanel.vo.PreviewVO"/>
+	<typeAlias alias="admin_schedulevo" type="com.dmi.smartux.admin.schedule.vo.ScheduleVO"/>
+	
+	<!-- 예약발송 푸쉬 사용자 리스트 총 건수 조회 -->
+	<!--  기존 경로 : /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/admin_nextuipush.xml -->
+	<select id="getNextUiPushUserCount" parameterClass="nextUiPushContentVO" resultClass="int">
+		SELECT
+			COUNT(*)		AS NUM
+		FROM
+			PT_VO_PUSH_USER PU,
+      		PT_UX_PAIRING UP
+		WHERE PU.KEY_ID = #contents_id#
+		AND PU.USER_INFO2 = #category_gb#
+		AND	PU.PUSH_TYPE = 'RP'
+    	AND UP.APP_TYPE = 'UX'
+    	AND PU.SA_ID = UP.SA_ID
+    	AND PU.MAC_ADDR = UP.STB_MAC
+    	AND UP.REG_ID IS NOT NULL
+	</select>
+	
+	<!-- 예약발송 푸쉬 사용자 리스트 조회  -->
+	<!--  기존 경로 : /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/admin_nextuipush.xml -->
+	<select id="getNextUiPushUserList" parameterClass="nextUiPushUserParamVO" resultMap="nextUiPushUserMap">
+		SELECT
+			SA_ID,
+			BUY_DATE,
+			REG_ID
+		FROM
+		(	SELECT
+				ROWNUM			AS RNUM,
+				PU.SA_ID		AS SA_ID,
+				PU.BUY_DATE		AS BUY_DATE,
+        		UP.REG_ID 		AS REG_ID
+			FROM
+				PT_VO_PUSH_USER PU,
+      			PT_UX_PAIRING UP
+			WHERE PU.KEY_ID = #contents_id#
+			AND PU.USER_INFO2 = #category_gb#
+			AND	PU.PUSH_TYPE = 'RP'
+    		AND UP.APP_TYPE = 'UX'
+    		AND PU.SA_ID = UP.SA_ID
+    		AND PU.MAC_ADDR = UP.STB_MAC
+    		AND UP.REG_ID IS NOT NULL
+		) PUSH
+		WHERE PUSH.RNUM BETWEEN $start_num$ AND $end_num$
+	</select>
+	
+	<!-- 컨텐츠 수정 -->
+	<!--  기존 경로 : /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/hotvod.xml -->
+	<update id="contentUpdate" parameterClass="hotvodContentVO">
+		UPDATE PT_UX_HV_CONT
+		   SET CONTENT_TYPE		= #content_type# ,
+			   CONTENT_NAME 	= #content_name# ,
+			   CONTENT_INFO		= #content_info# ,
+			   CONTENT_IMG		= #content_img# ,
+			   CONTENT_IMG_TV	= #content_img_tv# ,
+			   CONTENT_URL		= #content_url# ,
+			   <isNotEmpty property="start_time">
+			   DURATION			= TO_CHAR(TO_DATE(TRUNC(MOD(TO_DATE(#end_time#, 'HH24:MI:SS') - TO_DATE(#start_time#, 'HH24:MI:SS'),1)*24 *60 *60), 'SSSSS'), 'HH24:MI:SS') ,
+			   </isNotEmpty>
+			   <isEmpty property="start_time">
+			   DURATION			= #duration# ,
+			   </isEmpty>
+			   <isNotEmpty property="start_dt">
+			   START_DT         = TO_DATE(#start_dt#,'YYYY-MM-DD HH24:MI:SS'),
+			   </isNotEmpty>
+			   <isEmpty property="start_dt">
+			   START_DT			= NULL,
+			   </isEmpty>
+			   <isNotEmpty property="end_dt">
+			   END_DT        	= TO_DATE(#end_dt#,'YYYY-MM-DD HH24:MI:SS'),
+			   </isNotEmpty>
+			   <isEmpty property="end_dt">
+			   END_DT			= NULL,
+			   </isEmpty>
+			   HIT_CNT			= #hit_cnt# ,
+			   MOD_DT			= SYSDATE ,
+			   MOD_ID			= #mod_id#,
+			    <!-- 2019.11.12 브릿지홈 개편 HV_UI_TYPE 추가-->
+			   HV_UI_TYPE	 = #hv_ui_type#
+		 WHERE CONTENT_ID 		= #content_id#
+	</update>
+	
+	<!-- 컨텐츠 등록 -->
+	<!--  기존 경로 : /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/hotvod.xml -->
+	<insert id="contentInsert" parameterClass="hotvodContentVO">
+        INSERT INTO PT_UX_HV_CONT(
+			   CONTENT_ID ,
+			   CONTENT_TYPE ,			   
+			   CONTENT_NAME ,
+			   CONTENT_INFO ,
+			   CONTENT_IMG ,
+			   CONTENT_IMG_TV ,
+			   CONTENT_URL ,
+			   DURATION ,
+			   HIT_CNT , 
+			   REG_DT ,
+   			   <isNotEmpty property="start_dt">
+			   START_DT,
+   	    	   </isNotEmpty>
+   			   <isNotEmpty property="end_dt">
+			   END_DT,
+   	    	   </isNotEmpty>
+			   REG_ID,
+			   <!-- 2019.11.12 브릿지홈 개편 HV_UI_TYPE 추가-->
+			   HV_UI_TYPE
+			) VALUES (
+			   #content_id# ,
+			   #content_type# ,
+			   #content_name# ,
+			   #content_info# ,
+			   #content_img# ,
+			   #content_img_tv# ,
+			   #content_url# ,
+			   <isNotEmpty property="start_time">
+			   TO_CHAR(TO_DATE(TRUNC(MOD(TO_DATE(#end_time#, 'HH24:MI:SS') - TO_DATE(#start_time#, 'HH24:MI:SS'),1)*24 *60 *60), 'SSSSS'), 'HH24:MI:SS') ,
+			   </isNotEmpty>
+			   <isEmpty property="start_time">
+			   #duration# ,
+			   </isEmpty>
+			   #hit_cnt# ,			   
+			   SYSDATE ,
+			   <isNotEmpty property="start_dt">
+			   TO_DATE(#start_dt#,'YYYY-MM-DD HH24:MI:SS'),
+   	    	   </isNotEmpty>
+   			   <isNotEmpty property="end_dt">
+	    	   TO_DATE(#end_dt#,'YYYY-MM-DD HH24:MI:SS'),
+	    	   </isNotEmpty>			   
+			   #reg_id#,
+			    <!-- 2019.11.12 브릿지홈 개편 HV_UI_TYPE 추가-->
+			   #hv_ui_type#
+			)
+	</insert>
+	
+	<!-- 컨텐츠 ID 채번 -->
+	<!--  기존 경로 : /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/hotvod.xml -->
+	<select id="getContentId" resultClass="string">
+		SELECT 'C'||LPAD(DECODE(MAX(SUBSTR(CONTENT_ID, 2, 10))+1, '', 1, MAX(SUBSTR(CONTENT_ID, 2, 10))+1), 9, 0)
+		FROM  (
+				SELECT MAX(HV_CATEGORY_ID) AS CONTENT_ID
+		        FROM   PT_UX_HV_CATEGORY
+		        WHERE  LENGTH(HV_CATEGORY_ID)=10
+		        UNION ALL
+				SELECT MAX(CONTENT_ID) AS CONTENT_ID
+		        FROM   PT_UX_HV_CONT
+		        WHERE  LENGTH(CONTENT_ID)=10
+		     )
+	</select>
+	
+	<!-- 통합검색 컨텐츠 조회 -->
+	<!--  기존 경로 : /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/hotvod.xml -->
+	<select id="getHotvodServiceListAll" parameterClass="string" resultClass="hotvodFileUploadVO">
+		SELECT C.HV_CATEGORY_ID AS CAT_ID,
+		       C.CATEGORY_NAME  AS CAT_NAME,
+		       B.CONTENT_ID ,
+		       B.CONTENT_TYPE,
+		       B.CONTENT_NAME,
+		       B.CONTENT_INFO,
+		       B.CONTENT_URL,
+		       B.CONTENT_IMG AS IMG_URL_HDTV,
+		       B.CONTENT_IMG_TV AS IMG_URL_IPTV,
+		       B.DURATION,
+		       B.HIT_CNT,
+		       E.SITE_ID,
+		       S.SITE_NAME,
+		       S.SITE_URL,
+		       S.SITE_IMG AS SITE_ICON_HDTV,
+		       S.SITE_IMG_TV AS SITE_ICON_IPTV,
+		       TO_CHAR(B.REG_DT, 'YYYYMMDDHH24MISS') AS REG_DATE,
+		       E.BADGE_DATA
+		FROM   PT_UX_HV_CONT B,
+		       PT_UX_HV_CONT_EXT E,
+		       PT_UX_HV_CATE_CONTENT CC,
+		       PT_UX_HV_CATEGORY C,
+		       PT_UX_HV_SITE S
+		WHERE  B.CONTENT_ID      = CC.CONTENT_ID
+		AND    CC.HV_CATEGORY_ID = C.HV_CATEGORY_ID
+		AND    B.CONTENT_ID      = E.CONTENT_ID(+)
+		AND    E.SITE_ID         = S.SITE_ID(+)
+		AND    B.CONTENT_TYPE    = 'V'
+		AND    BITAND(C.MULTI_SERVICE_TYPE,#multi_service_type#) > 0
+		AND    NVL(CC.DEL_YN, 'N') = 'N'
+		AND    NVL(C.TEST_YN, 'N') = 'N'
+		AND    NVL(C.UNIFY_SEARCH_YN, 'Y') = 'Y'
+	</select>
+	
+	<!-- 컨텐츠 조회수 로그 수정 -->
+	<!--  기존 경로 : /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/hotvod.xml -->
+	<update id="contentLogUpdate" parameterClass="hotvodContentVO">
+		UPDATE PT_UX_HV_HITCNT_LOG
+		   SET HIT_CNT = TO_NUMBER(#hit_cnt#)
+		     , MOD_DT = SYSDATE
+		 WHERE HITCNT_YEAR =  TO_CHAR(SYSDATE, 'YYYY')
+    	   AND HITCNT_MONTH = TO_CHAR(SYSDATE, 'MM')
+    	   AND HITCNT_DAY = TO_CHAR(SYSDATE, 'DD')
+		   AND CONTENT_ID = #content_id#
+	</update>
+	
+	<!-- 컨텐츠 조회수 로그 등록 -->
+	<!--  기존 경로 : /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/hotvod.xml -->
+	<insert id="contentLogInsert" parameterClass="hotvodContentVO">
+		INSERT INTO PT_UX_HV_HITCNT_LOG(HITCNT_YEAR, HITCNT_MONTH, HITCNT_DAY, CONTENT_ID, HIT_CNT, REG_DT)
+		VALUES (TO_CHAR(SYSDATE, 'YYYY'), TO_CHAR(SYSDATE,'MM'), TO_CHAR(SYSDATE, 'DD'), #content_id#,  #hit_cnt#,  SYSDATE)		
+	</insert>
+	
+	<!-- 최신회 등록되었는지 확인 할 카테고리 리스트를 가져온다. -->
+	<!--  기존 경로 : /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/admin_latest.xml -->
+	<select id="getCategoryList" resultClass="HashMap">
+		SELECT
+			CAT_ID,
+			NVL(CATEGORY_GB, 'I20') AS CATEGORY_GB
+		FROM PT_UX_LATEST
+		GROUP BY CAT_ID, CATEGORY_GB
+	</select>
+	
+	<!-- 푸쉬할 사용자의 전체 카운트를 가져온다. -->
+	<!--  기존 경로 : /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/admin_latest.xml -->
+	<select id="getUserListCount" parameterClass="String" resultClass="int">
+		SELECT
+			COUNT(*) AS NUM
+		FROM (
+			SELECT
+    			A.REG_ID
+			FROM
+				PT_UX_LATEST A,
+				pvsuser.XCION_SBC_TBL B
+			WHERE A.SA_ID=B.SBC_CONT_NO
+				AND A.MAC=B.MAC_ADDR
+				AND (B.ST_TYP='1' OR B.ST_TYP='3')
+				AND B.MAC_ADDR NOT LIKE 'v%'
+				AND A.CAT_ID=#catID#
+				GROUP BY A.REG_ID
+			)
+	</select>
+	
+	<!-- 푸쉬할 사용자 리스트를 가져온다.(분할처리) -->
+	<!--  기존 경로 : /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/admin_latest.xml -->
+	<select id="getUserList" parameterClass="latestContentVO" resultMap="pushUserMap">
+		SELECT
+			REG_ID
+		FROM
+			(SELECT
+				RMT.REG_ID,
+				ROWNUM RNUM
+			FROM
+				(SELECT
+					A.REG_ID
+				FROM
+					PT_UX_LATEST A,
+					pvsuser.XCION_SBC_TBL B
+				WHERE A.SA_ID=B.SBC_CONT_NO
+				AND A.MAC=B.MAC_ADDR
+				AND (B.ST_TYP='1' OR B.ST_TYP='3')
+				AND B.MAC_ADDR NOT LIKE 'v%'
+				AND A.CAT_ID=#categoryID#
+				GROUP BY A.REG_ID
+				) RMT
+			) MAT
+		WHERE MAT.RNUM BETWEEN $startNumber$ AND $endNumber$
+	</select>
+	
+	<!-- 	기존 경로 : /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/admin_mainpanel.xml -->
+	<update id="updatePanelTitleVersion" parameterClass="map">
+		UPDATE PT_UX_PANEL_TITLE
+		SET VERSION = #version#
+		, UPDATED = SYSDATE
+		, UPDATE_ID = #update_id#
+	</update>
+	
+	<!-- 	기존 경로 : /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/admin_mainpanel.xml -->
+	<delete id="deletePanelTitle" parameterClass="string">
+		DELETE PT_UX_PANEL_TITLE
+		WHERE PANNEL_ID = #pannel_id#         
+	</delete>
+	
+	<!-- 	기존 경로 : /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/admin_code.xml -->
+	<select id="getUseSsgbnCnt" parameterClass="String" resultClass="int">
+		SELECT COUNT(CATEGORY_TYPE) 
+          FROM PT_UX_PANEL_TITLE_TEMP
+         WHERE CATEGORY_TYPE = #ss_gbn#
+	</select>
+	
+	<!-- 	기존 경로 : /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/admin_mainpanel.xml -->
+	<select id="getPanelTitleTempTitlenmCnt" parameterClass="map" resultClass="int">
+		SELECT COUNT(TITLE_NM)
+		FROM PT_UX_PANEL_TITLE_TEMP
+		WHERE PANNEL_ID = #panel_id# 
+		AND TITLE_NM = #title_nm#
+		<isEqual property="p_title_id" compareValue="-1">
+		AND P_TITLE_ID IS NULL
+		</isEqual>
+		<isNotEqual property="p_title_id" compareValue="-1">
+		AND P_TITLE_ID = #p_title_id#
+		</isNotEqual>
+	</select>
+	
+	<!-- 	기존 경로 : /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/admin_mainpanel.xml -->
+	<select id="getPanelTitleTempTitleid" parameterClass="map" resultClass="string">
+		SELECT NVL(MAX(TO_NUMBER(TITLE_ID)), 0) + 1
+		FROM PT_UX_PANEL_TITLE_TEMP
+		WHERE PANNEL_ID = #pannel_id#
+	</select>
+	
+	<!-- 	기존 경로 : /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/admin_mainpanel.xml -->
+	<insert id="insertPanelTitleTemp" parameterClass="map">
+		INSERT INTO PT_UX_PANEL_TITLE_TEMP(PANNEL_ID, TITLE_ID, TITLE_NM, TITLE_COLOR, P_TITLE_ID, ORDERED, USE_YN, CREATE_ID, UPDATE_ID, TITLE_BG_IMG_FILE, BG_IMG_FILE, BG_IMG_FILE2, BG_IMG_FILE3)
+		VALUES(
+			#pannel_id#, 
+			#title_id#, 
+			#title_nm#, 
+			#title_color#,
+			DECODE(#p_title_id#, '-1', NULL, #p_title_id#), 
+			(
+				SELECT NVL(MAX(ORDERED), 0) + 1 
+				FROM PT_UX_PANEL_TITLE_TEMP 
+				WHERE PANNEL_ID = #pannel_id#
+				<isEqual property="p_title_id" compareValue="-1">
+				AND P_TITLE_ID IS NULL
+				</isEqual>
+				<isNotEqual property="p_title_id" compareValue="-1">
+				AND P_TITLE_ID = #p_title_id#
+				</isNotEqual>
+			),
+			#use_yn#,
+			#create_id#, 
+			#update_id#,
+			#title_bg_img_file#,
+			#bg_img_file#,
+			#bg_img_file2#,
+			#bg_img_file3#)
+	</insert>
+	
+	<!-- 	기존 경로 : /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/admin_mainpanel.xml -->
+	<update id="updatePanelTitleTempCategorySetNull" parameterClass="map">
+		UPDATE PT_UX_PANEL_TITLE_TEMP
+		SET CATEGORY_ID = NULL,
+		CATEGORY_TYPE = NULL,
+		ALBUM_CNT = NULL,
+		UI_TYPE = NULL,
+		<!-- BG_IMG_FILE = NULL, -->
+		<!-- TITLE_BG_IMG_FILE = NULL, -->
+		DESCRIPTION = NULL,
+		UPDATED = SYSDATE,
+		UPDATE_ID = #update_id#
+		WHERE PANNEL_ID = #pannel_id#
+		AND TITLE_ID = #p_title_id#
+	</update>
+	
+	<!-- 	기존 경로 : /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/admin_mainpanel.xml -->
+	<update id="updatePanelTitleTemp" parameterClass="map">
+		UPDATE PT_UX_PANEL_TITLE_TEMP
+		SET TITLE_NM = #title_nm#,
+		TITLE_COLOR = #title_color#,
+		USE_YN = #use_yn#,
+		UPDATED = SYSDATE,
+		UPDATE_ID = #update_id#,
+		TITLE_BG_IMG_FILE = #title_bg_img_file#,
+		BG_IMG_FILE = #bg_img_file#,
+		BG_IMG_FILE2 = #bg_img_file2#,
+		BG_IMG_FILE3 = #bg_img_file3#
+		WHERE PANNEL_ID = #pannel_id#
+		AND TITLE_ID = #title_id#
+	</update>
+	
+	<!-- 지면 삭제시 자기 것과 자기의 하위것을 모두 지운다 -->
+	<!-- 	기존 경로 : /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/admin_mainpanel.xml -->
+	<delete id="deletePanelTitleTemp" parameterClass="map">
+		DELETE FROM PT_UX_PANEL_TITLE_TEMP
+		WHERE PANNEL_ID = #pannel_id#
+		AND(TITLE_ID = #title_id#
+			OR TITLE_ID IN(
+				SELECT TITLE_ID
+				FROM PT_UX_PANEL_TITLE_TEMP
+				WHERE PANNEL_ID = #pannel_id#
+				START WITH P_TITLE_ID = #title_id#
+				CONNECT BY PRIOR TITLE_ID = P_TITLE_ID
+				AND PRIOR PANNEL_ID = PANNEL_ID
+			)
+		)
+	</delete>
+	
+	<!-- 	기존 경로 : /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/admin_mainpanel.xml -->
+	<update id="focusPanelTitleTemp" parameterClass="map">
+		UPDATE PT_UX_PANEL_TITLE_TEMP
+		SET FOCUS_YN = 'Y' , 
+		UPDATED = SYSDATE
+		WHERE PANNEL_ID = #pannel_id#
+		AND  TITLE_ID = #title_id#
+	</update>
+	
+	<!-- 	기존 경로 : /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/admin_mainpanel.xml -->
+	<update id="focusPanelTitle" parameterClass="map">
+		UPDATE PT_UX_PANEL_TITLE_TEMP
+		SET FOCUS_YN = 'Y'
+		WHERE PANNEL_ID = #pannel_id#
+		AND TITLE_ID = #title_id#
+	
+	</update>
+	
+	<!-- 	기존 경로 : /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/admin_mainpanel.xml -->
+	<update id="focusPanelTitleNull" parameterClass="map">
+		UPDATE PT_UX_PANEL_TITLE_TEMP
+		SET FOCUS_YN = 'N'
+		WHERE PANNEL_ID = #pannel_id#
+	</update>
+	
+	
+	<!-- 	기존 경로 : /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/admin_mainpanel.xml -->
+	<select id="changePanelTitleTempOrderList" parameterClass="map" resultClass="admin_viewvo">
+		SELECT TITLE_ID, TITLE_NM, ORDERED
+		FROM PT_UX_PANEL_TITLE_TEMP
+		WHERE PANNEL_ID = #pannel_id#
+		<isEqual property="p_title_id" compareValue="-1">
+		AND P_TITLE_ID IS NULL
+		</isEqual>
+		<isNotEqual property="p_title_id" compareValue="-1">
+		AND P_TITLE_ID = #p_title_id#
+		</isNotEqual>
+		ORDER BY ORDERED
+	</select>
+	
+	<!-- 	기존 경로 : /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/admin_mainpanel.xml -->
+	<update id="changePanelTitleTempOrderJob" parameterClass="admin_viewvo">
+		UPDATE PT_UX_PANEL_TITLE_TEMP
+		SET ORDERED = #ordered#
+		, UPDATED = SYSDATE
+		, UPDATE_ID = #update_id#
+		WHERE PANNEL_ID = #pannel_id#
+		AND TITLE_ID = #title_id#
+	</update>
+	
+	<!-- 	기존 경로 : /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/admin_mainpanel.xml -->
+	<update id="updateCategory" parameterClass="map">
+		UPDATE PT_UX_PANEL_TITLE_TEMP
+		SET CATEGORY_ID = #category_id#
+		, CATEGORY_TYPE = #category_type#
+		, ALBUM_CNT = #album_cnt#
+		, UI_TYPE = #ui_type#
+		, PAGE_TYPE = #page_type#
+		, PAGE_CODE = #page_code#
+		, DESCRIPTION = #description#
+		, CATEGORY_GB = #category_gb#
+		, UPDATED = SYSDATE
+		, UPDATE_ID = #update_id#
+		, REPS_ALBUM_ID = #reps_album_id# 
+		, REPS_CATEGORY_ID = #reps_category_id#
+		, TRAILER_VIEWING_TYPE = #trailer_viewing_type#
+		, REPS_TRAILER_VIEWING_TYPE = #reps_trailer_viewing_type#
+		, LOCATION_CODE = #location_code#
+		, LOCATION_YN = #location_yn#	
+<!-- 2019.11.04 : PAPER_UI_TYPE [지면UI타입 추가] Start - 이태광 -->             
+        , PAPER_UI_TYPE = #paper_ui_type#
+<!-- 2019.11.04 : PAPER_UI_TYPE [지면UI타입 추가] End - 이태광 -->
+        , PRODUCT_CODE = #product_code# 		
+        , PRODUCT_CODE_NOT = #product_code_not# 		
+        , SHOW_CNT = #show_cnt# 		
+		WHERE PANNEL_ID = #pannel_id#
+		AND TITLE_ID = #title_id#
+	</update>
+	
+	<!-- 	기존 경로 : /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/admin_mainpanel.xml -->
+	<!-- 임시 지면 테이블과 상용 지면 테이블에서 패널의 지면이 변경된 수 조회 -->
+	<select id="getPanelTitleChangeCount" parameterClass="map" resultClass="int">
+		SELECT	COUNT(*)
+		FROM (
+		  	SELECT A.PANNEL_ID AS PANNEL_ID_TEMP, A.TITLE_ID AS TITLE_ID_TEMP, B.PANNEL_ID PANNEL_ID, B.TITLE_ID TITLE_ID, A.UPDATED, B.VERSION
+		  	FROM
+		    	(SELECT * FROM PT_UX_PANEL_TITLE_TEMP WHERE PANNEL_ID = #pannel_id#) A
+		    	FULL OUTER JOIN
+		    	(SELECT * FROM PT_UX_PANEL_TITLE WHERE PANNEL_ID = #pannel_id#)  B
+		  	ON A.PANNEL_ID = B.PANNEL_ID AND A.TITLE_ID = B.TITLE_ID)
+		WHERE
+		(
+			PANNEL_ID_TEMP IS NULL
+		  	OR PANNEL_ID IS NULL
+		  	OR VERSION <![CDATA[<]]> TO_CHAR(UPDATED, 'YYYYMMDDHH24MISS')
+		)
+	</select>
+	
+	<!-- 	기존 경로 : /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/admin_mainpanel.xml -->
+	<!-- 하위 지면이 더는 없는데 카테고리 코드가 셋팅이 안된 지면들의 이름을 검색하는 쿼리 -->
+	<select id="mustCategorySettingList" parameterClass="map" resultClass="string">
+		SELECT TITLE_NM FROM(
+			SELECT A.TITLE_NM, a.CATEGORY_ID, DECODE(B.PANNEL_ID, NULL, 'N', 'Y') AS EXISTSUB, CATEGORY_TYPE
+			FROM (
+    			SELECT PANNEL_ID, TITLE_ID, TITLE_NM, CATEGORY_ID, CATEGORY_TYPE, ROWNUM RN
+    			FROM PT_UX_PANEL_TITLE_TEMP
+    			START WITH P_TITLE_ID IS NULL 
+    			AND PANNEL_ID = #pannel_id#
+    			CONNECT BY PRIOR TITLE_ID = P_TITLE_ID
+    			AND PRIOR PANNEL_ID = PANNEL_ID
+    			ORDER SIBLINGS BY ORDERED
+    			) A, (SELECT PANNEL_ID, P_TITLE_ID FROM PT_UX_PANEL_TITLE_TEMP GROUP BY PANNEL_ID, P_TITLE_ID)  B
+			WHERE A.PANNEL_ID = B.PANNEL_ID(+)
+			AND   A.TITLE_ID  = B.P_TITLE_ID(+)
+			ORDER BY RN
+		) 
+		WHERE CATEGORY_TYPE IS NULL
+		AND EXISTSUB = 'N'
+	</select>
+	
+	<!-- 	기존 경로 : /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/admin_mainpanel.xml -->
+	<delete id="deletePanelTitleTempByDeletePanel" parameterClass="string">
+		DELETE PT_UX_PANEL_TITLE_TEMP
+		WHERE PANNEL_ID = #pannel_id#         
+	</delete>
+	
+	<!-- 	기존 경로 : /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/admin_mainpanel.xml -->
+	<!-- PT_UX_PANEL_TITLE_TEMP 테이블에서 PT_UX_TITLE 테이블로 등록 -->
+	<insert id="insertPanelTitle" parameterClass="map">
+		INSERT INTO PT_UX_PANEL_TITLE(PANNEL_ID, TITLE_ID, TITLE_NM, TITLE_COLOR, P_TITLE_ID, CATEGORY_ID, CATEGORY_TYPE, ALBUM_CNT, UI_TYPE, BG_IMG_FILE, DESCRIPTION, ORDERED, USE_YN, VERSION, CREATED, UPDATED, PAGE_TYPE, PAGE_CODE, CREATE_ID, UPDATE_ID, TITLE_BG_IMG_FILE, CATEGORY_GB, REPS_ALBUM_ID, REPS_CATEGORY_ID, TRAILER_VIEWING_TYPE, REPS_TRAILER_VIEWING_TYPE, BG_IMG_FILE2, LOCATION_CODE, LOCATION_YN , FOCUS_YN , BG_IMG_FILE3	
+<!-- 2019.11.04 : PAPER_UI_TYPE [지면UI타입 추가] Start - 이태광 -->		
+									, PAPER_UI_TYPE, PRODUCT_CODE, PRODUCT_CODE_NOT, SHOW_CNT)
+<!-- 2019.11.04 : PAPER_UI_TYPE [지면UI타입 추가] End - 이태광 -->		
+		SELECT PANNEL_ID, TITLE_ID, TITLE_NM, TITLE_COLOR, P_TITLE_ID, CATEGORY_ID, CATEGORY_TYPE, ALBUM_CNT, UI_TYPE, BG_IMG_FILE, DESCRIPTION, ORDERED, USE_YN, ' ', SYSDATE, SYSDATE, PAGE_TYPE, PAGE_CODE, '$create_id$', '$create_id$', TITLE_BG_IMG_FILE, CATEGORY_GB, REPS_ALBUM_ID, REPS_CATEGORY_ID, TRAILER_VIEWING_TYPE, REPS_TRAILER_VIEWING_TYPE, BG_IMG_FILE2, LOCATION_CODE, LOCATION_YN , FOCUS_YN , BG_IMG_FILE3		
+<!-- 2019.11.04 : PAPER_UI_TYPE [지면UI타입 추가] Start - 이태광 -->		
+			, PAPER_UI_TYPE, PRODUCT_CODE, PRODUCT_CODE_NOT, SHOW_CNT
+<!-- 2019.11.04 : PAPER_UI_TYPE [지면UI타입 추가] End - 이태광 -->		
+		FROM PT_UX_PANEL_TITLE_TEMP WHERE pannel_id = #pannel_id#
+	</insert>
+	
+	<!-- 	기존 경로 : /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/admin_mainpanel.xml -->
+	<select id="previewPanelTitleTemp" parameterClass="map" resultClass="admin_previewvo">
+		SELECT PANNEL_ID || '_' || TITLE_ID AS CODE
+			, PANNEL_ID || DECODE(P_TITLE_ID, NULL, '', '_') || P_TITLE_ID AS P_CODE
+			, TITLE_NM AS PANELVIEWNAME
+			, CATEGORY_ID AS CATEGORY_CODE
+			, CATEGORY_TYPE AS CATEGORY_TYPE
+			, UI_TYPE AS UI_TYPE
+			, BG_IMG_FILE AS BG_IMG_FILE
+			, DESCRIPTION AS DESCRIPTION
+			, ORDERED AS ORDER_SEQ
+			, LEVEL
+			, PAGE_TYPE
+			, PAGE_CODE
+			, NVL(CATEGORY_GB, 'I20') AS CATEGORY_GB
+		FROM PT_UX_PANEL_TITLE_TEMP
+		START WITH P_TITLE_ID IS NULL 
+		AND PANNEL_ID = #pannel_id#
+		AND USE_YN = 'Y'
+		CONNECT BY PRIOR TITLE_ID = P_TITLE_ID
+		AND PRIOR PANNEL_ID = PANNEL_ID
+		ORDER SIBLINGS BY PANNEL_ID, ORDERED
+	</select>
+	
+	<!-- 	기존 경로 : /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/admin_mainpanel.xml -->
+	<select id="previewPanelTitle" parameterClass="map" resultClass="admin_previewvo">
+		SELECT PANNEL_ID || '_' || TITLE_ID AS CODE
+			, PANNEL_ID || DECODE(P_TITLE_ID, NULL, '', '_') || P_TITLE_ID AS P_CODE
+			, TITLE_NM AS PANELVIEWNAME
+			, CATEGORY_ID AS CATEGORY_CODE
+			, CATEGORY_TYPE AS CATEGORY_TYPE
+			, UI_TYPE AS UI_TYPE
+			, BG_IMG_FILE AS BG_IMG_FILE
+			, DESCRIPTION AS DESCRIPTION
+			, ORDERED AS ORDER_SEQ
+			, LEVEL
+			, PAGE_TYPE
+			, PAGE_CODE
+			, NVL(CATEGORY_GB, 'I20') AS CATEGORY_GB
+		FROM PT_UX_PANEL_TITLE
+		START WITH P_TITLE_ID IS NULL 
+		AND PANNEL_ID = #pannel_id#
+		AND USE_YN = 'Y'
+		CONNECT BY PRIOR TITLE_ID = P_TITLE_ID
+		AND PRIOR PANNEL_ID = PANNEL_ID
+		ORDER SIBLINGS BY PANNEL_ID, ORDERED
+	</select>
+	
+	<!-- 	기존 경로 : /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/admin_mainpanel.xml -->
+	<select id="selectUseSchedule" parameterClass="map" resultClass="admin_schedulevo">
+		SELECT B.SCHEDULE_CODE, B.SCHEDULE_NAME
+		FROM( 
+			SELECT CATEGORY_ID FROM PT_UX_PANEL_TITLE_TEMP WHERE CATEGORY_TYPE='SCHEDULE'
+			UNION
+			SELECT CATEGORY_ID FROM PT_UX_PANEL_TITLE WHERE CATEGORY_TYPE='SCHEDULE'
+		)A, PT_UX_SMUX_VOD_SCHEDULE B
+		WHERE A.CATEGORY_ID = B.SCHEDULE_CODE
+		AND B.SCHEDULE_CODE IN ($schedule_codes$)
+		ORDER BY SCHEDULE_CODE
+	</select>
+	
+	<!-- 기존 경로 : /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/mainpanel.xml -->
+	<update id="setMainPanelTitleVersion" parameterClass="map">
+	   UPDATE 
+	   		PT_UX_PANEL_TITLE 
+       SET 
+       		VERSION = TO_CHAR(SYSDATE,'YYYYMMDDHH24MISS') 
+ 	   WHERE 
+ 	   		category_type = #category_type# 
+       	AND TO_CHAR(SYSDATE,'YYYYMMDDHH24MISS')-VERSION >= 60
+	</update>
+</sqlMap>

@@ -1,0 +1,315 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="test_notipop">
+
+	<delete id="delete_test_data_to_bbsmaster_table">
+		DELETE 
+		FROM 
+			PT_HDTV_BBS_MASTER
+		WHERE
+			(SCR_TP='X' AND BBS_ID='tdd01') OR (SCR_TP='V' AND BBS_ID='tdd02')
+	</delete>
+	
+	<insert id="insert_test_data_to_bbsmaster_table1" >    
+	INSERT INTO PT_HDTV_BBS_MASTER
+	(
+		BBS_ID
+		,BBS_GBN
+		,BBS_NM
+		,VERSION
+		,SCR_TP
+		,DEL_YN
+		,REG_ID
+		,MOD_ID
+		,REG_DT
+		,MOD_DT
+	)
+	VALUES ('tdd01','PU','TDD공지','2012090101001','X',0,'관리자',NULL,to_date('2012-10-26', 'YYYY-MM-DD'),NULL)
+    </insert>
+	
+	<insert id="insert_test_data_to_bbsmaster_table2" >    
+	INSERT INTO PT_HDTV_BBS_MASTER
+	(
+		BBS_ID
+		,BBS_GBN
+		,BBS_NM
+		,VERSION
+		,SCR_TP
+		,DEL_YN
+		,REG_ID
+		,MOD_ID
+		,REG_DT
+		,MOD_DT
+	)
+	VALUES ('tdd02','PU','TDD공지2','2012090101001','V',0,'관리자',NULL,to_date('2012-10-26', 'YYYY-MM-DD'),NULL)
+    </insert>
+	
+	<delete id="delete_test_data_to_bbs_table">
+		DELETE 
+		FROM 
+			PT_HDTV_BBS
+		WHERE
+			(REG_NO='2' AND BBS_ID='tdd01') OR (REG_NO='3' AND BBS_ID='tdd01')
+	</delete>
+	
+	<insert id="insert_test_data_to_bbs_table1"> 
+		INSERT INTO PT_HDTV_BBS 
+		       (
+		           REG_NO, 
+		           BBS_ID, 
+		           TITLE, 
+		           CONTENT, 
+		           IS_FIXED, 
+		           S_DATE, 
+		           E_DATE, 
+		           N_DATE, 
+		           EV_CONT_ID, 
+		           WIN_DT, 
+		           ORG_FILE_NM, 
+		           SAVE_FILE_NM, 
+		           REG_DT, 
+		           REG_ID, 
+		           MOD_DT, 
+		           MOD_ID, 
+		           IS_ADT, 
+		           EV_TYPE, 
+		           EV_STAT_ID, 
+		           EV_DETAIL
+		       ) 
+		       VALUES 
+		       (
+		           2, 
+		           'tdd01', 
+		           'TDD시험용', 
+		           'TDD시험용 입니다.', 
+		           1, 
+		           to_date('2012-11-01', 'YYYY-MM-DD'), 
+		           to_date('2012-11-08', 'YYYY-MM-DD'), 
+		           NULL, 
+		           '이벤트컨텐츠', 
+		           NULL, 
+		           '', 
+		           '', 
+		           to_date('2012-11-01', 'YYYY-MM-DD'), 
+		           'admin', 
+		           to_date('2012-11-01', 'YYYY-MM-DD'), 
+		           'admin', 
+		           0, 
+		           'ev3', 
+		           1, 
+		           NULL
+		       )
+	</insert>
+	
+	<insert id="insert_test_data_to_bbs_table2">
+		INSERT INTO PT_HDTV_BBS 
+		       (
+		           REG_NO, 
+		           BBS_ID, 
+		           TITLE, 
+		           CONTENT, 
+		           IS_FIXED, 
+		           S_DATE, 
+		           E_DATE, 
+		           N_DATE, 
+		           EV_CONT_ID, 
+		           WIN_DT, 
+		           ORG_FILE_NM, 
+		           SAVE_FILE_NM, 
+		           REG_DT, 
+		           REG_ID, 
+		           MOD_DT, 
+		           MOD_ID, 
+		           IS_ADT, 
+		           EV_TYPE, 
+		           EV_STAT_ID, 
+		           EV_DETAIL
+		       ) 
+		       VALUES 
+		       (
+		           3, 
+		           'tdd01', 
+		           '두번째TDD데이터', 
+		           '시험용 두번째 TDD데이터 입니다.', 
+		           1, 
+		           to_date('2012-11-04', 'YYYY-MM-DD'), 
+		           to_date('2012-12-23', 'YYYY-MM-DD'), 
+		           NULL, 
+		           '이벤트TDD', 
+		           NULL, 
+		           '', 
+		           '', 
+		           to_date('2012-11-03', 'YYYY-MM-DD'), 
+		           'admin', 
+		           to_date('2012-11-03', 'YYYY-MM-DD'), 
+		           'admin', 
+		           0, 
+		           'ev3', 
+		           2, 
+		           NULL
+		       )
+	</insert>
+	
+	<delete id="delete_test_data_to_notiterm_table">
+		DELETE 
+		FROM 
+			PT_HDTV_NOTI_TERM
+		WHERE
+			REG_NO='2' OR REG_NO='3'
+	</delete>
+	
+	<insert id="insert_test_data_to_notiterm_table1" >
+		INSERT INTO PT_HDTV_NOTI_TERM 
+		(
+		REG_NO
+		,TERM_MODEL
+		)
+		VALUES
+	   (2,  'TDD-GB10')
+    </insert>
+    
+	<insert id="insert_test_data_to_notiterm_table2" >
+		INSERT INTO PT_HDTV_NOTI_TERM 
+		(
+		REG_NO
+		,TERM_MODEL
+		)
+		VALUES
+	   (2,  'TDD-GB20')
+    </insert>
+    
+	<insert id="insert_test_data_to_notiterm_table3" >
+		INSERT INTO PT_HDTV_NOTI_TERM 
+		(
+		REG_NO
+		,TERM_MODEL
+		)
+		VALUES
+	   (3,  'TDD-GB30')
+    </insert>
+    
+	<delete id="delete_test_data_to_choicenoti_table">
+		DELETE 
+		FROM 
+			PT_HDTV_CHOICE_NOTI
+		WHERE
+			(SCR_TP='X' AND DISPLAY_TYPE='S') OR (SCR_TP='X' AND DISPLAY_TYPE='T') OR (SCR_TP='V' AND DISPLAY_TYPE='S') OR (SCR_TP='V' AND DISPLAY_TYPE='T')
+	</delete>
+    
+	<insert id="insert_test_data_to_choicenoti_table1" >
+		INSERT INTO PT_HDTV_CHOICE_NOTI 
+       (
+           SCR_TP, 
+           DISPLAY_TYPE, 
+           STATUS, 
+           MESSAGE_YN, 
+           MESSAGE, 
+           NET_TYPE, 
+           BBS_ID, 
+           REG_NO, 
+           REG_DT, 
+           REG_ID
+       ) 
+       VALUES 
+       (
+           'X', 
+           'S', 
+           '0', 
+           'Y', 
+           '서비스안정화 진행중입니다.', 
+           '0', 
+           'tdd01', 
+           2, 
+           SYSDATE, 
+           'admin'
+       )
+    </insert>
+    
+	<insert id="insert_test_data_to_choicenoti_table2" >
+		INSERT INTO PT_HDTV_CHOICE_NOTI 
+       (
+           SCR_TP, 
+           DISPLAY_TYPE, 
+           STATUS, 
+           MESSAGE_YN, 
+           MESSAGE, 
+           NET_TYPE, 
+           BBS_ID, 
+           REG_NO, 
+           REG_DT, 
+           REG_ID
+       ) 
+       VALUES 
+       (
+           'X', 
+           'T', 
+           '0', 
+           'Y', 
+           '검수용!! 서비스안정화 진행중입니다.', 
+           '0', 
+           'tdd01', 
+           2, 
+           SYSDATE, 
+           'admin'
+       )
+    </insert>
+    
+	<insert id="insert_test_data_to_choicenoti_table3" >
+		INSERT INTO PT_HDTV_CHOICE_NOTI 
+       (
+           SCR_TP, 
+           DISPLAY_TYPE, 
+           STATUS, 
+           MESSAGE_YN, 
+           MESSAGE, 
+           NET_TYPE, 
+           BBS_ID, 
+           REG_NO, 
+           REG_DT, 
+           REG_ID
+       ) 
+       VALUES 
+       (
+           'V', 
+           'S', 
+           '1', 
+           'Y', 
+           '내년 이맘때 서비서 할 예정입니다. 죄송합니다.', 
+           '0', 
+           NULL, 
+           NULL, 
+           SYSDATE, 
+           'admin'
+       )
+    </insert>
+    
+	<insert id="insert_test_data_to_choicenoti_table4" >
+		INSERT INTO PT_HDTV_CHOICE_NOTI 
+       (
+           SCR_TP, 
+           DISPLAY_TYPE, 
+           STATUS, 
+           MESSAGE_YN, 
+           MESSAGE, 
+           NET_TYPE, 
+           BBS_ID, 
+           REG_NO, 
+           REG_DT, 
+           REG_ID
+       ) 
+       VALUES 
+       (
+           'V', 
+           'T', 
+           NULL, 
+           NULL, 
+           NULL, 
+           NULL, 
+           'tdd01', 
+           3, 
+           SYSDATE, 
+           'admin'
+       )
+    </insert>
+
+</sqlMap>

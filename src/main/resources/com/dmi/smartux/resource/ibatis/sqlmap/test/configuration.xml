@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="test_configuration">
+
+	<!-- 백업 테이블 create  -->
+	<statement id="create_configuration_temp_table">
+		CREATE TABLE PT_UX_CODE_ITEMS_CONFIG (
+  			  CODE         VARCHAR2(5)       NOT NULL, 
+			  ITEM_CODE    VARCHAR2(100)     NOT NULL, 
+			  ITEM_NM      VARCHAR2(100)     NOT NULL, 
+			  ORDERED      NUMBER            NOT NULL, 
+			  SS_GBN       VARCHAR2(10)          NULL, 
+			  APP_TYPE     VARCHAR2(3)           NULL, 
+			  USE_YN       VARCHAR2(1)      DEFAULT 'Y'      	 NOT NULL, 
+			  CREATED      DATE             DEFAULT SYSDATE      NOT NULL, 
+			  UPDATED      DATE             DEFAULT SYSDATE      NOT NULL, 
+			  CREATE_ID    VARCHAR2(30)      NOT NULL, 
+			  UPDATE_ID    VARCHAR2(30)      NOT NULL
+		)
+	</statement>
+	
+	<!-- 기존 테이블의 기존 데이터를 백업 테이블에 insert -->
+	<insert id="insert_configuration_to_temp_table">
+		INSERT INTO PT_UX_CODE_ITEMS_CONFIG
+		SELECT * FROM PT_UX_CODE_ITEMS WHERE CODE='A0009'
+	</insert>
+	
+	<!-- 기존 테이블의 기존 데이터 삭제 -->
+	<delete id="delete_org_configuration_data">
+		DELETE FROM PT_UX_CODE_ITEMS WHERE CODE='A0009'
+	</delete>
+	
+	<!-- 테스트 데이터를 기존 테이블에 insert-->
+	<insert id="insert_test_data_to_org_configuration_table1">
+		INSERT INTO PT_UX_CODE_ITEMS(CODE, ITEM_CODE, ITEM_NM, ORDERED, SS_GBN, APP_TYPE , USE_YN, CREATED, UPDATED, CREATE_ID, UPDATE_ID)
+		VALUES(
+			'A0009'
+			, 'AS_PhoneNumber_TEST1'
+    		, '국번없이 100번'
+    		, 1
+    		, ''
+    		,'ALL'
+    		, 'Y'
+    		, SYSDATE
+    		, SYSDATE
+   	 		, 'admin'
+    		, 'admin'
+    	)
+	</insert>
+	
+	<insert id="insert_test_data_to_org_configuration_table2">
+		INSERT INTO PT_UX_CODE_ITEMS(CODE, ITEM_CODE, ITEM_NM, ORDERED, SS_GBN, APP_TYPE , USE_YN, CREATED, UPDATED, CREATE_ID, UPDATE_ID)
+		VALUES(
+			'A0009'
+			, 'SET2_TEST2'
+    		, 'SET2_TEST2'
+    		, 2
+    		, ''
+    		,'SMA'
+    		, 'Y'
+    		, SYSDATE
+    		, SYSDATE
+   	 		, 'admin'
+    		, 'admin'
+    	)
+	</insert>
+	
+	<insert id="insert_test_data_to_org_configuration_table3">
+		INSERT INTO PT_UX_CODE_ITEMS(CODE, ITEM_CODE, ITEM_NM, ORDERED, SS_GBN, APP_TYPE , USE_YN, CREATED, UPDATED, CREATE_ID, UPDATE_ID)
+		VALUES(
+			'A0009'
+			, 'SET3_TEST3'
+    		, 'SET3_TEST3'
+    		, 3
+    		, ''
+    		,'UX'
+    		, 'Y'
+    		, SYSDATE
+    		, SYSDATE
+   	 		, 'admin'
+    		, 'admin'
+    	)
+	</insert>
+	
+	<!-- 기존 테이블의 테스트 데이터 삭제 -->
+	<delete id="delete_test_configuration_data">
+		DELETE FROM PT_UX_CODE_ITEMS WHERE CODE='A0009'
+	</delete>
+	
+	<!-- 백업 테이블에 보관된 데이터를 기존 테이블에 insert -->
+	<insert id="insert_configuration_to_org_table">
+		INSERT INTO PT_UX_CODE_ITEMS
+		SELECT * FROM PT_UX_CODE_ITEMS_CONFIG WHERE CODE='A0009'
+	</insert>
+	
+	<!-- 백업 테이블 drop  -->
+	<statement id="drop_configuration_temp_table">
+		DROP TABLE PT_UX_CODE_ITEMS_CONFIG
+	</statement>	
+		
+</sqlMap>
+
+

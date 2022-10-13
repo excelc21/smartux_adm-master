@@ -1,0 +1,858 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="test_authentication">
+
+<!--
+################################################################################### 
+Before Query
+###################################################################################-->
+
+<!--
+################################################################################### 
+Data Insert Query
+###################################################################################-->
+	<insert id="insert_authentication_wishlist">
+		INSERT INTO PT_OA_AUTH 
+       ( 
+           SERVICE_ID,
+           URI,
+           ACCESS_KEY,
+           KEY_TYPE,
+           USE_YN,
+           REG_DATE,
+           UP_DATE,
+           CP_ID,
+           SERVICE_LIFE,
+           MAPP_URI,
+		   MAPP_METHOD,
+		   MAPP_SYSTEM
+       ) 
+       VALUES 
+       ( 
+           'TestKey008' 
+           ,'[GET]suxm.uplus.co.kr/v1/wishlist' 
+           ,'TestAccKey008' 
+           ,'T' 
+           ,'Y' 
+           ,SYSDATE 
+           ,SYSDATE 
+           ,'cp' 
+           ,'15.10.18'
+           ,'/vod/bestvod'
+           ,'GET'
+           ,'suxm.uplus.co.kr'
+       ) 
+	</insert>
+	
+	<delete id="delete_authentication_wishlist">
+		DELETE 
+		FROM 
+			PT_OA_AUTH
+		WHERE
+			ACCESS_KEY = 'TestAccKey008'
+	</delete>
+	
+	
+	
+	<insert id="insert_authentication_youtube">
+		INSERT INTO PT_OA_AUTH 
+       ( 
+           SERVICE_ID,
+           URI,
+           ACCESS_KEY,
+           KEY_TYPE,
+           USE_YN,
+           REG_DATE,
+           UP_DATE,
+           CP_ID,
+           SERVICE_LIFE,
+           MAPP_URI,
+		   MAPP_METHOD,
+		   MAPP_SYSTEM
+       ) 
+       VALUES 
+       ( 
+           'TestKey016' 
+           ,'[GET]suxm.uplus.co.kr/v1/search/youtube' 
+           ,'TestAccKey016' 
+           ,'T' 
+           ,'Y' 
+           ,SYSDATE 
+           ,SYSDATE 
+           ,'cp' 
+           ,'15.10.18'
+           ,'/vod/bestvod' 
+           ,'GET'
+           ,'suxm.uplus.co.kr'
+       ) 
+	</insert>
+	
+	<delete id="delete_authentication_youtube">
+		DELETE 
+		FROM 
+			PT_OA_AUTH
+		WHERE
+			ACCESS_KEY = 'TestAccKey016'
+	</delete>
+	
+	<insert id="insert_authentication_mainpanel_version">
+		INSERT INTO PT_OA_AUTH 
+       ( 
+           SERVICE_ID,
+           URI,
+           ACCESS_KEY,
+           KEY_TYPE,
+           USE_YN,
+           REG_DATE,
+           UP_DATE,
+           CP_ID,
+           SERVICE_LIFE,
+           MAPP_URI,
+		   MAPP_METHOD,
+		   MAPP_SYSTEM
+       ) 
+       VALUES 
+       ( 
+           'TestKey006' 
+           ,'[GET]suxm.uplus.co.kr/v1/mainpanel/version' 
+           ,'TestAccKey006' 
+           ,'T' 
+           ,'Y' 
+           ,SYSDATE 
+           ,SYSDATE 
+           ,'cp' 
+           ,'15.10.18'
+           ,'/vod/bestvod' 
+           ,'GET'
+           ,'suxm.uplus.co.kr'
+       ) 
+	</insert>
+	
+	<delete id="delete_authentication_mainpanel_version">
+		DELETE 
+		FROM 
+			PT_OA_AUTH
+		WHERE
+			ACCESS_KEY = 'TestAccKey006'
+	</delete>
+	
+	<insert id="insert_authentication_mainpanel">
+		INSERT INTO PT_OA_AUTH 
+       ( 
+           SERVICE_ID,
+           URI,
+           ACCESS_KEY,
+           KEY_TYPE,
+           USE_YN,
+           REG_DATE,
+           UP_DATE,
+           CP_ID,
+           SERVICE_LIFE,
+           MAPP_URI,
+		   MAPP_METHOD,
+		   MAPP_SYSTEM
+       ) 
+       VALUES 
+       ( 
+           'TestKey007' 
+           ,'[GET]suxm.uplus.co.kr/v1/mainpanel' 
+           ,'TestAccKey007' 
+           ,'T' 
+           ,'Y' 
+           ,SYSDATE 
+           ,SYSDATE 
+           ,'cp' 
+           ,'15.10.18'
+           ,'/vod/bestvod' 
+           ,'GET'
+           ,'suxm.uplus.co.kr'
+       ) 
+	</insert>
+	
+	<delete id="delete_authentication_mainpanel">
+		DELETE 
+		FROM 
+			PT_OA_AUTH
+		WHERE
+			ACCESS_KEY = 'TestAccKey007'
+	</delete>
+	
+	<insert id="insert_authentication_i20list">
+		INSERT INTO PT_OA_AUTH 
+       ( 
+           SERVICE_ID,
+           URI,
+           ACCESS_KEY,
+           KEY_TYPE,
+           USE_YN,
+           REG_DATE,
+           UP_DATE,
+           CP_ID,
+           SERVICE_LIFE,
+           MAPP_URI,
+		   MAPP_METHOD,
+		   MAPP_SYSTEM
+       ) 
+       VALUES 
+       ( 
+           'TestKey012' 
+           ,'[GET]suxm.uplus.co.kr/v1/i20list' 
+           ,'TestAccKey012' 
+           ,'T' 
+           ,'Y' 
+           ,SYSDATE 
+           ,SYSDATE 
+           ,'cp' 
+           ,'15.10.18'
+           ,'/vod/bestvod' 
+           ,'GET'
+           ,'suxm.uplus.co.kr'
+       ) 
+	</insert>
+	
+	<delete id="delete_authentication_i20list">
+		DELETE 
+		FROM 
+			PT_OA_AUTH
+		WHERE
+			ACCESS_KEY = 'TestAccKey012'
+	</delete>
+	
+	<insert id="insert_authentication_setting">
+		INSERT INTO PT_OA_AUTH 
+       ( 
+           SERVICE_ID,
+           URI,
+           ACCESS_KEY,
+           KEY_TYPE,
+           USE_YN,
+           REG_DATE,
+           UP_DATE,
+           CP_ID,
+           SERVICE_LIFE,
+           MAPP_URI,
+		   MAPP_METHOD,
+		   MAPP_SYSTEM
+       ) 
+       VALUES 
+       ( 
+           'TestKey011' 
+           ,'[GET]suxm.uplus.co.kr/v1/setting' 
+           ,'TestAccKey011' 
+           ,'T' 
+           ,'Y' 
+           ,SYSDATE 
+           ,SYSDATE 
+           ,'cp' 
+           ,'15.10.18'
+           ,'/vod/bestvod' 
+           ,'GET'
+           ,'suxm.uplus.co.kr'
+       ) 
+	</insert>
+	
+	<delete id="delete_authentication_setting">
+		DELETE 
+		FROM 
+			PT_OA_AUTH
+		WHERE
+			ACCESS_KEY = 'TestAccKey011'
+	</delete>
+	
+	<insert id="insert_authentication_bestvod">
+		INSERT INTO PT_OA_AUTH 
+       ( 
+           SERVICE_ID,
+           URI,
+           ACCESS_KEY,
+           KEY_TYPE,
+           USE_YN,
+           REG_DATE,
+           UP_DATE,
+           CP_ID,
+           SERVICE_LIFE,
+           MAPP_URI,
+		   MAPP_METHOD,
+		   MAPP_SYSTEM
+       ) 
+       VALUES 
+       ( 
+           'TestKey010' 
+           ,'[GET]suxm.uplus.co.kr/v1/bestvod' 
+           ,'TestAccKey010' 
+           ,'T' 
+           ,'Y' 
+           ,SYSDATE 
+           ,SYSDATE 
+           ,'cp' 
+           ,'15.10.18'
+           ,'/vod/bestvod' 
+           ,'GET'
+           ,'suxm.uplus.co.kr'
+       ) 
+	</insert>
+	
+	<delete id="delete_authentication_bestvod">
+		DELETE 
+		FROM 
+			PT_OA_AUTH
+		WHERE
+			ACCESS_KEY = 'TestAccKey010'
+	</delete>
+	
+	<insert id="insert_authentication_smartstart">
+		INSERT INTO PT_OA_AUTH 
+       ( 
+           SERVICE_ID,
+           URI,
+           ACCESS_KEY,
+           KEY_TYPE,
+           USE_YN,
+           REG_DATE,
+           UP_DATE,
+           CP_ID,
+           SERVICE_LIFE,
+           MAPP_URI,
+		   MAPP_METHOD,
+		   MAPP_SYSTEM
+       ) 
+       VALUES 
+       ( 
+           'TestKey009' 
+           ,'[GET]suxm.uplus.co.kr/v1/smartstart' 
+           ,'TestAccKey009' 
+           ,'T' 
+           ,'Y' 
+           ,SYSDATE 
+           ,SYSDATE 
+           ,'cp' 
+           ,'15.10.18'
+           ,'/vod/bestvod' 
+           ,'GET'
+           ,'suxm.uplus.co.kr'
+       ) 
+	</insert>
+	
+	<delete id="delete_authentication_smartstart">
+		DELETE 
+		FROM 
+			PT_OA_AUTH
+		WHERE
+			ACCESS_KEY = 'TestAccKey009'
+	</delete>
+	
+	<insert id="insert_authentication_rating">
+		INSERT INTO PT_OA_AUTH 
+       ( 
+           SERVICE_ID,
+           URI,
+           ACCESS_KEY,
+           KEY_TYPE,
+           USE_YN,
+           REG_DATE,
+           UP_DATE,
+           CP_ID,
+           SERVICE_LIFE,
+           MAPP_URI,
+		   MAPP_METHOD,
+		   MAPP_SYSTEM
+       ) 
+       VALUES 
+       ( 
+           'TestKey005' 
+           ,'[GET]suxm.uplus.co.kr/v1/rating/live' 
+           ,'TestAccKey005' 
+           ,'T' 
+           ,'Y' 
+           ,SYSDATE 
+           ,SYSDATE 
+           ,'cp' 
+           ,'15.10.18'
+           ,'/vod/bestvod' 
+           ,'GET'
+           ,'suxm.uplus.co.kr'
+       ) 
+	</insert>
+	
+	<delete id="delete_authentication_rating">
+		DELETE 
+		FROM 
+			PT_OA_AUTH
+		WHERE
+			ACCESS_KEY = 'TestAccKey005'
+	</delete>
+	
+	<insert id="insert_authentication_theme">
+		INSERT INTO PT_OA_AUTH 
+       ( 
+           SERVICE_ID,
+           URI,
+           ACCESS_KEY,
+           KEY_TYPE,
+           USE_YN,
+           REG_DATE,
+           UP_DATE,
+           CP_ID,
+           SERVICE_LIFE,
+           MAPP_URI,
+		   MAPP_METHOD,
+		   MAPP_SYSTEM
+       ) 
+       VALUES 
+       ( 
+           'TestKey004' 
+           ,'[GET]suxm.uplus.co.kr/v1/theme' 
+           ,'TestAccKey004' 
+           ,'T' 
+           ,'Y' 
+           ,SYSDATE 
+           ,SYSDATE 
+           ,'cp' 
+           ,'15.10.18'
+           ,'/vod/bestvod' 
+           ,'GET'
+           ,'suxm.uplus.co.kr'
+       ) 
+	</insert>
+	
+	<delete id="delete_authentication_theme">
+		DELETE 
+		FROM 
+			PT_OA_AUTH
+		WHERE
+			ACCESS_KEY = 'TestAccKey004'
+	</delete>
+	
+	<insert id="insert_authentication_album">
+		INSERT INTO PT_OA_AUTH 
+       ( 
+           SERVICE_ID,
+           URI,
+           ACCESS_KEY,
+           KEY_TYPE,
+           USE_YN,
+           REG_DATE,
+           UP_DATE,
+           CP_ID,
+           SERVICE_LIFE,
+           MAPP_URI,
+		   MAPP_METHOD,
+		   MAPP_SYSTEM
+       ) 
+       VALUES 
+       ( 
+           'TestKey015' 
+           ,'[GET]suxm.uplus.co.kr/v1/album' 
+           ,'TestAccKey015' 
+           ,'T' 
+           ,'Y' 
+           ,SYSDATE 
+           ,SYSDATE 
+           ,'cp' 
+           ,'15.10.18'
+           ,'/vod/bestvod' 
+           ,'GET'
+           ,'suxm.uplus.co.kr'
+       ) 
+	</insert>
+	
+	<delete id="delete_authentication_album">
+		DELETE 
+		FROM 
+			PT_OA_AUTH
+		WHERE
+			ACCESS_KEY = 'TestAccKey015'
+	</delete>
+		
+	
+	<insert id="insert_authentication_push_post">
+		INSERT INTO PT_OA_AUTH 
+       ( 
+           SERVICE_ID,
+           URI,
+           ACCESS_KEY,
+           KEY_TYPE,
+           USE_YN,
+           REG_DATE,
+           UP_DATE,
+           CP_ID,
+           SERVICE_LIFE,
+           MAPP_URI,
+		   MAPP_METHOD,
+		   MAPP_SYSTEM
+       ) 
+       VALUES 
+       ( 
+           'TestKey013' 
+           ,'[POST]suxm.uplus.co.kr/v1/push' 
+           ,'TestAccKey013' 
+           ,'T' 
+           ,'Y' 
+           ,SYSDATE 
+           ,SYSDATE 
+           ,'cp' 
+           ,'15.10.18'
+           ,'/vod/bestvod' 
+           ,'GET'
+           ,'suxm.uplus.co.kr'
+       ) 
+	</insert>
+	
+	<delete id="delete_authentication_push_post">
+		DELETE 
+		FROM 
+			PT_OA_AUTH
+		WHERE
+			ACCESS_KEY = 'TestAccKey013'
+	</delete>
+
+	<insert id="insert_authentication_push_delete">
+		INSERT INTO PT_OA_AUTH 
+       ( 
+           SERVICE_ID,
+           URI,
+           ACCESS_KEY,
+           KEY_TYPE,
+           USE_YN,
+           REG_DATE,
+           UP_DATE,
+           CP_ID,
+           SERVICE_LIFE,
+           MAPP_URI,
+		   MAPP_METHOD,
+		   MAPP_SYSTEM
+       ) 
+       VALUES 
+       ( 
+           'TestKey014' 
+           ,'[DELETE]suxm.uplus.co.kr/v1/push' 
+           ,'TestAccKey014' 
+           ,'T' 
+           ,'Y' 
+           ,SYSDATE 
+           ,SYSDATE 
+           ,'cp' 
+           ,'15.10.18'
+           ,'/vod/bestvod' 
+           ,'GET'
+           ,'suxm.uplus.co.kr'
+       ) 
+	</insert>
+	
+	<delete id="delete_authentication_push_delete">
+		DELETE 
+		FROM 
+			PT_OA_AUTH
+		WHERE
+			ACCESS_KEY = 'TestAccKey014'
+	</delete>
+	
+	
+	<insert id="insert_authentication_reservation_post">
+		INSERT INTO PT_OA_AUTH 
+       ( 
+           SERVICE_ID,
+           URI,
+           ACCESS_KEY,
+           KEY_TYPE,
+           USE_YN,
+           REG_DATE,
+           UP_DATE,
+           CP_ID,
+           SERVICE_LIFE,
+           MAPP_URI,
+		   MAPP_METHOD,
+		   MAPP_SYSTEM
+       ) 
+       VALUES 
+       ( 
+           'TestKey001' 
+           ,'[POST]suxm.uplus.co.kr/v1/reservation' 
+           ,'TestAccKey001' 
+           ,'T' 
+           ,'Y' 
+           ,SYSDATE 
+           ,SYSDATE 
+           ,'cp' 
+           ,'15.10.18'
+           ,'/vod/bestvod' 
+           ,'GET'
+           ,'suxm.uplus.co.kr'
+       ) 
+	</insert>
+	
+	<delete id="delete_authentication_reservation_post">
+		DELETE 
+		FROM 
+			PT_OA_AUTH
+		WHERE
+			ACCESS_KEY = 'TestAccKey001'
+	</delete>
+	
+	<insert id="insert_authentication_reservation_delete">
+		INSERT INTO PT_OA_AUTH 
+       ( 
+           SERVICE_ID,
+           URI,
+           ACCESS_KEY,
+           KEY_TYPE,
+           USE_YN,
+           REG_DATE,
+           UP_DATE,
+           CP_ID,
+           SERVICE_LIFE,
+           MAPP_URI,
+		   MAPP_METHOD,
+		   MAPP_SYSTEM
+       ) 
+       VALUES 
+       ( 
+           'TestKey002' 
+           ,'[DELETE]suxm.uplus.co.kr/v1/reservation' 
+           ,'TestAccKey002' 
+           ,'T' 
+           ,'Y' 
+           ,SYSDATE 
+           ,SYSDATE 
+           ,'cp' 
+           ,'15.10.18'
+           ,'/vod/bestvod' 
+           ,'GET'
+           ,'suxm.uplus.co.kr'
+       ) 
+	</insert>
+	
+	<delete id="delete_authentication_reservation_delete">
+		DELETE 
+		FROM 
+			PT_OA_AUTH
+		WHERE
+			ACCESS_KEY = 'TestAccKey002'
+	</delete>
+	
+	<insert id="insert_authentication_reservation_get">
+		INSERT INTO PT_OA_AUTH 
+       ( 
+           SERVICE_ID,
+           URI,
+           ACCESS_KEY,
+           KEY_TYPE,
+           USE_YN,
+           REG_DATE,
+           UP_DATE,
+           CP_ID,
+           SERVICE_LIFE,
+           MAPP_URI,
+		   MAPP_METHOD,
+		   MAPP_SYSTEM
+       ) 
+       VALUES 
+       ( 
+           'TestKey003' 
+           ,'[GET]suxm.uplus.co.kr/v1/reservation' 
+           ,'TestAccKey003' 
+           ,'T' 
+           ,'Y' 
+           ,SYSDATE 
+           ,SYSDATE 
+           ,'cp' 
+           ,'15.10.18'
+           ,'/vod/bestvod' 
+           ,'GET'
+           ,'suxm.uplus.co.kr'
+       ) 
+	</insert>
+	
+	<delete id="delete_authentication_reservation_get">
+		DELETE 
+		FROM 
+			PT_OA_AUTH
+		WHERE
+			ACCESS_KEY = 'TestAccKey003'
+	</delete>
+	
+	<insert id="insert_authentication_noticeinfo">
+		INSERT INTO PT_OA_AUTH 
+       ( 
+           SERVICE_ID,
+           URI,
+           ACCESS_KEY,
+           KEY_TYPE,
+           USE_YN,
+           REG_DATE,
+           UP_DATE,
+           CP_ID,
+           SERVICE_LIFE,
+           MAPP_URI,
+		   MAPP_METHOD,
+		   MAPP_SYSTEM
+       ) 
+       VALUES 
+       ( 
+           'TestKey030' 
+           ,'[GET]suxm.uplus.co.kr/v1/noticeinfo' 
+           ,'TestAccKey030' 
+           ,'T' 
+           ,'Y' 
+           ,SYSDATE 
+           ,SYSDATE 
+           ,'cp' 
+           ,'15.10.18'
+           ,'/v1/noticeinfo'
+           ,'GET'
+           ,'suxm.uplus.co.kr'
+       ) 
+	</insert>
+	
+	<delete id="delete_authentication_noticeinfo">
+		DELETE 
+		FROM 
+			PT_OA_AUTH
+		WHERE
+			ACCESS_KEY = 'TestAccKey030'
+	</delete>
+	
+	<!-- 세컨드TV추가 -->
+	<delete id="delete_authentication_notip3">
+		DELETE 
+		FROM 
+			MOGUSER.PT_OA_AUTH
+		WHERE
+			ACCESS_KEY = 'SUXMoaTest052'
+	</delete>
+	
+	<insert id="insert_authentication_notip3">
+		INSERT INTO MOGUSER.PT_OA_AUTH 
+       ( 
+           SERVICE_ID,   
+           URI,
+           ACCESS_KEY,  
+           KEY_TYPE,
+           USE_YN,
+           REG_DATE,
+           UP_DATE,
+           CP_ID,
+           SERVICE_LIFE,
+           MAPP_URI,
+           MAPP_METHOD,
+           MAPP_SYSTEM
+       ) 
+       VALUES 
+       ( 
+           'SUXMoa052'  
+           ,'[GET]suxm.uplus.co.kr/v2/notice/gn001' 
+           ,'SUXMoaTest052'  
+           ,'T' 
+           ,'Y' 
+           ,SYSDATE 
+           ,SYSDATE 
+           ,'cp'               
+           ,'15.10.18'
+           ,'/v2/notice/gn001' 
+           ,'GET' 
+           ,'suxm.uplus.co.kr'
+       ) 
+	</insert>
+	
+	<delete id="delete_authentication_startupnoti">
+		DELETE 
+		FROM 
+			MOGUSER.PT_OA_AUTH
+		WHERE
+			ACCESS_KEY = 'SUXMoaTest059'
+	</delete>
+	
+	<insert id="insert_authentication_startupnoti">
+		INSERT INTO MOGUSER.PT_OA_AUTH 
+       ( 
+           SERVICE_ID,   
+           URI,
+           ACCESS_KEY,  
+           KEY_TYPE,
+           USE_YN,
+           REG_DATE,
+           UP_DATE,
+           CP_ID,
+           SERVICE_LIFE,
+           MAPP_URI,
+           MAPP_METHOD,
+           MAPP_SYSTEM
+       ) 
+       VALUES 
+       ( 
+           'SUXMoa059'  
+           ,'[GET]suxm.uplus.co.kr/v1/startup/noti' 
+           ,'SUXMoaTest059'  
+           ,'T' 
+           ,'Y' 
+           ,SYSDATE 
+           ,SYSDATE 
+           ,'cp'               
+           ,'15.10.18'
+           ,'/v1/startup/noti' 
+           ,'GET' 
+           ,'suxm.uplus.co.kr'
+       ) 
+	</insert>
+	
+	<delete id="delete_authentication_statpaticipation">
+		DELETE 
+		FROM 
+			MOGUSER.PT_OA_AUTH
+		WHERE
+			ACCESS_KEY = 'SUXMoaTest053'
+	</delete>
+	
+	<insert id="insert_authentication_statpaticipation">
+		INSERT INTO MOGUSER.PT_OA_AUTH 
+       ( 
+           SERVICE_ID,   
+           URI,
+           ACCESS_KEY,  
+           KEY_TYPE,
+           USE_YN,
+           REG_DATE,
+           UP_DATE,
+           CP_ID,
+           SERVICE_LIFE,
+           MAPP_URI,
+           MAPP_METHOD,
+           MAPP_SYSTEM
+       ) 
+       VALUES 
+       ( 
+           'SUXMoa053'  
+           ,'[POST]suxm.uplus.co.kr/v1/stat' 
+           ,'SUXMoaTest053'  
+           ,'T' 
+           ,'Y' 
+           ,SYSDATE 
+           ,SYSDATE 
+           ,'cp'               
+           ,'15.10.18'
+           ,'/v1/stat' 
+           ,'POST' 
+           ,'suxm.uplus.co.kr'
+       ) 
+	</insert>
+	<!-- 세컨드TV추가 -->
+<!--
+################################################################################### 
+After Query
+###################################################################################-->
+	<!-- 기존 테이블의 테스트 데이터 삭제 -->
+	<delete id="delete_youtube_test_data">
+		DELETE FROM PT_UX_YOUTUBE
+	</delete>
+	
+	<!-- 백업 테이블에 보관된 데이터를 기존 테이블에 insert -->
+	<insert id="insert_youtube_to_org_table">
+		INSERT INTO PT_UX_YOUTUBE
+		SELECT * FROM PT_UX_YOUTUBE_BACKUP
+	</insert>
+	
+	<!-- 백업 테이블 drop  -->
+	<statement id="drop_youtube_backup_table">
+		DROP TABLE PT_UX_YOUTUBE_BACKUP
+	</statement>
+</sqlMap>

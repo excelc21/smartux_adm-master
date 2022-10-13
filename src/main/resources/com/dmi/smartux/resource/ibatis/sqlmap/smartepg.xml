@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="smartepg">
+	<typeAlias alias="themeinfo" type="com.dmi.smartux.smartepg.vo.ThemeInfoVO"/>
+	<typeAlias alias="realratinginfotheme" type="com.dmi.smartux.smartepg.vo.RealRatingInfoThemeVO"/>
+	<typeAlias alias="realratinginfo" type="com.dmi.smartux.smartepg.vo.RealRatingInfoVO"/>
+	
+	<select id="getThemeInfo" parameterClass="map" resultClass="themeinfo">
+		SELECT ITEM_CODE AS THEME_CODE, ITEM_NM AS THEME_NAME 
+		FROM PT_UX_CODE_ITEMS
+		WHERE CODE = #code#
+		AND USE_YN = 'Y'
+		ORDER BY ORDERED
+	</select>
+	
+	<select id="getRealRatingByTheme" resultClass="realratinginfotheme">
+		SELECT RNUM, SERVICE_ID, CHANNEL_NO, CHANNEL_NAME, PROGRAM_ID
+    		, PROGRAM_NAME, DEFIN_FLAG, PROGRAM_INFO, PROGRAM_STIME, PROGRAM_ETIME, SERIES_FLAG, SERIES_DESC, IMG_URL
+		FROM(
+    		SELECT SERVICE_ID, 'ch11' AS CHANNEL_NO, '우리채널' AS CHANNEL_NAME
+        		, PRO_CD AS PROGRAM_ID, EVENT_NAME AS PROGRAM_NAME, AV_RESOLUTION AS DEFIN_FLAG, '01' AS PROGRAM_INFO 
+        		, START_TIME AS PROGRAM_STIME, END_TIME AS PROGRAM_ETIME, 'Y' AS SERIES_FLAG, '01회' AS SERIES_DESC
+        		, 'imgurl' AS IMG_URL, ROW_NUMBER() OVER(ORDER BY POP_RATING DESC) AS RNUM
+    		FROM T_PROGRAM_REAL_RATING A, T_PROGRAM_THEME B
+    		WHERE B.THEME_CODE = #theme_code#
+    		AND a.THEME_CODE = b.THEME_CODE
+		)
+	</select>
+	
+	<!-- 
+	<select id="getRealRating" resultClass="realratinginfo">
+		SELECT RANK_NO, SERVICE_ID, CHANNEL_NO, CHANNEL_NAME, PROGRAM_ID
+			, PROGRAM_NAME, DEFIN_FLAG, PROGRAM_INFO, PROGRAM_STIME, PROGRAM_ETIME, SERIES_FLAG, SERIES_DESC, RATING, IMG_URL
+		FROM(
+  			SELECT SERVICE_ID, 'ch11' AS CHANNEL_NO, '우리채널' AS CHANNEL_NAME
+  				, PRO_CD AS PROGRAM_ID, EVENT_NAME AS PROGRAM_NAME, AV_RESOLUTION AS DEFIN_FLAG, '01' AS PROGRAM_INFO 
+  				, START_TIME AS PROGRAM_STIME, END_TIME AS PROGRAM_ETIME, 'Y' AS SERIES_FLAG, '01회' AS SERIES_DESC
+  				, TO_CHAR(POP_RATING, 90.9) AS RATING, 'imgurl' AS IMG_URL, ROW_NUMBER() OVER(ORDER BY POP_RATING DESC) AS RANK_NO
+  			FROM T_PROGRAM_REAL_RATING
+		)
+		ORDER BY RANK_NO
+	</select>
+	-->
+	
+	<select id="getRealRating" resultClass="realratinginfo">
+	<!-- 데이터가 없는 임시 테이블을 조회하여 레코드가 존재 하지 않도록 쿼리 조회 (기존 쿼리 잘못되어 조치함) -->
+	<!-- SELECT '' AS RANK_NO
+	       ,'' AS SERVICE_ID
+	       , '' AS CHANNEL_NO
+	       , '' AS CHANNEL_NAME
+	       , '' AS PROGRAM_ID
+	       , '' AS PROGRAM_NAME
+	       , '' AS LOCALAREACODE
+	       , '' AS IMG_URL
+		FROM  TB_TEMP
+	 -->
+	 <![CDATA[
+	  SELECT
+		        DENSE_RANK() OVER (ORDER BY TO_NUMBER(B.RANKING) ) AS RANK_NO
+		       , C.SERVICE_ID AS SERVICE_ID
+		       , C.CHANNELNUMBER AS CHANNEL_NO
+		       , C.CHNL_NAME AS CHANNEL_NAME
+		       , A.EVENT_ID AS PROGRAM_ID
+		       , A.PRO_NAME AS PROGRAM_NAME
+		       , C.LOCALAREACODE AS LOCALAREACODE
+		       , F_SERVER_URL('E')||'LIVE_'||C.SERVICE_ID||'_287_190.jpg' AS IMG_URL
+		       , ROUND(B.POP_RATING, 3) AS POP_RATING
+		        FROM   PT_LE_AV_EPG A,   AVBM_QBIC_3MIN_TB B, PT_CD_PLAY_CHNL C
+		        WHERE A.CHNL_CD = 'CH'||C.SERVICE_ID
+		        AND   C.USE_YN = 'Y'
+		        AND   C.CHANNELNUMBER = B.CH_NO
+		AND   A.PRO_DATE = TO_CHAR(SYSDATE, 'YYYYMMDD')
+		AND   A.PRO_TIME <= TO_CHAR(SYSDATE, 'HH24MISS')
+		AND   A.PRO_ENDTIME > TO_CHAR(SYSDATE, 'HH24MISS')
+		        ORDER BY TO_NUMBER(RANKING)
+	  ]]>		
+	</select>
+	
+	<select id="getRealRating_TEMP" resultClass="realratinginfo">
+	<![CDATA[
+		SELECT
+		        B.RANKING AS RANK_NO
+		       , C.SERVICE_ID AS SERVICE_ID
+		       , C.CHANNELNUMBER AS CHANNEL_NO
+		       , C.CHNL_NAME AS CHANNEL_NAME
+		       , A.EVENT_ID AS PROGRAM_ID
+		       , A.PRO_NAME AS PROGRAM_NAME
+		       , C.LOCALAREACODE AS LOCALAREACODE
+		       , F_SERVER_URL('E')||'LIVE_'||C.SERVICE_ID||'_287_190.jpg' AS IMG_URL
+		        FROM   PT_LE_AV_EPG A,   AVBM_QBIC_3MIN_TB B, PT_CD_PLAY_CHNL C
+		        WHERE 1= 1 
+		      	  AND   C.USE_YN = 'Y'
+		      	  AND   A.PRO_DATE||A.PRO_TIME <= '20120517090000'
+   				  AND   A.PRO_DATE||A.PRO_ENDTIME > '20120517090000'
+				  ORDER BY TO_NUMBER(RANKING)
+	]]>		
+	</select>
+		
+	<select id="getRealRating_BACKUP" resultClass="realratinginfo">
+	<!-- 
+	실시간 시청률과 관련하여 이미지 url을 만들어야 하는 상황이 있다.
+	그때 앞에 시작하는 부분(ex: http://123.456.789.100/images/ 이런 부분)을 다음의 오라클 함수를 실행하여 가져온다 
+	SELECT F_SERVER_URL('P') FROM DUAL(P는 포스터, E는 EPG 썸네일, 아마도 E를 쓰게 될 것이다)
+	
+	현재는 쌓이는 데이터가 조회가 되어야 하는 관계로 특정 시간(2012년 05월 16일 16시 17분 00초)로 주어서 조회하도록 했지만
+	실제 운영환경으로 바뀔땐 주석처리 해놓은 sysdate를 이용하는 조건으로 바꾸어야 한다
+	-->
+	
+	SELECT B.RANKING AS RANK_NO
+       , C.SERVICE_ID AS SERVICE_ID
+       , C.CHANNELNUMBER AS CHANNEL_NO
+       , C.CHNL_NAME AS CHANNEL_NAME
+       , A.EVENT_ID AS PROGRAM_ID
+       , A.PRO_NAME AS PROGRAM_NAME
+       , C.LOCALAREACODE AS LOCALAREACODE
+       , F_SERVER_URL('E')||'LIVE_'||C.SERVICE_ID||'_287_190.jpg' AS IMG_URL
+	FROM   PT_LE_AV_EPG A, AVBM_QBIC_3MIN_TB B, PT_CD_PLAY_CHNL C
+	WHERE A.CHNL_CD = 'CH'||C.SERVICE_ID
+	AND   C.USE_YN='Y'
+	AND   C.CHANNELNUMBER = B.CH_NO
+	<!-- 
+	AND   A.PRO_DATE||A.PRO_TIME &lt;= '20120517090000'
+	AND   A.PRO_DATE||A.PRO_ENDTIME &gt;= '20120517090000'
+	--> 
+	AND   A.PRO_DATE||A.PRO_TIME &lt;= TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+	AND   A.PRO_DATE||A.PRO_ENDTIME &gt; TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+	ORDER BY TO_NUMBER(RANKING)
+	</select>
+	
+</sqlMap>

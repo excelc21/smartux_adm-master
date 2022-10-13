@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="admin_profileMaster">
+	<resultMap id="profileMasterMap" class="com.dmi.smartux.admin.profile.vo.ProfileMasterVO">
+		<result property="profileMstId" column="PROFILE_MST_ID" />
+		<result property="profileMstName" column="PROFILE_MST_NAME" />
+		<result property="regDate" column="REG_DATE" />
+	</resultMap>
+
+	<select id="getProfileMasterList" parameterClass="com.dmi.smartux.admin.profile.vo.ProfileMasterVO" resultMap="profileMasterMap">
+		SELECT  PROFILE_MST_ID,
+				PROFILE_MST_NAME,
+				SERVICE_TYPE,
+				TO_CHAR(TO_DATE(REG_DATE,'YYYY-MM-DD HH24:MI:SS'),'YYYY-MM-DD HH24:MI:SS')  AS REG_DATE 
+		FROM PT_CM_PROFILE_IMG_MST
+		WHERE 1=1
+		<isEmpty property="serviceType">
+            AND SERVICE_TYPE IS null
+        </isEmpty>
+        <isNotEmpty property="serviceType">
+            AND SERVICE_TYPE = #serviceType#
+        </isNotEmpty>
+		ORDER BY REG_DATE
+	</select>
+	
+	<select id="checkProfileMaster" parameterClass="com.dmi.smartux.admin.profile.vo.ProfileMasterVO" resultClass="int">
+        SELECT  count(1)
+        FROM PT_CM_PROFILE_IMG_MST
+        WHERE 1=1
+        AND PROFILE_MST_ID = #profileMstId#
+    </select>
+
+	<insert id="insertProfileMaster" parameterClass="com.dmi.smartux.admin.profile.vo.ProfileMasterVO">
+		INSERT INTO
+		PT_CM_PROFILE_IMG_MST
+		(
+		PROFILE_MST_ID,
+		PROFILE_MST_NAME,
+		SERVICE_TYPE,
+		REG_DATE 
+		)
+		VALUES
+		(
+		#profileMstId#,
+		#profileMstName#,
+		#serviceType#,
+		TO_CHAR (SYSDATE, 'yyyymmddHH24MISS')
+		)
+	</insert>
+	
+	<update id="updateProfileMaster" parameterClass="com.dmi.smartux.admin.profile.vo.ProfileMasterVO">
+		UPDATE PT_CM_PROFILE_IMG_MST
+		SET
+		PROFILE_MST_NAME=#profileMstName#
+		WHERE
+		PROFILE_MST_ID = #profileMstId#
+		<isEmpty property="serviceType">
+            AND SERVICE_TYPE IS null
+        </isEmpty>
+        <isNotEmpty property="serviceType">
+            AND SERVICE_TYPE = #serviceType#
+        </isNotEmpty>
+	</update>
+
+	<delete id="deleteProfileMaster" parameterClass="com.dmi.smartux.admin.profile.vo.ProfileMasterVO">
+		DELETE FROM
+		PT_CM_PROFILE_IMG_MST
+		WHERE
+		PROFILE_MST_ID = #profileMstId#
+	</delete>
+</sqlMap>

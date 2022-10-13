@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="test_wishlist">
+
+	<!-- 백업 테이블 create  -->
+	<statement id="create_wishlist_backup_table">
+		CREATE TABLE PT_VO_FAVORITE_BACKUP (
+		  SA_ID            VARCHAR2(20)      NOT NULL, 
+		  MAC_ADDR         VARCHAR2(38)      NOT NULL, 
+		  CONTENTS_ID      VARCHAR2(20)      NOT NULL, 
+		  FAV_IDX          VARCHAR2(10)          NULL, 
+		  CONTENTS_NAME    VARCHAR2(200)         NULL, 
+		  CHA_NUM          VARCHAR2(10)          NULL, 
+		  PRICE            NUMBER(15, 2)         NULL, 
+		  PR_INFO          VARCHAR2(5)           NULL, 
+		  CATEGORY_ID      VARCHAR2(5)           NULL, 
+		  REG_UPDATE       VARCHAR2(8)           NULL, 
+		  RESULT_TYPE      VARCHAR2(3)           NULL
+		)
+	</statement>
+
+	<!-- TEMP 테이블 create  -->
+	<statement id="create_wishlist_temp_table">
+		CREATE TABLE PT_VO_FAVORITE_TEMP (
+		  SA_ID            VARCHAR2(20)      NOT NULL, 
+		  MAC_ADDR         VARCHAR2(38)      NOT NULL, 
+		  CONTENTS_ID      VARCHAR2(20)      NOT NULL, 
+		  FAV_IDX          VARCHAR2(10)          NULL, 
+		  CONTENTS_NAME    VARCHAR2(200)         NULL, 
+		  CHA_NUM          VARCHAR2(10)          NULL, 
+		  PRICE            NUMBER(15, 2)         NULL, 
+		  PR_INFO          VARCHAR2(5)           NULL, 
+		  CATEGORY_ID      VARCHAR2(5)           NULL, 
+		  REG_UPDATE       VARCHAR2(8)           NULL, 
+		  RESULT_TYPE      VARCHAR2(3)           NULL
+		)
+	</statement>
+	
+	<!-- 기존 테이블의 기존 데이터를 백업 테이블에 insert -->
+	<insert id="insert_wishlist_backup_table" >
+		INSERT INTO PT_VO_FAVORITE_BACKUP			
+		SELECT * FROM PT_VO_FAVORITE WHERE sa_id = '210078530576' AND mac_addr = '001c.6270.4d19'
+	</insert>
+	
+	<!-- 기존 테이블의 기존 데이터를 TEMP 테이블에 insert -->
+	<insert id="insert_wishlist_temp_table" >
+		INSERT INTO PT_VO_FAVORITE_TEMP			
+		SELECT * FROM PT_VO_FAVORITE WHERE sa_id = '210078530576' AND mac_addr = '001c.6270.4d19'
+	</insert>
+	
+	<!-- 기존 테이블의 기존 데이터 삭제 -->
+	<delete id="delete_org_wishlist_data" >
+		DELETE FROM VODUSER.PT_VO_FAVORITE WHERE sa_id = '210078530576' AND mac_addr = '001c.6270.4d19'
+	</delete>
+	
+	<!-- 테스트 데이터를 기존 테이블에 insert-->
+	<insert id="insert_test_data_to_org_wishlist_table1" >
+		INSERT INTO VODUSER.PT_VO_FAVORITE( SA_ID, MAC_ADDR, CONTENTS_ID,FAV_IDX,CONTENTS_NAME,CHA_NUM, PRICE, PR_INFO, CATEGORY_ID, REG_UPDATE, RESULT_TYPE )
+		VALUES(
+			'210078530576'
+			, '001c.6270.4d19'
+    		, 'M01126KA34PPV00'
+    		, '1'
+			, 'TEST1'
+    		, ''
+    		, '5500'
+    		, '01'
+    		, 'E1909'
+    		,SYSDATE
+    		, ''
+		)
+	</insert>
+	
+	<insert id="insert_test_data_to_org_wishlist_table2" >
+		INSERT INTO VODUSER.PT_VO_FAVORITE( SA_ID, MAC_ADDR, CONTENTS_ID,FAV_IDX,CONTENTS_NAME,CHA_NUM, PRICE, PR_INFO, CATEGORY_ID, REG_UPDATE, RESULT_TYPE )
+		VALUES(
+			'210078530576'
+			, '001c.6270.4d19'
+    		, 'M011267B71PPV00'
+    		, '2'
+			, 'TEST2'
+    		, '02'
+    		, '700'
+    		, '04'
+    		, 'E2233'
+    		,SYSDATE
+    		, ''
+		)
+	</insert>
+	
+	<insert id="insert_test_data_to_org_wishlist_table3" >
+		INSERT INTO VODUSER.PT_VO_FAVORITE( SA_ID, MAC_ADDR, CONTENTS_ID,FAV_IDX,CONTENTS_NAME,CHA_NUM, PRICE, PR_INFO, CATEGORY_ID, REG_UPDATE, RESULT_TYPE )
+		VALUES(
+			'210078530576'
+			, '001c.6270.4d19'
+    		, 'M011264A45PPV00'
+    		, '3'
+			, 'TEST3'
+    		, ''
+    		, '4000'
+    		, '03'
+    		, 'E1101'
+    		,SYSDATE
+    		, ''
+		)
+	</insert>
+	
+	<insert id="insert_test_data_to_org_wishlist_table4" >
+		INSERT INTO VODUSER.PT_VO_FAVORITE( SA_ID, MAC_ADDR, CONTENTS_ID,FAV_IDX,CONTENTS_NAME,CHA_NUM, PRICE, PR_INFO, CATEGORY_ID, REG_UPDATE, RESULT_TYPE )
+		VALUES(
+			'210078530576'
+			, '001c.6270.4d19'
+    		, 'M01125VA30PPV00'
+    		, '4'
+			, 'TEST4'
+    		, ''
+    		, '2500'
+    		, '05'
+    		, 'M0111'
+    		,SYSDATE
+    		, ''
+		)
+	</insert>
+	
+	<insert id="insert_test_data_to_org_wishlist_table5" >
+		INSERT INTO VODUSER.PT_VO_FAVORITE( SA_ID, MAC_ADDR, CONTENTS_ID,FAV_IDX,CONTENTS_NAME,CHA_NUM, PRICE, PR_INFO, CATEGORY_ID, REG_UPDATE, RESULT_TYPE )
+		VALUES(
+			'210078530576'
+			, '001c.6270.4d19'
+    		, 'M011265A65PPV00'
+    		, '5'
+			, 'TEST5'
+    		, ''
+    		, '2500'
+    		, '05'
+    		, 'M0111'
+    		,SYSDATE
+    		, ''
+		)
+	</insert>
+	
+	<!-- 기존 테이블의 테스트 데이터 삭제 -->
+	<delete id="delete_test_wishlist_data" >
+		DELETE FROM VODUSER.PT_VO_FAVORITE WHERE sa_id = '210078530576' AND mac_addr = '001c.6270.4d19'
+	</delete>
+	
+	<!-- 백업 테이블에 보관된 데이터를 기존 테이블에 insert -->
+	<insert id="insert_wishlist_to_org_table" >
+		INSERT INTO VODUSER.PT_VO_FAVORITE
+		SELECT * FROM PT_VO_FAVORITE_BACKUP WHERE sa_id = '210078530576' AND mac_addr = '001c.6270.4d19'
+	</insert>
+	
+	<!-- 백업 테이블 drop  -->
+	<statement id="drop_wishlist_backup_table">
+		DROP TABLE PT_VO_FAVORITE_BACKUP
+	</statement>
+		
+</sqlMap>

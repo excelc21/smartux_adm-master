@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="paper_iptv">
+	<typeAlias alias="panelTitleTreamVO" type="com.dmi.smartux.admin.mainpanel.vo.PanelTitleTreamVO"/>
+	
+	<!-- 노출단말등록-->
+    <insert id="insertPaperTerminal" parameterClass="map">
+        
+        MERGE INTO PT_UX_PANEL_TITLE_TERM S
+            USING DUAL ON (S.PAPER_ID = #paper_id# AND S.TERM_MODEL = #term_model#)
+        WHEN NOT MATCHED THEN
+            INSERT (S.PAPER_ID, S.TERM_MODEL) 
+            VALUES (#paper_id#, #term_model#)
+
+    </insert>
+    
+    <!-- 노출단말 조회 -->
+    <select id="getPaperTerminal" parameterClass="string" resultClass="string">
+        SELECT 
+           TERM_MODEL
+        FROM 
+           PT_UX_PANEL_TITLE_TERM
+        WHERE PAPER_ID = #paper_id#
+    </select>
+    
+    <!-- 노출단말 삭제-->
+    <delete id="deletePaperTerminal" parameterClass="string" >
+        DELETE FROM PT_UX_PANEL_TITLE_TERM WHERE PAPER_ID = #paper_id#
+    </delete>
+    
+    <!-- 노출단말 조회 -->
+    <select id="getLikePaperTerminal" parameterClass="string" resultClass="panelTitleTreamVO">
+        SELECT 
+           PAPER_ID, TERM_MODEL
+        FROM 
+           PT_UX_PANEL_TITLE_TERM
+        WHERE PAPER_ID LIKE #paper_id#||'%' 
+    </select>
+    
+     <!-- 노출단말 삭제-->
+    <delete id="deleteLikePaperTerminal" parameterClass="string" >
+        DELETE FROM PT_UX_PANEL_TITLE_TERM WHERE PAPER_ID LIKE #paper_id#||'%' 
+    </delete>
+
+</sqlMap>

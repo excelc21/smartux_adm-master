@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="multipayment">
+	<typeAlias alias="multipaymentSearchVo" type="com.dmi.smartux.admin.multipayment.vo.MultiPaymentSearchVo"/>
+	<typeAlias alias="multipaymentVo" type="com.dmi.smartux.admin.multipayment.vo.MultiPaymentVo"/>
+	<typeAlias alias="ptuxpaymentppmVo" type="com.dmi.smartux.admin.multipayment.vo.PtUxPaymentPpmVo"/>
+
+	<select id="multipaymentList" parameterClass="multipaymentSearchVo" resultClass="multipaymentVo">
+		SELECT A.*
+		FROM (
+		SELECT /*+ INDEX(INFO IDX_PT_PAYMENT_MULTI_LOG_02)*/
+		ROW_NUMBER() OVER(ORDER BY PA_REG_DT DESC) AS ROWNO
+		,PT_YEAR
+		,PT_MONTH
+		,PA_KEY
+		,PA_TYPE
+		,PA_STATUS
+		,TO_CHAR(TO_DATE(PA_REG_DT, 'YYMMDDHH24MISS'), 'YYYY-MM-DD HH24:MI:SS') AS PA_REG_DT
+		,TO_CHAR(TO_DATE(PA_MOD_DT, 'YYMMDDHH24MISS'), 'YYYY-MM-DD HH24:MI:SS') AS PA_MOD_DT
+		,PA_FLAG
+		,PA_MESSAGE
+		,M_TYPE
+		,APP_TYPE
+		,SA_ID
+		,STB_MAC
+		,PROD_CATE
+		,PROD_ID
+		,PROD_NAME
+		,DISCOUNT_DIV
+		,DISCOUNT_PRICE
+		,CPN_EVT_ID
+		,CPN_NO
+		,CPN_OFFER_TYPE
+		,TO_NUMBER(NVL(PROD_PRICE, 0)) AS PROD_PRICE
+		,TO_NUMBER(NVL(PROD_PRICE_SALE, 0)) AS PROD_PRICE_SALE
+		,TO_NUMBER(NVL(DATAFREE_PRICE, 0)) AS DATAFREE_PRICE
+		,TO_NUMBER(NVL(DATAFREE_PRICE_SALE, 0)) AS DATAFREE_PRICE_SALE
+		,TO_NUMBER(NVL(TOTAL_PRICE, -1)) AS TOTAL_PRICE
+		,BUY_TYPE
+		,BUY_GB
+		,PROD_PACKAGE
+		,FAILOVER_DIV
+		FROM
+		PT_UX_PAYMENT_MULTI_INFO INFO
+		WHERE
+		<isEqual property="compareYear" compareValue="1">
+			PT_YEAR = TO_CHAR(MOD(SUBSTR(#startDt#, 1, 4), 2))
+			<isNotEmpty property="month_list">
+				AND PT_MONTH IN
+				<iterate property="month_list" open="(" close=")" conjunction=",">
+					#month_list[]#
+				</iterate>
+			</isNotEmpty>
+
+		</isEqual>
+		<isNotEqual property="compareYear" compareValue="1">
+			(
+			(PT_YEAR = MOD(SUBSTR(#startDt#, 1, 4), 2) AND PT_MONTH <![CDATA[>=]]>  TO_CHAR(TO_NUMBER(SUBSTR(#startDt#, 6, 2))))
+			OR
+			(PT_YEAR = MOD(SUBSTR(#endDt#, 1, 4), 2) AND PT_MONTH  <![CDATA[<=]]>  TO_CHAR(TO_NUMBER(SUBSTR(#endDt#, 6, 2))))
+			)
+		</isNotEqual>
+		<isNotEmpty prepend="AND" property="mtype">
+			(M_TYPE = #mtype#)
+		</isNotEmpty>
+		<isEmpty prepend="AND" property="mtype">
+			(M_TYPE = '2' OR M_TYPE = '3')
+		</isEmpty>
+		<isNotEmpty property="downloadDt">
+			AND PA_REG_DT <![CDATA[<=]]> #downloadDt#
+		</isNotEmpty>
+		AND PA_REG_DT BETWEEN REPLACE(#startDt#, '-') || '000000' AND REPLACE(#endDt#, '-') || '235959'
+		<isNotEmpty prepend="AND" property="findValue">
+			$findName$ LIKE '%$findValue$%'
+		</isNotEmpty>
+		<isNotEmpty prepend="AND" property="status">
+			PA_STATUS = #status#
+		</isNotEmpty>
+		<isNotEmpty prepend="AND" property="paType">
+			PA_TYPE = #paType#
+		</isNotEmpty>
+		<isNotEmpty prepend="AND" property="discount_div">
+			REPLACE(DISCOUNT_DIV, ',') LIKE  REPLACE(#discount_div#, '0', '_')
+		</isNotEmpty>
+		<isNotEmpty prepend="AND" property="find_pa_key">
+			PA_KEY LIKE '$find_pa_key$%'
+		</isNotEmpty>
+		) A
+		WHERE ROWNO BETWEEN '$start_rnum$' AND '$end_rnum$'
+	</select>
+
+	<select id="multipaymentListCount" parameterClass="multipaymentSearchVo" resultClass="int">
+		SELECT /*+ INDEX(INFO IDX_PT_PAYMENT_MULTI_LOG_02)*/
+		COUNT(PA_KEY)
+		FROM
+		PT_UX_PAYMENT_MULTI_INFO INFO
+		WHERE
+		<isEqual property="compareYear" compareValue="1">
+			PT_YEAR = TO_CHAR(MOD(SUBSTR(#startDt#, 1, 4), 2))
+			<isNotEmpty property="month_list">
+				AND PT_MONTH IN
+				<iterate property="month_list" open="(" close=")" conjunction=",">
+					#month_list[]#
+				</iterate>
+			</isNotEmpty>
+		</isEqual>
+		<isNotEqual property="compareYear" compareValue="1">
+			(
+			(PT_YEAR = MOD(SUBSTR(#startDt#, 1, 4), 2) AND PT_MONTH <![CDATA[>=]]>  TO_CHAR(TO_NUMBER(SUBSTR(#startDt#, 6, 2))))
+			OR
+			(PT_YEAR = MOD(SUBSTR(#endDt#, 1, 4), 2) AND PT_MONTH  <![CDATA[<=]]>  TO_CHAR(TO_NUMBER(SUBSTR(#endDt#, 6, 2))))
+			)
+		</isNotEqual>
+		<isNotEmpty prepend="AND" property="mtype">
+			(M_TYPE = #mtype#)
+		</isNotEmpty>
+		<isEmpty prepend="AND" property="mtype">
+			(M_TYPE = '2' OR M_TYPE = '3')
+		</isEmpty>
+		<isNotEmpty property="downloadDt">
+			AND PA_REG_DT <![CDATA[<=]]> #downloadDt#
+		</isNotEmpty>
+		AND PA_REG_DT BETWEEN REPLACE(#startDt#, '-') || '000000' AND REPLACE(#endDt#, '-') || '235959'
+		<isNotEmpty prepend="AND" property="findValue">
+			$findName$ LIKE '%$findValue$%'
+		</isNotEmpty>
+		<isNotEmpty prepend="AND" property="status">
+			PA_STATUS = #status#
+		</isNotEmpty>
+		<isNotEmpty prepend="AND" property="paType">
+			PA_TYPE = #paType#
+		</isNotEmpty>
+		<isNotEmpty prepend="AND" property="discount_div">
+			REPLACE(DISCOUNT_DIV, ',') LIKE  REPLACE(#discount_div#, '0', '_')
+		</isNotEmpty>
+		<isNotEmpty prepend="AND" property="find_pa_key">
+			PA_KEY LIKE '$find_pa_key$%'
+		</isNotEmpty>
+	</select>
+
+	<select id="multipaymentInfo" parameterClass="multipaymentSearchVo" resultClass="multipaymentVo">
+		SELECT
+		ppmi.*
+		, pccb.USE_YN AS COUPON_STATUS
+		, ppms.STATUS AS MEMBERSHIP_STATUS
+		, pptv.STATUS AS TVPOINT_STATUS
+		<isEqual property="type" compareValue="H">
+			, ppci.STATUS AS PG_STATUS
+		</isEqual>
+		<isEqual property="type" compareValue="P">
+			, ppmi.PA_STATUS AS PG_STATUS
+		</isEqual>
+		<isEqual property="type" compareValue="S">
+			, ppmi.PA_STATUS AS PG_STATUS
+		</isEqual>
+		FROM (
+		SELECT
+		ppmi.PT_YEAR ,
+		ppmi.PT_MONTH ,
+		ppmi.PA_KEY ,
+		ppmi.PA_TYPE ,
+		ppmi.PA_STATUS ,
+		TO_CHAR(TO_DATE(ppmi.PA_REG_DT, 'YYMMDDHH24MISS'), 'YYYY-MM-DD HH24:MI:SS') AS PA_REG_DT ,
+		TO_CHAR(TO_DATE(ppmi.PA_MOD_DT, 'YYMMDDHH24MISS'), 'YYYY-MM-DD HH24:MI:SS') AS PA_MOD_DT ,
+		ppmi.PA_FLAG ,
+		ppmi.PA_MESSAGE ,
+		ppmi.M_TYPE ,
+		ppmi.APP_TYPE ,
+		ppmi.BUY_TYPE ,
+		ppmi.BUY_GB ,
+		ppmi.SA_ID ,
+		ppmi.STB_MAC ,
+		ppmi.PROD_CATE ,
+		ppmi.PROD_ID ,
+		ppmi.PROD_NAME ,
+		ppmi.PROD_PACKAGE ,
+		ppmi.DISCOUNT_DIV ,
+		ppmi.DISCOUNT_PRICE ,
+		ppmi.CPN_EVT_ID ,
+		ppmi.CPN_NO ,
+		ppmi.CPN_OFFER_TYPE ,
+		ppmi.CPN_TYPE ,
+		ppmi.FAILOVER_DIV ,
+		TO_NUMBER(NVL(ppmi.PROD_PRICE, 0))          AS PROD_PRICE ,
+		TO_NUMBER(NVL(ppmi.PROD_PRICE_SALE, 0))     AS PROD_PRICE_SALE ,
+		TO_NUMBER(NVL(ppmi.DATAFREE_PRICE, 0))      AS DATAFREE_PRICE ,
+		TO_NUMBER(NVL(ppmi.DATAFREE_PRICE_SALE, 0)) AS DATAFREE_PRICE_SALE ,
+		TO_NUMBER(NVL(ppmi.TOTAL_PRICE, -1))        AS TOTAL_PRICE
+		FROM    PT_UX_PAYMENT_MULTI_INFO ppmi
+		WHERE
+		ppmi.PT_YEAR = #pt_year# AND
+		ppmi.PT_MONTH = #pt_month# AND
+		ppmi.PA_KEY = #paKey#
+		) ppmi
+		LEFT JOIN PT_UX_COUPON_BOX pccb ON
+		( pccb.PT_SAID = MOD(NVL(SUBSTR(ppmi.SA_ID, -2),ppmi.SA_ID),33) AND pccb.PT_YEAR = TO_NUMBER(TO_CHAR(SYSTIMESTAMP,'Y')) AND pccb.CPN_NO  = ppmi.CPN_NO )
+		OR
+		( pccb.PT_SAID = MOD(NVL(SUBSTR(ppmi.SA_ID, -2),ppmi.SA_ID),33) AND pccb.PT_YEAR = TO_NUMBER(TO_CHAR(ADD_MONTHS(SYSTIMESTAMP,-12),'Y')) AND pccb.CPN_NO  = ppmi.CPN_NO )
+		LEFT JOIN PT_PAYMENT_MEMBERSHIP ppms ON
+		( ppms.PT_YEAR  = #pt_year# AND ppms.PT_MONTH = #pt_month# AND ppms.PA_KEY   = #paKey# )
+		<isEqual property="pt_month" compareValue="12">
+			OR
+			( ppms.PT_YEAR  = MOD(#pt_year# + 1, 2) AND ppms.PT_MONTH = '1' AND ppms.PA_KEY   = #paKey# )
+		</isEqual>
+		LEFT JOIN PT_PAYMENT_TVPOINT pptv ON
+		( pptv.PT_YEAR  = #pt_year# AND pptv.PT_MONTH = #pt_month# AND pptv.PA_KEY   = #paKey# )
+		<isEqual property="pt_month" compareValue="12">
+			OR
+			( pptv.PT_YEAR  = MOD(#pt_year# + 1, 2) AND pptv.PT_MONTH = '1' AND pptv.PA_KEY   = #paKey# )
+		</isEqual>
+
+		<isEqual property="type" compareValue="H">
+			LEFT JOIN PT_PAYMENT_CARD_INFO ppci ON
+			( ppci.PT_YEAR  = #pt_year# AND ppci.PT_MONTH = #pt_month# AND ppci.PA_KEY   = #paKey# )
+			<isEqual property="pt_month" compareValue="12">
+				OR
+				( ppci.PT_YEAR  = MOD(#pt_year# + 1, 2) AND ppci.PT_MONTH = '1' AND ppci.PA_KEY   = #paKey# )
+			</isEqual>
+		</isEqual>
+	</select>
+
+
+<select id="multipaymentListBypakey" parameterClass="ptuxpaymentppmVo" resultClass="ptuxpaymentppmVo">
+SELECT a.SA_ID , a.PRODUCT_CODE , a.PRODUCT_NAME , a.PA_STATUS , a.PA_KEY ,  a.PA_REG_DT 
+FROM (SELECT ROW_NUMBER() OVER(ORDER BY PA_REG_DT DESC) AS ROWNO ,  smart.SA_ID , smart.PRODUCT_CODE , smart.PRODUCT_NAME , smart.PA_STATUS , smart.PA_KEY , smart.PA_REG_DT 
+FROM SMARTUX.PT_UX_PAYMENT_PPM_INFO smart
+WHERE smart.PA_KEY = #pa_key# AND smart.PA_REG_DT BETWEEN #start_dt# and #end_dt#  ) a
+WHERE ROWNO BETWEEN #start_rnum# AND #end_rnum#
+</select>
+
+<select id="multipaymentCountBypakey" parameterClass="ptuxpaymentppmVo" resultClass="int">
+SELECT count(PA_KEY) FROM SMARTUX.PT_UX_PAYMENT_PPM_INFO
+WHERE PA_KEY = #pa_key# AND PA_REG_DT BETWEEN #start_dt# and #end_dt#
+</select>
+
+<select id="multipaymentListBysaid" parameterClass="ptuxpaymentppmVo" resultClass="ptuxpaymentppmVo">
+
+SELECT a.SA_ID , a.PRODUCT_CODE , a.PRODUCT_NAME , a.PA_STATUS , a.PA_KEY ,  a.PA_REG_DT 
+FROM (SELECT ROW_NUMBER() OVER(ORDER BY PA_REG_DT DESC) AS ROWNO ,  smart.SA_ID , smart.PRODUCT_CODE , smart.PRODUCT_NAME , smart.PA_STATUS , smart.PA_KEY , smart.PA_REG_DT 
+FROM SMARTUX.PT_UX_PAYMENT_PPM_INFO smart
+WHERE smart.SA_ID = #sa_id# AND smart.PA_REG_DT BETWEEN #start_dt# and #end_dt# ) a
+WHERE ROWNO BETWEEN #start_rnum# AND #end_rnum#
+</select>
+
+<select id="multipaymentCountBysaid" parameterClass="ptuxpaymentppmVo" resultClass="int">
+SELECT count(PA_KEY) FROM SMARTUX.PT_UX_PAYMENT_PPM_INFO 
+WHERE SA_ID = #sa_id# AND PA_REG_DT BETWEEN #start_dt# and #end_dt#
+</select>
+
+<select id="multipaymentListBydate" parameterClass="ptuxpaymentppmVo" resultClass="ptuxpaymentppmVo">
+
+SELECT a.SA_ID , a.PRODUCT_CODE , a.PRODUCT_NAME , a.PA_STATUS , a.PA_KEY ,  a.PA_REG_DT 
+FROM (SELECT ROW_NUMBER() OVER(ORDER BY PA_REG_DT DESC) AS ROWNO ,  smart.SA_ID , smart.PRODUCT_CODE , smart.PRODUCT_NAME , smart.PA_STATUS , smart.PA_KEY , smart.PA_REG_DT 
+FROM SMARTUX.PT_UX_PAYMENT_PPM_INFO smart
+WHERE smart.PA_REG_DT BETWEEN #start_dt# and #end_dt# ) a
+WHERE ROWNO BETWEEN #start_rnum# AND #end_rnum#
+</select>
+
+<select id="multipaymentCountBydate" parameterClass="ptuxpaymentppmVo" resultClass="int">
+SELECT count(PA_KEY) FROM SMARTUX.PT_UX_PAYMENT_PPM_INFO
+WHERE PA_REG_DT BETWEEN #start_dt# and #end_dt#
+</select>
+
+
+<select id="multipaymentPpmInfo" parameterClass="ptuxpaymentppmVo" resultClass="ptuxpaymentppmVo">
+SELECT PA_KEY , PA_STATUS , PA_FLAG , PA_MESSAGE , SA_ID , STB_MAC , PRODUCT_CODE , PRODUCT_NAME , PA_REG_DT , PA_MOD_DT
+FROM SMARTUX.PT_UX_PAYMENT_PPM_INFO 
+WHERE PA_KEY = #pa_key#
+</select>
+
+
+</sqlMap>
+

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMapConfig PUBLIC "-//ibatis.apache.org//DTD SQL Map Config 2.0//EN"
+    "http://ibatis.apache.org/dtd/sql-map-config-2.dtd">
+<sqlMapConfig>
+	<settings 
+		useStatementNamespaces="true"
+	/>
+	
+	<!-- 발화어 -->
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/admin_keyword.xml" />
+	
+	<!-- 말풍선 -->
+    <sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/admin_bubble_iptv.xml" />
+    
+    <!-- 가이드채널 -->
+    <sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/admin_guidelink.xml" />
+    
+    <!-- abtest -->
+    <sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/admin_abtest.xml" />
+    
+    <!-- IMCS 정보등록 -->
+    <sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/imcs_info.xml" />
+    
+    <!-- BPAS 편성관리 -->
+    <sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/admin_bpas.xml" />
+    
+    <!-- password log -->
+    <sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/admin_pass.xml" />
+    
+    <!-- menu check -->
+    <sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/admin_menu.xml" />
+    
+    <!-- 지면관리 노출단말 -->
+    <sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/paper_iptv.xml" />
+    
+</sqlMapConfig>

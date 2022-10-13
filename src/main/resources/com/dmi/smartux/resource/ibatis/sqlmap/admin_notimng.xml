@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="admin_notimng">
+
+	<typeAlias alias="notiMngViewVO" type="com.dmi.smartux.admin.notimng.vo.NotiMngViewVO"/>
+
+	<select id=  "getNotiMngViewList"  parameterClass="java.util.HashMap" resultClass="java.util.HashMap" remapResults="true">
+	SELECT 
+		*
+	FROM 
+		PT_HDTV_BBS_MASTER
+	WHERE
+	    BBS_GBN = #bbs_Gbn#	AND SCR_TP = #scr_Type#
+	ORDER BY
+	    BBS_ID DESC
+	</select> 
+	
+	<select id = "getNotiBbsidCheck" parameterClass="String" resultClass="string" remapResults="true">
+    SELECT 
+        COUNT(BBS_ID) 
+    FROM 
+        PT_HDTV_BBS_MASTER 
+    WHERE 
+        BBS_ID = #bbs_Id#
+	</select>
+ 	<update id= "setNotiMngUpdate"  parameterClass="java.util.HashMap" >
+	UPDATE PT_HDTV_BBS_MASTER
+		SET 
+	BBS_NM =#bbs_Nm# , MOD_DT = SYSDATE , VERSION = VERSION+1 , MOD_ID = #bbs_Mod_Id#
+		WHERE 
+	BBS_ID =#bbs_Id#
+	</update> 
+	
+	<update id= "setNotiMngDelete"  parameterClass="java.util.HashMap" >
+	UPDATE  PT_HDTV_BBS_MASTER
+	    SET
+	DEL_YN = #del_Yn#
+	    WHERE
+	BBS_ID = #bbs_Id#    
+	</update> 
+	
+	<insert id="setNotiMngInsert"  parameterClass="java.util.HashMap">
+	INSERT INTO 
+	    PT_HDTV_BBS_MASTER (BBS_ID,BBS_GBN,BBS_NM,DEL_YN,REG_DT,MOD_DT,VERSION,REG_ID,MOD_ID,SCR_TP)
+	VALUES
+	    (#bbs_Id#,#bbs_Gbn#,#bbs_Nm#,0,SYSDATE,null,#bbs_Version#,#bbs_Reg_Id#,null,#scr_Type#)
+	    <!--    게시판아이디(#bbs_Id#) , 게시판 구분(#bbs_Gbn#) , 게시판 제목(#bbs_Nm#) , 삭제 여부(0) , 등록 날자(SYSDATE) , 
+	             수정 날자(null) , 버전정보(#bbs_Version#) , 등록자 아이디(#bbs_Reg_Id#) , 수정자 아이디(null)                        -->
+	</insert>
+	
+	<insert id="writeLog" parameterClass="java.util.HashMap">
+	INSERT INTO 
+	   PT_HDTV_BBS_MASTER_LOG
+	       (BBS_ID , BBS_GBN , BBS_NM , DEL_YN , VERSION , SCR_TP, ACT_ID , ACT_IP , ACT_GBN)
+	VALUES
+	       (#bbs_Id#,#bbs_Gbn#,#bbs_Nm#,0,#bbs_Version#,#scr_Type#,#act_id#,#act_ip#,#act_gbn#)       
+	</insert>
+	
+	<insert id="writeLog2" parameterClass = "java.util.HashMap">
+	INSERT INTO 
+	   PT_HDTV_BBS_MASTER_LOG
+	       (BBS_ID , BBS_GBN , BBS_NM , DEL_YN , VERSION , SCR_TP, ACT_ID , ACT_IP , ACT_GBN)
+	   (
+	   SELECT
+	         A.* , #act_id# , #act_ip# , #act_gbn#
+	    FROM( 
+	         SELECT
+	             BBS_ID,
+	             BBS_GBN,
+	             BBS_NM,
+	             DEL_YN,
+	             VERSION,
+	             SCR_TP
+	         FROM
+	             PT_HDTV_BBS_MASTER
+	         WHERE
+	             BBS_ID = #bbs_Id#
+	           )A
+	    )
+	</insert>
+</sqlMap>

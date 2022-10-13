@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<!-- 2021.04.16 AB테스트 MIMS -->
+<sqlMap namespace="bpas">
+    
+    <!--    2021.04.16 BPAS 편성관리 목록 조회 -->
+    <select id="getBPASList" resultClass="com.dmi.smartux.admin.abtest.vo.BPASListVo" parameterClass="com.dmi.smartux.admin.abtest.vo.BPASSearchVo">
+        SELECT
+            tbl2.*
+        FROM(
+            SELECT
+                tbl.*
+                ,ROWNUM rnum
+            FROM (
+                SELECT
+                    tbl0.*,case when AB_Y_CNT > 0 then 'Y' else 'N' end AB_YN 
+                FROM(
+                    SELECT
+                        SEQ
+                        ,MIMS_TYPE
+                        ,MIMS_ID
+                        ,CASE 
+                           WHEN MIMS_TYPE = 'SUM' THEN (SELECT SCHEDULE_NAME FROM smartux.PT_UX_SMUX_VOD_SCHEDULE vmc WHERE vmc.SCHEDULE_CODE = cii.MIMS_ID)
+                           WHEN MIMS_TYPE = 'HOT' THEN (SELECT CONTENT_NAME FROM smartux.PT_UX_HV_CONT hhc WHERE hhc.CONTENT_ID = cii.MIMS_ID)
+                           WHEN MIMS_TYPE = 'BAN' THEN (SELECT TITLE FROM smartux.PT_HDTV_ADS_INFO hai WHERE hai.ADS_NO = cii.MIMS_ID)
+                           WHEN MIMS_TYPE = 'PAP' THEN (SELECT TITLE_NM FROM smartux.PT_UX_PANEL_TITLE_TEMP hai WHERE hai.PANNEL_ID||'|'||hai.TITLE_ID = cii.MIMS_ID)
+                           ELSE '' 
+                         END TITLE
+                        ,IMCS_TYPE
+                        ,IMCS_ID
+                        
+                        ,CASE 
+                           WHEN IMCS_TYPE = 'CAT' THEN (SELECT CATEGORY_NAME FROM smartux.PT_VO_CATEGORY WHERE category_id = cii.IMCS_ID)
+                           WHEN IMCS_TYPE = 'ALB' THEN ''
+                           ELSE ''
+                         END CATEGORY_NAME 
+                         
+                         ,CASE 
+                           WHEN IMCS_TYPE = 'CAT' THEN ''
+                           WHEN IMCS_TYPE = 'ALB' THEN (SELECT ADI_ALBUM_NAME FROM smartux.PT_LA_ALBUM_MST WHERE adi_album_id = cii.IMCS_ID)
+                           ELSE ''
+                         END ALBUM_NAME 
+                           
+                           
+                        
+                        ,TO_CHAR(TO_DATE(REG_DATE,'YYYYMMDDHH24MISS'), 'YYYY.MM.DD') REG_DATE
+                        ,REG_DATE REG_DATE_ORI
+                        ,CASE  
+                           WHEN IMCS_TYPE = 'CAT' THEN (SELECT count(1) FROM TABLE(IMCSUSER.PACK_ABTEST.F_GET_AB_IMCS_CAT(cii.IMCS_ID, 'I')) WHERE ABTEST_YN = 'Y')
+                           WHEN IMCS_TYPE = 'ALB' THEN (SELECT count(1) FROM TABLE(IMCSUSER.PACK_ABTEST.F_GET_AB_IMCS_ALB(cii.IMCS_ID)) WHERE ABTEST_YN = 'Y')
+                           ELSE 0
+                         END AB_Y_CNT
+                    FROM PT_UX_IMCS_INFO cii
+                    WHERE 1=1
+                    AND REG_DATE BETWEEN REPLACE(#startDt#, '-') || '000000' AND REPLACE(#endDt#, '-') || '235959'
+                    
+                    <iterate property="mims_type_list" open="AND (" close=")" conjunction="OR">
+                        MIMS_TYPE = #mims_type_list[]#
+                    </iterate>
+                ) tbl0
+                WHERE 1=1
+                
+                <isEqual property="ab_yn" compareValue="Y">
+                    AND AB_Y_CNT > 0
+                </isEqual>
+                <isEqual property="ab_yn" compareValue="N">
+                    AND AB_Y_CNT = 0
+                </isEqual>
+                
+                <isNotEmpty property="findValue">
+                    <isEqual property="findType" compareValue="01">
+                        AND IMCS_ID = #findValue#
+                    </isEqual>
+                    
+                    <isEqual property="findType" compareValue="02">
+                        AND ALBUM_NAME like '%'||#findValue#||'%'
+                    </isEqual>
+                    
+                    <isEqual property="findType" compareValue="03">
+                        AND IMCS_ID = #findValue#
+                    </isEqual>
+                    
+                    <isEqual property="findType" compareValue="04">
+                        AND CATEGORY_NAME like '%'||#findValue#||'%'
+                    </isEqual>
+                </isNotEmpty>
+                
+                ORDER BY REG_DATE_ORI desc
+            ) tbl
+        ) tbl2
+        WHERE tbl2.rnum BETWEEN '$start_rnum$' AND '$end_rnum$'
+    </select>
+    
+    <!--   2021.04.16 BPAS 편성관리 목록 카운트 조회 -->
+    <select id="getBPASListCount" resultClass="int" parameterClass="com.dmi.smartux.admin.abtest.vo.BPASSearchVo">
+        SELECT
+            count(1)
+        FROM(
+            SELECT
+                tbl.*
+                ,ROWNUM rnum
+            FROM (
+                SELECT
+                    tbl0.*,case when AB_Y_CNT > 0 then 'Y' else 'N' end AB_YN 
+                FROM(
+                    SELECT
+                        ROW_NUMBER() OVER(ORDER BY REG_DATE DESC) AS ROWNO
+                        ,SEQ
+                        ,MIMS_TYPE
+                        ,MIMS_ID
+                        ,CASE 
+                           WHEN MIMS_TYPE = 'SUM' THEN (SELECT SCHEDULE_NAME FROM smartux.PT_UX_SMUX_VOD_SCHEDULE vmc WHERE vmc.SCHEDULE_CODE = cii.MIMS_ID)
+                           WHEN MIMS_TYPE = 'HOT' THEN (SELECT CONTENT_NAME FROM smartux.PT_UX_HV_CONT hhc WHERE hhc.CONTENT_ID = cii.MIMS_ID)
+                           WHEN MIMS_TYPE = 'BAN' THEN (SELECT TITLE FROM smartux.PT_HDTV_ADS_INFO hai WHERE hai.ADS_NO = cii.MIMS_ID)
+                           WHEN MIMS_TYPE = 'PAP' THEN (SELECT TITLE_NM FROM smartux.PT_UX_PANEL_TITLE_TEMP hai WHERE hai.PANNEL_ID||'|'||hai.TITLE_ID = cii.MIMS_ID)
+                           ELSE '' 
+                         END TITLE
+                        ,IMCS_TYPE
+                        ,IMCS_ID
+                        
+                        ,CASE 
+                           WHEN IMCS_TYPE = 'CAT' THEN (SELECT CATEGORY_NAME FROM smartux.PT_VO_CATEGORY WHERE category_id = cii.IMCS_ID)
+                           WHEN IMCS_TYPE = 'ALB' THEN ''
+                           ELSE ''
+                         END CATEGORY_NAME 
+                         
+                         ,CASE 
+                           WHEN IMCS_TYPE = 'CAT' THEN ''
+                           WHEN IMCS_TYPE = 'ALB' THEN (SELECT ADI_ALBUM_NAME FROM smartux.PT_LA_ALBUM_MST WHERE adi_album_id = cii.IMCS_ID)
+                           ELSE ''
+                         END ALBUM_NAME 
+                           
+                           
+                        
+                        ,TO_CHAR(TO_DATE(REG_DATE,'YYYYMMDDHH24MISS'), 'YYYY.MM.DD') REG_DATE
+                        ,REG_DATE REG_DATE_ORI
+                        ,CASE  
+                           WHEN IMCS_TYPE = 'CAT' THEN (SELECT count(1) FROM TABLE(IMCSUSER.PACK_ABTEST.F_GET_AB_IMCS_CAT(cii.IMCS_ID, 'I')) WHERE ABTEST_YN = 'Y')
+                           WHEN IMCS_TYPE = 'ALB' THEN (SELECT count(1) FROM TABLE(IMCSUSER.PACK_ABTEST.F_GET_AB_IMCS_ALB(cii.IMCS_ID)) WHERE ABTEST_YN = 'Y')
+                           ELSE 0
+                         END AB_Y_CNT
+                    FROM PT_UX_IMCS_INFO cii
+                    WHERE 1=1
+                    AND REG_DATE BETWEEN REPLACE(#startDt#, '-') || '000000' AND REPLACE(#endDt#, '-') || '235959'
+                    
+                    
+                    <iterate property="mims_type_list" open="AND (" close=")" conjunction="OR">
+                        MIMS_TYPE = #mims_type_list[]#
+                    </iterate>
+                ) tbl0
+                WHERE 1=1
+                
+                <isEqual property="ab_yn" compareValue="Y">
+                    AND AB_Y_CNT > 0
+                </isEqual>
+                <isEqual property="ab_yn" compareValue="N">
+                    AND AB_Y_CNT = 0
+                </isEqual>
+                
+                <isNotEmpty property="findValue">
+                    <isEqual property="findType" compareValue="01">
+                        AND IMCS_ID = #findValue#
+                    </isEqual>
+                    
+                    <isEqual property="findType" compareValue="02">
+                        AND ALBUM_NAME like '%'||#findValue#||'%'
+                    </isEqual>
+                    
+                    <isEqual property="findType" compareValue="03">
+                        AND IMCS_ID = #findValue#
+                    </isEqual>
+                    
+                    <isEqual property="findType" compareValue="04">
+                        AND CATEGORY_NAME like '%'||#findValue#||'%'
+                    </isEqual>
+                </isNotEmpty>
+                
+                ORDER BY REG_DATE_ORI desc
+            ) tbl
+        ) tbl2
+    </select>
+    
+    <!--   2021.04.16 카테고리 조회 -->
+    <select id="getCategoryList" resultClass="com.dmi.smartux.admin.abtest.vo.CategoryListVo">
+        SELECT 
+            LEVEL
+            ,CATEGORY_ID
+            ,CATEGORY_NAME
+            ,PARENT_CATEGORY_ID
+        FROM smartux.PT_VO_CATEGORY 
+        START WITH CATEGORY_ID = #category_id# 
+        CONNECT BY PRIOR PARENT_CATEGORY_ID = CATEGORY_ID
+    </select>
+    
+    <!--   2021.04.16 카테고리id 조회 -->
+    <select id="getCategoryIdList" resultClass="com.dmi.smartux.admin.abtest.vo.CategoryListVo">
+        
+       SELECT 
+           A.CATEGORY_ID
+       FROM  smartux.PT_VO_CATEGORY A, smartux.PT_VO_CATEGORY_MAP B, smartux.PT_LA_ALBUM_MST C
+       WHERE 1=1
+       AND A.CATEGORY_ID = B.CATEGORY_ID 
+       AND B.CONTENTS_ID = C.ADI_ALBUM_ID 
+       AND C.ADI_ALBUM_ID = #imcs_id#
+       ORDER BY CATEGORY_ID
+    </select>
+    
+    <!--   2021.04.16 패널조회 -->
+    <select id="getPanelList" resultClass="com.dmi.smartux.admin.abtest.vo.PanelListVo">
+        
+        SELECT 
+            p.PANNEL_NM||'('||p.PANNEL_ID||')' pannel_name, 
+            p.PANNEL_ID, 
+            ptt.title_nm||'('||ptt.TITLE_ID||')' title_name, 
+            ptt.TITLE_ID 
+        FROM smartux.PT_UX_PANEL_TITLE_TEMP ptt 
+        LEFT JOIN smartux.PT_UX_PANEL p 
+            ON (ptt.PANNEL_ID = p.PANNEL_ID) 
+        WHERE ptt.CATEGORY_ID = #category_id#
+    </select>
+    
+    <!--   2021.04.16 패널조회 -->
+    <select id="getPanelList2" resultClass="com.dmi.smartux.admin.abtest.vo.PanelListVo" parameterClass="com.dmi.smartux.admin.abtest.vo.PanelListVo">
+        
+        SELECT 
+            p.PANNEL_NM||'('||p.PANNEL_ID||')' pannel_name, 
+            p.PANNEL_ID, 
+            ptt.title_nm||'('||ptt.TITLE_ID||')' title_name, 
+            ptt.TITLE_ID 
+        FROM smartux.PT_UX_PANEL_TITLE_TEMP ptt 
+        LEFT JOIN smartux.PT_UX_PANEL p 
+            ON (ptt.PANNEL_ID = p.PANNEL_ID) 
+        WHERE ptt.pannel_id = #pannel_id#
+        AND ptt.title_id = #title_id#
+    </select>
+    
+    <!--   2021.04.16 패널조회 -->
+    <select id="getPanelList3" resultClass="com.dmi.smartux.admin.abtest.vo.PanelListVo">
+        
+        SELECT 
+            p.PANNEL_NM||'('||p.PANNEL_ID||')' pannel_name, 
+            p.PANNEL_ID, 
+            ptt.title_nm||'('||ptt.TITLE_ID||')' title_name, 
+            ptt.TITLE_ID 
+        FROM smartux.PT_UX_PANEL_TITLE_TEMP ptt 
+        LEFT JOIN smartux.PT_UX_PANEL p 
+            ON (ptt.PANNEL_ID = p.PANNEL_ID) 
+        WHERE ptt.CATEGORY_ID = (select ads_id FROM smartux.PT_HDTV_ADS_INFO where ads_no = #ads_no#)
+    </select>
+    
+    <!--   2021.04.16 패널조회 -->
+    <select id="getPanelList4" resultClass="com.dmi.smartux.admin.abtest.vo.PanelListVo">
+        
+        SELECT 
+            p.PANNEL_NM||'('||p.PANNEL_ID||')' pannel_name, 
+            p.PANNEL_ID, 
+            ptt.title_nm||'('||ptt.TITLE_ID||')' title_name, 
+            ptt.TITLE_ID 
+        FROM smartux.PT_UX_PANEL_TITLE_TEMP ptt 
+        LEFT JOIN smartux.PT_UX_PANEL p 
+            ON (ptt.PANNEL_ID = p.PANNEL_ID) 
+        WHERE ptt.CATEGORY_ID IN (SELECT category_id FROM smartux.PT_UX_HV_CONT_EXT WHERE content_id = #content_id#)
+    </select>
+    
+    <!--   2021.04.16 테스트정보조회 -->
+    <select id="getTestIdInfo" resultClass="com.dmi.smartux.admin.abtest.vo.TestListVo" parameterClass="com.dmi.smartux.admin.abtest.vo.BPASSearchVo">
+       SELECT tbl.*, TO_CHAR(TO_DATE(END_DATE,'YYYYMMDDHH24'), 'YYYY.MM.DD HH24') END_DATE2 FROM TABLE(IMCSUSER.PACK_ABTEST.F_GET_AB_IMCS_ALB(#findValue#)) tbl WHERE ABTEST_YN = 'Y'
+    </select>
+    
+    <!--   2021.04.16 테스트정보조회 -->
+    <select id="getTestIdInfo2" resultClass="com.dmi.smartux.admin.abtest.vo.TestListVo" parameterClass="com.dmi.smartux.admin.abtest.vo.BPASSearchVo">
+       SELECT tbl.*, TO_CHAR(TO_DATE(END_DATE,'YYYYMMDDHH24'), 'YYYY.MM.DD HH24') END_DATE2 FROM TABLE(IMCSUSER.PACK_ABTEST.F_GET_AB_IMCS_CAT(#findValue#, 'I')) tbl WHERE ABTEST_YN = 'Y'
+    </select>
+</sqlMap>

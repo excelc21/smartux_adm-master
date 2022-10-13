@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<result>
+	<flag>0000</flag>
+	<message>성공</message>
+	<total_count>4</total_count>
+	<recordset>
+		<record>
+			<album_id>M01126IA16PPV00</album_id>
+			<cat_id>T292B</cat_id>
+			<album_title>닥터 진 8회 6월17일(일)</album_title>
+			<img_url>http://123.140.17.220:8888/</img_url>
+			<w_img>M01126IA16PPV00HD260.JPG</w_img>
+			<h_img>M01126IA16PPV00HD270.JPG</h_img>
+			<is_hd>Y</is_hd>
+			<program_info>04</program_info>
+			<series_flag>Y</series_flag>
+			<series_desc>8회</series_desc>
+			<close_yn>N</close_yn>
+			<auth_yn>N</auth_yn>
+			<reg_date>20120622</reg_date>
+			<cha_num></cha_num>
+			<suggested_price>0</suggested_price>
+			<point>3</point>
+		</record>
+		<record>
+			<album_id>M01126IA09PPV00</album_id>
+			<cat_id>T2739</cat_id>
+			<album_title>나는 가수다2 8회 6월17일(일)</album_title>
+			<img_url>http://123.140.17.220:8888/</img_url>
+			<w_img>M01126IA09PPV00HD260.JPG</w_img>
+			<h_img>M01126IA09PPV00HD270.jpg</h_img>
+			<is_hd>Y</is_hd>
+			<program_info>04</program_info>
+			<series_flag>Y</series_flag>
+			<series_desc>8회</series_desc>
+			<close_yn>N</close_yn>
+			<auth_yn>N</auth_yn>
+			<reg_date>20120622</reg_date>
+			<cha_num></cha_num>
+			<suggested_price>0</suggested_price>
+			<point>3</point>
+		</record>
+		<record>
+			<album_id>M01126IA03PPV00</album_id>
+			<cat_id>T3524</cat_id>
+			<album_title>정글의 법칙 시즌2 7회 6월17일(일)</album_title>
+			<img_url>http://123.140.17.220:8888/</img_url>
+			<w_img>M01126IA03PPV00HD260.JPG</w_img>
+			<h_img>M01126IA03PPV00HD270.jpg</h_img>
+			<is_hd>Y</is_hd>
+			<program_info>03</program_info>
+			<series_flag>Y</series_flag>
+			<series_desc>7회</series_desc>
+			<close_yn>N</close_yn>
+			<auth_yn>N</auth_yn>
+			<reg_date>20120622</reg_date>
+			<cha_num></cha_num>
+			<suggested_price>0</suggested_price>
+			<point>3</point>
+		</record>
+		<record>
+			<album_id>M01126IA13PPV00</album_id>
+			<cat_id>T392A</cat_id>
+			<album_title>신사의 품격 8회 6월17일(일)</album_title>
+			<img_url>http://123.140.17.220:8888/</img_url>
+			<w_img>M01126IA13PPV00HD260.jpg</w_img>
+			<h_img>M01126IA13PPV00HD270.jpg</h_img>
+			<is_hd>Y</is_hd>
+			<program_info>04</program_info>
+			<series_flag>Y</series_flag>
+			<series_desc>8회</series_desc>
+			<close_yn>N</close_yn>
+			<auth_yn>N</auth_yn>
+			<reg_date>20120622</reg_date>
+			<cha_num></cha_num>
+			<suggested_price>0</suggested_price>
+			<point>2</point>
+		</record>
+	</recordset>
+</result>

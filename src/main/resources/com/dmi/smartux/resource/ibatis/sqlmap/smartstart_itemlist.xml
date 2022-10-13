@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="smartstart_itemlist">
+	<typeAlias alias="itemlistvo" type="com.dmi.smartux.smartstart.vo.SmartStartItemListVO"/>
+	
+	<select id="getSmartStartItemList" resultClass="itemlistvo">
+		SELECT 
+			CATEGORY_TYPE AS item_type, 
+			TITLE_NM AS item_title,
+			CATEGORY_ID AS genre_code,			         
+            UI_TYPE AS ui_type,
+            DECODE(NVL(BG_IMG_FILE, NULL), NULL, '', F_SERVER_URL('I') || BG_IMG_FILE)  AS bg_img_file,
+            DESCRIPTION AS description,
+            ORDERED AS order_seq      
+		FROM 
+			PT_UX_PANEL_TITLE
+		WHERE	1=1
+        <isNotEmpty property="config_pannel_code">	
+			AND PANNEL_ID = #config_pannel_code#
+		</isNotEmpty>
+		ORDER BY ORDERED ASC
+	</select>
+			
+</sqlMap>
+		
+		

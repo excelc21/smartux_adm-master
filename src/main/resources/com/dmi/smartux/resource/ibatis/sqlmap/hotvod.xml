@@ -1,0 +1,1184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="hotvod">
+	<typeAlias alias="hotvodSearchVO" type="com.dmi.smartux.admin.hotvod.vo.HotvodSearchVO"/>
+	<typeAlias alias="hotvodContentVO" type="com.dmi.smartux.admin.hotvod.vo.HotvodContentVO"/>
+	<typeAlias alias="hotvodFileUploadVO" type="com.dmi.smartux.admin.hotvod.vo.HotvodFileUploadVO"/>
+	<typeAlias alias="hotvodExcelVo" type="com.dmi.smartux.admin.hotvod.vo.HotvodExcelVo"/>	
+	
+	<!-- 컨텐츠 목록 -->	
+	<select id="contentList" parameterClass="hotvodSearchVO" resultClass="hotvodContentVO">
+	  	SELECT O.*,
+	       (SELECT COUNT(1) CNT
+	       FROM    PT_UX_HV_CATE_CONTENT AA ,
+	               PT_UX_HV_CONT BB
+	       WHERE   AA.CONTENT_ID     =BB.CONTENT_ID
+	       AND     AA.HV_CATEGORY_ID = O.CONTENT_ID
+	       AND     AA.DEL_YN         = 'Y'
+	       )
+	       AS SUB_CNT
+		FROM   ( SELECT A.*
+		       FROM    ( SELECT ROWNUM AS ROWNO,
+		                       B.*
+		               FROM    ( SELECT T.*
+		                       FROM    ( SELECT           LEVEL ,
+		                                                 LPAD(' ', ((6*LEVEL*2)), '<![CDATA[&nbsp;]]>') AS LEVEL_PAD,
+		                                                 C.CATEGORY_NAME               AS CONTENT_NAME ,
+		                                                 C.HV_CATEGORY_ID              AS CONTENT_ID ,
+		                                                 'C'                           AS CONTENT_TYPE ,
+		                                                 C.PARENT_ID ,
+		                                                 (SELECT CATEGORY_NAME
+		                                                 FROM    PT_UX_HV_CATEGORY
+		                                                 WHERE   HV_CATEGORY_ID = C.PARENT_ID
+		                                                 )
+		                                                                  AS PARENT_NAME ,
+		                                                 C.CATEGORY_INFO  AS CONTENT_INFO ,
+		                                                 C.CATEGORY_ORDER AS CONTENT_ORDER ,
+		                                                 NULL             AS CONTENT_IMG ,
+		                                                 NULL             AS CONTENT_URL ,
+		                                                 NULL             AS DURATION ,
+		                                                 0                AS HIT_CNT ,
+		                                                 NULL             AS SITE_ID ,
+		                                                 NULL             AS SITE_NAME ,
+		                                                 C.REG_DT ,
+		                                                 C.REG_ID ,
+		                                                 C.DEL_YN AS DEL_YN ,
+		                                                 NVL(C.MULTI_SERVICE_TYPE,#defaultServiceDec#) AS MULTI_SERVICE_TYPE,
+		                                                 CONNECT_BY_ROOT(C.HV_CATEGORY_ID) AS ROOT_ID
+		                               FROM              PT_UX_HV_CATEGORY C
+		                               WHERE             1                                 =1
+		                                                 <isEqual property="delYn" compareValue="N">
+		                                                 		AND C.DEL_YN = 'N'
+		                                                 </isEqual>
+		                                                 <isNotEmpty prepend="AND" property="findValue">
+		                                                        <isEqual property="findName" compareValue="CONTENT_NAME">
+		                                                         CATEGORY_NAME LIKE '%$findValue$%'
+		                                                         </isEqual>
+		                                                         <isEqual property="findName" compareValue="SITE_NAME">
+		                                                         C.HV_CATEGORY_ID IN (SELECT B.CATEGORY_ID FROM PT_UX_HV_SITE A, PT_UX_HV_CONT_EXT B WHERE A.SITE_ID=B.SITE_ID AND A.SITE_NAME LIKE '%$findValue$%' )
+		                                                         </isEqual>
+		                                                         <isEqual property="findName" compareValue="PARNT_NAME">
+		                                                         C.PARENT_ID IN (SELECT HV_CATEGORY_ID FROM PT_UX_HV_CATEGORY WHERE CATEGORY_NAME LIKE '%$findValue$%' )
+		                                                         </isEqual>
+		                                                 </isNotEmpty>
+		                                                 <isNotEmpty property="multiServiceType" prepend="AND">
+		                                                   BITAND( NVL(C.MULTI_SERVICE_TYPE,#defaultServiceDec#) ,#multiServiceType#) > 0
+		                                                 </isNotEmpty>
+		                                                 START WITH C.PARENT_ID      IS NULL
+		                                                 CONNECT BY PRIOR C.HV_CATEGORY_ID = C.PARENT_ID
+		                               ORDER SIBLINGS BY C.CATEGORY_ORDER,
+		                                                 C.REG_DT DESC
+		                               )
+		                               T
+		                       )
+		                       B
+		               )
+		               A
+		       WHERE ROWNO BETWEEN '$start_rnum$' AND '$end_rnum$'
+		       )
+		       O																
+	</select>
+	
+	<!-- 컨텐츠 목록갯수 -->
+	<select id="contentListCnt" parameterClass="hotvodSearchVO" resultClass="int">
+			SELECT COUNT(B.HV_CATEGORY_ID)
+         	   FROM (SELECT HV_CATEGORY_ID,
+                       DEL_YN AS DEL_YN,
+                       CONNECT_BY_ROOT(HV_CATEGORY_ID) AS ROOT_ID
+                       <isEqual property="delYn" compareValue="Y">
+                       ,(SELECT COUNT(1) CNT
+		                       FROM    PT_UX_HV_CATE_CONTENT AA ,
+		                               PT_UX_HV_CONT BB
+		                       WHERE   AA.CONTENT_ID     =BB.CONTENT_ID
+		                       AND     AA.HV_CATEGORY_ID = C.HV_CATEGORY_ID
+		                       AND     AA.DEL_YN  = 'Y'
+		                       ) AS SUB_CNT
+		               </isEqual>
+                  FROM PT_UX_HV_CATEGORY C
+                 WHERE 1 = 1
+                 <isEqual property="delYn" compareValue="N">
+				 	AND DEL_YN = 'N'
+				 </isEqual>
+                 <isNotEmpty prepend="AND" property="findValue">
+			 	   <isEqual property="findName" compareValue="CONTENT_NAME">
+			  	   CATEGORY_NAME LIKE '%$findValue$%'
+			  	   </isEqual>
+			  	   <isEqual property="findName" compareValue="SITE_NAME">
+			  	   C.HV_CATEGORY_ID IN (SELECT B.CATEGORY_ID FROM PT_UX_HV_SITE A, PT_UX_HV_CONT_EXT B WHERE A.SITE_ID=B.SITE_ID AND A.SITE_NAME LIKE '%$findValue$%' )
+			  	   </isEqual>
+			  	   <isEqual property="findName" compareValue="PARNT_NAME">
+			  	   PARENT_ID IN (SELECT HV_CATEGORY_ID FROM PT_UX_HV_CATEGORY WHERE CATEGORY_NAME LIKE '%$findValue$%' )
+			  	   </isEqual>
+		 		  </isNotEmpty>
+		 		  <isNotEmpty property="multiServiceType" prepend="AND">
+			 		BITAND(C.MULTI_SERVICE_TYPE,#multiServiceType#) > 0
+			      </isNotEmpty>             
+		                START WITH PARENT_ID IS NULL
+		          CONNECT BY PRIOR HV_CATEGORY_ID = PARENT_ID
+		         ORDER SIBLINGS BY CATEGORY_ORDER, REG_DT DESC
+             ) B
+			 <isEqual property="delYn" compareValue="Y">
+			   WHERE (B.DEL_YN = 'Y' OR B.SUB_CNT > 0)
+			 </isEqual>             
+	         <isNotEmpty property="pcateid">
+		    	<isEqual property="delYn" compareValue="N">
+		    		WHERE 
+		    	</isEqual>
+		    	<isEqual property="delYn" compareValue="Y">
+		    		AND 
+		    	</isEqual>		         
+	    		 ROOT_ID IN <iterate conjunction="," open="(" close=")" property="pcateid">#pcateid[]#</iterate>
+	    	 </isNotEmpty>             
+	</select>
+	
+	<!-- 카테고리 상세 -->
+	<select id="categoryDetail" parameterClass="hotvodSearchVO" resultClass="hotvodContentVO">	
+		SELECT *
+		FROM ( 
+			SELECT A.HV_CATEGORY_ID AS CONTENT_ID,			   
+			   'C' AS CONTENT_TYPE ,
+			   A.PARENT_ID ,
+			   A.CATEGORY_NAME AS CONTENT_NAME,
+			   A.CATEGORY_INFO AS CONTENT_INFO,
+			   A.CATEGORY_ORDER AS CONTENT_ORDER,
+			   A.CATEGORY_IMG AS CONTENT_IMG,
+			   CASE WHEN A.CATEGORY_IMG IS NOT NULL THEN F_SERVER_URL('I')||'iptv/hotvod/'||A.CATEGORY_IMG ELSE NULL END AS CONTENT_IMG_URL ,
+			   A.CATEGORY_IMG_TV AS CONTENT_IMG_TV,
+			   CASE WHEN A.CATEGORY_IMG_TV IS NOT NULL THEN F_SERVER_URL('I')||'iptv/hotvod/'||A.CATEGORY_IMG_TV ELSE NULL END AS CONTENT_IMG_TV_URL ,
+			   '' AS CONTENT_URL ,
+			   '' AS DURATION ,
+			   NULL AS HIT_CNT ,
+			   '' AS SITE_ID ,
+			   '' AS CATEGORY_ID ,
+			   '' AS ALBUM_ID ,
+			   '' AS CONTENTS_NAME ,
+			   '' AS SERIES_NO ,
+			   '' AS SPONSOR_NAME ,
+			   '' AS STILL_IMG ,
+			   '' AS START_TIME ,
+			   '' AS END_TIME ,
+			   '' AS SERIES_DESC ,
+			   NVL(A.DEL_YN, 'N') AS DEL_YN,
+			   NVL(A.BADGE_DATA, '0') AS BADGE_DATA,
+	           A.TEST_YN,
+	           A.UNIFY_SEARCH_YN,
+	           A.MULTI_SERVICE_TYPE
+       FROM    PT_UX_HV_CATEGORY A
+       WHERE   A.HV_CATEGORY_ID = #content_id#
+	   <isNotEmpty property="parent_id">
+	      AND A.PARENT_ID  = #parent_id#
+	   </isNotEmpty>
+       )
+	</select>	
+	
+	<!-- 컨텐츠 상세 -->
+	<!-- 	2019.11.11 브릿지 홈 개편 :PT_UX_HV_CONT 테이블 HV_UI_TYPE 조회 추가 -->
+	<select id="contentDetail" parameterClass="hotvodSearchVO" resultClass="hotvodContentVO">
+		SELECT A.CONTENT_ID ,
+			   CONT.CONTENT_TYPE ,
+			   A.HV_CATEGORY_ID AS PARENT_ID ,
+			   CONT.CONTENT_NAME ,
+			   CONT.CONTENT_INFO ,
+			   A.CONTENT_ORDER ,
+			   CONT.CONTENT_IMG ,
+			   CASE WHEN CONT.CONTENT_IMG IS NOT NULL THEN F_SERVER_URL('I')||'iptv/hotvod/'||CONT.CONTENT_IMG ELSE NULL END AS CONTENT_IMG_URL ,
+			   CONT.CONTENT_IMG_TV ,
+			   CASE WHEN CONT.CONTENT_IMG_TV IS NOT NULL THEN F_SERVER_URL('I')||'iptv/hotvod/'||CONT.CONTENT_IMG_TV ELSE NULL END AS CONTENT_IMG_TV_URL ,
+			   CONT.CONTENT_URL ,
+			   CONT.DURATION ,
+			   CONT.HIT_CNT ,
+			   EXT.SITE_ID ,
+			   EXT.CATEGORY_ID ,
+			   (SELECT CATEGORY_NAME FROM PT_VO_CATEGORY CATE WHERE CATE.CATEGORY_ID= EXT.CATEGORY_ID) CATEGORY_NAME,
+			   EXT.ALBUM_ID ,
+			   B.CONTENTS_NAME ,
+			   B.SERIES_NO ,
+			   B.SPONSOR_NAME ,
+			   B.STILL_IMG ,
+			   EXT.START_TIME ,
+			   EXT.END_TIME ,
+			   B.SERIES_DESC ,
+			   NVL(A.DEL_YN, 'N') AS DEL_YN,
+			   NVL(EXT.BADGE_DATA, '0') AS BADGE_DATA,
+	           '' AS TEST_YN,
+	           '' AS UNIFY_SEARCH_YN,
+	           TO_CHAR(CONT.START_DT,'YYYY-MM-DD HH24:MI:SS') AS START_DT,
+	           TO_CHAR(CONT.END_DT,'YYYY-MM-DD HH24:MI:SS') AS END_DT,
+	           CONT.HV_UI_TYPE
+		  FROM PT_UX_HV_CATE_CONTENT A,
+      			   PT_UX_HV_CONT CONT,
+      			   PT_UX_HV_CONT_EXT EXT,
+		  	   (SELECT S_B.CATEGORY_ID AS CATEGORY_ID, 
+		               S_B.CONTENTS_ID AS ALBUM_ID, 
+		               S_B.CONTENTS_NAME AS CONTENTS_NAME, 
+		               S_C.SERIES_NO AS SERIES_NO, 
+		               S_E.GENRE_SMALL AS SPONSOR_NAME, 
+		               DECODE(MIN(S_F.MAIN_IMG_FILE_NAME), NULL, '', F_SERVER_URL('P')||'resize.php?filename='||MIN(S_F.MAIN_IMG_FILE_NAME)||'<![CDATA[&width=215&height=125&type=still]]>') AS STILL_IMG,
+		               S_B.SERIES_NO AS SERIES_DESC
+		          FROM ( SELECT EXT.CATEGORY_ID,
+		                        EXT.ALBUM_ID
+		                 FROM   PT_UX_HV_CONT MST,
+		                        PT_UX_HV_CONT_EXT EXT
+		                 WHERE  EXT.CONTENT_ID = #content_id#
+		                 AND    MST.CONTENT_TYPE IN ('H', 'M')
+		                 AND    MST.CONTENT_ID = EXT.CONTENT_ID
+		                ) A ,
+		                PT_VO_CATEGORY_MAP S_B, 
+		                PT_LA_ALBUM_MST S_C, 
+		                PT_LA_PACKAGE_ASSET S_D, 
+		                PT_LA_TITLE_ASSET S_E, 
+		                IMCSUSER.PT_LA_ALBUM_IMG S_F 
+			       WHERE S_B.CONTENTS_ID    = A.ALBUM_ID
+			       AND   S_B.CATEGORY_ID    = A.CATEGORY_ID
+			       AND   S_B.CONTENTS_ID    = S_C.ADI_ALBUM_ID
+			       AND   S_C.ADI_ALBUM_ID   = S_D.ADI_ALBUM_ID
+			       AND   S_D.ADI_PRODUCT_ID = S_E.ADI_PRODUCT_ID
+			       AND   S_D.ALBUM_TYPE    != 'PR'
+            	   AND (
+		                    (
+		                        (S_C.PRE_MAPPING_YN IS NULL OR S_C.PRE_MAPPING_YN = 'N') AND (S_B.VIEWING_FLAG = 'V' OR S_B.VIEWING_FLAG IS NULL)
+		                    )
+		                	OR
+		                    (
+		                        S_C.PRE_MAPPING_YN = 'Y' AND S_B.VIEWING_FLAG = 'V'
+		                    )
+                   		)
+		           AND S_B.CONTENTS_ID = S_F.ADI_ALBUM_ID(+)
+		           AND S_F.IMG_FLAG(+) = 'N'
+		      GROUP BY S_B.CATEGORY_ID, 
+		               S_B.CONTENTS_ID, 
+		               S_B.CONTENTS_NAME, 
+		               S_E.ASSET_NAME, 
+		               S_B.SERIES_NO, 
+		               S_C.SERIES_NO, 
+		               S_E.GENRE_SMALL
+		          ) B
+		 WHERE A.CONTENT_ID = #content_id#
+		 <isNotEmpty property="parent_id">
+		   AND A.HV_CATEGORY_ID = #parent_id#
+		 </isNotEmpty>
+		AND A.CONTENT_ID    = CONT.CONTENT_ID
+		AND CONT.CONTENT_ID = EXT.CONTENT_ID(+)
+		AND EXT.CATEGORY_ID = B.CATEGORY_ID(+)
+		AND EXT.ALBUM_ID    = B.ALBUM_ID(+)
+		AND ROWNUM          = 1
+	</select>
+	
+	<!-- mims.xml로 이동 -->
+	<!-- 컨텐츠 조회수 로그 수정 -->
+	<!-- <update id="contentLogUpdate" parameterClass="hotvodContentVO">
+		UPDATE PT_UX_HV_HITCNT_LOG
+		   SET HIT_CNT = TO_NUMBER(#hit_cnt#)
+		     , MOD_DT = SYSDATE
+		 WHERE HITCNT_YEAR =  TO_CHAR(SYSDATE, 'YYYY')
+    	   AND HITCNT_MONTH = TO_CHAR(SYSDATE, 'MM')
+    	   AND HITCNT_DAY = TO_CHAR(SYSDATE, 'DD')
+		   AND CONTENT_ID = #content_id#
+	</update> -->
+	
+	<!-- mims.xml로 이동 -->
+	<!-- 컨텐츠 수정 -->
+	<!-- <update id="contentUpdate" parameterClass="hotvodContentVO">
+		UPDATE PT_UX_HV_CONT
+		   SET CONTENT_TYPE		= #content_type# ,
+			   CONTENT_NAME 	= #content_name# ,
+			   CONTENT_INFO		= #content_info# ,
+			   CONTENT_IMG		= #content_img# ,
+			   CONTENT_IMG_TV	= #content_img_tv# ,
+			   CONTENT_URL		= #content_url# ,
+			   <isNotEmpty property="start_time">
+			   DURATION			= TO_CHAR(TO_DATE(TRUNC(MOD(TO_DATE(#end_time#, 'HH24:MI:SS') - TO_DATE(#start_time#, 'HH24:MI:SS'),1)*24 *60 *60), 'SSSSS'), 'HH24:MI:SS') ,
+			   </isNotEmpty>
+			   <isEmpty property="start_time">
+			   DURATION			= #duration# ,
+			   </isEmpty>
+			   <isNotEmpty property="start_dt">
+			   START_DT         = TO_DATE(#start_dt#,'YYYY-MM-DD HH24:MI:SS'),
+			   </isNotEmpty>
+			   <isEmpty property="start_dt">
+			   START_DT			= NULL,
+			   </isEmpty>
+			   <isNotEmpty property="end_dt">
+			   END_DT        	= TO_DATE(#end_dt#,'YYYY-MM-DD HH24:MI:SS'),
+			   </isNotEmpty>
+			   <isEmpty property="end_dt">
+			   END_DT			= NULL,
+			   </isEmpty>
+			   HIT_CNT			= #hit_cnt# ,
+			   MOD_DT			= SYSDATE ,
+			   MOD_ID			= #mod_id#,
+			   2019.11.12 브릿지홈 개편 HV_UI_TYPE 추가
+			   HV_UI_TYPE	 = #hv_ui_type#
+		 WHERE CONTENT_ID 		= #content_id#
+	</update> -->
+	
+	<!-- 컨텐츠 확장정보 존재여부 -->
+	<select id="contentExtYn" parameterClass="string" resultClass="int">
+		SELECT  COUNT(*) FROM  PT_UX_HV_CONT_EXT WHERE CONTENT_ID = #content_id#
+	</select>
+		
+	<!-- 컨텐츠 확장정보 수정 -->
+	<update id="contentExtUpdate" parameterClass="hotvodContentVO">
+		UPDATE  PT_UX_HV_CONT_EXT
+		   SET  ALBUM_ID        = #album_id#,				
+				CATEGORY_ID     = #category_id#,
+				START_TIME      = #start_time#,
+				END_TIME        = #end_time#,
+				SITE_ID         = #site_id#,
+				BADGE_DATA		= #badge_data#
+		 WHERE CONTENT_ID 		= #content_id#
+	</update>
+
+	<!-- 카테고리매핑컨텐츠 삭제 -->
+	 <delete id="contentCateDelete" parameterClass="hotvodContentVO">
+	 	DELETE FROM PT_UX_HV_CATE_CONTENT
+	 	WHERE       CONTENT_ID 	   = #content_id#
+		AND         HV_CATEGORY_ID = #pre_parent_id#
+	 </delete>
+	
+	<!-- 카테고리 수정 -->
+	<update id="categoryUpdate" parameterClass="hotvodContentVO">
+		UPDATE PT_UX_HV_CATEGORY
+		   SET PARENT_ID 		= #parent_id# ,
+			   CATEGORY_NAME 	= #content_name# ,
+			   CATEGORY_INFO	= #content_info# ,
+			   CATEGORY_ORDER	= #content_order# ,
+			   CATEGORY_IMG		= #content_img# ,
+			   CATEGORY_IMG_TV	= #content_img_tv# ,
+			   MOD_DT			= SYSDATE ,
+			   MOD_ID			= #mod_id# ,
+			   DEL_YN			= #del_yn#,
+			   BADGE_DATA		= #badge_data#,
+			   TEST_YN          = #test_yn#,
+			   UNIFY_SEARCH_YN  = #unify_search_yn#,
+			   MULTI_SERVICE_TYPE     = #multi_service_type#
+		 WHERE HV_CATEGORY_ID   = #content_id#
+	</update>	
+	
+	<!-- mims.xml로 이동 -->
+	<!-- 컨텐츠 조회수 로그 등록 -->
+	<!-- <insert id="contentLogInsert" parameterClass="hotvodContentVO">
+		INSERT INTO PT_UX_HV_HITCNT_LOG(HITCNT_YEAR, HITCNT_MONTH, HITCNT_DAY, CONTENT_ID, HIT_CNT, REG_DT)
+		VALUES (TO_CHAR(SYSDATE, 'YYYY'), TO_CHAR(SYSDATE,'MM'), TO_CHAR(SYSDATE, 'DD'), #content_id#,  #hit_cnt#,  SYSDATE)		
+	</insert> -->
+	
+	<!-- mims.xml로 이동 -->
+	<!-- 컨텐츠 등록 -->
+	<!-- <insert id="contentInsert" parameterClass="hotvodContentVO">
+        INSERT INTO PT_UX_HV_CONT(
+			   CONTENT_ID ,
+			   CONTENT_TYPE ,			   
+			   CONTENT_NAME ,
+			   CONTENT_INFO ,
+			   CONTENT_IMG ,
+			   CONTENT_IMG_TV ,
+			   CONTENT_URL ,
+			   DURATION ,
+			   HIT_CNT , 
+			   REG_DT ,
+   			   <isNotEmpty property="start_dt">
+			   START_DT,
+   	    	   </isNotEmpty>
+   			   <isNotEmpty property="end_dt">
+			   END_DT,
+   	    	   </isNotEmpty>
+			   REG_ID,
+			   2019.11.12 브릿지홈 개편 HV_UI_TYPE 추가
+			   HV_UI_TYPE
+			) VALUES (
+			   #content_id# ,
+			   #content_type# ,
+			   #content_name# ,
+			   #content_info# ,
+			   #content_img# ,
+			   #content_img_tv# ,
+			   #content_url# ,
+			   <isNotEmpty property="start_time">
+			   TO_CHAR(TO_DATE(TRUNC(MOD(TO_DATE(#end_time#, 'HH24:MI:SS') - TO_DATE(#start_time#, 'HH24:MI:SS'),1)*24 *60 *60), 'SSSSS'), 'HH24:MI:SS') ,
+			   </isNotEmpty>
+			   <isEmpty property="start_time">
+			   #duration# ,
+			   </isEmpty>
+			   #hit_cnt# ,			   
+			   SYSDATE ,
+			   <isNotEmpty property="start_dt">
+			   TO_DATE(#start_dt#,'YYYY-MM-DD HH24:MI:SS'),
+   	    	   </isNotEmpty>
+   			   <isNotEmpty property="end_dt">
+	    	   TO_DATE(#end_dt#,'YYYY-MM-DD HH24:MI:SS'),
+	    	   </isNotEmpty>			   
+			   #reg_id#,
+			    2019.11.12 브릿지홈 개편 HV_UI_TYPE 추가
+			   #hv_ui_type#
+			)
+	</insert> -->
+	
+	<!-- 컨텐츠 확장정보 등록 -->
+	<insert id="contentExtInsert" parameterClass="hotvodContentVO">
+        INSERT INTO PT_UX_HV_CONT_EXT(
+        		CONTENT_ID,
+				ALBUM_ID,
+				CATEGORY_ID,
+				START_TIME,
+				END_TIME,
+				SITE_ID,
+				BADGE_DATA
+			) VALUES (
+			    #content_id#,
+				#album_id#,
+				#category_id#,
+				#start_time#,
+				#end_time#,
+				#site_id#,
+				#badge_data#
+			)
+	</insert>
+	
+	<!-- 카테고리-컨텐츠 매핑 등록 -->
+	<insert id="cateContentInsert" parameterClass="hotvodContentVO">
+        INSERT INTO PT_UX_HV_CATE_CONTENT(
+				HV_CATEGORY_ID,
+				CONTENT_ID,
+				CONTENT_ORDER,
+				DEL_YN
+			) VALUES (
+				#parent_id#,
+				#content_id#,
+				#content_order#,
+				#del_yn#
+			)	
+	</insert>	
+	
+	<!-- 카테고리 등록 -->
+	<insert id="categoryInsert" parameterClass="hotvodContentVO">
+		INSERT INTO PT_UX_HV_CATEGORY(
+			    HV_CATEGORY_ID,
+				PARENT_ID,
+				CATEGORY_INFO,
+				CATEGORY_NAME,
+				CATEGORY_ORDER,
+			    CATEGORY_IMG,
+			    CATEGORY_IMG_TV,
+			    BADGE_DATA,		
+				TEST_YN,
+				UNIFY_SEARCH_YN,
+				MULTI_SERVICE_TYPE,
+				DEL_YN,
+				REG_DT,
+				REG_ID
+			) VALUES (
+			   #content_id#,
+			   #parent_id#,
+			   #content_info#,
+			   #content_name#,			   
+			   #content_order#,
+			   #content_img#,
+			   #content_img_tv#,
+			   #badge_data#,
+			   #test_yn#,
+			   #unify_search_yn#,
+			   #multi_service_type#,
+			   #del_yn#,
+			   SYSDATE,
+			   #reg_id#
+			)
+	</insert>	
+	
+	<!-- 카테고리 삭제 (하위 컨텐츠 포함) -->
+	<update id="categoryDelete" parameterClass="map">
+		UPDATE /*+ INDEX_DESC(A PT_UX_HV_CATEGORY) */ PT_UX_HV_CATEGORY A
+		   SET A.DEL_YN = 'Y'
+		     , A.MOD_DT = SYSDATE
+             , A.MOD_ID = #mod_id#
+		 WHERE A.DEL_YN = 'N'
+		   AND A.HV_CATEGORY_ID IN (
+		   							SELECT HV_CATEGORY_ID 
+					  		   		  FROM PT_UX_HV_CATEGORY
+					  			     WHERE NVL(DEL_YN, 'N') != 'Y'
+						 			 START WITH PARENT_ID = #content_id#
+		 							 CONNECT BY PRIOR HV_CATEGORY_ID = PARENT_ID UNION SELECT #content_id# FROM DUAL
+					  		        )
+	</update>
+		
+	<!-- 컨텐츠매핑 삭제 -->
+	<update id="cateContentDelete" parameterClass="map">
+		UPDATE /*+ INDEX_DESC(A PK_PT_UX_HV_CONT) */ PT_UX_HV_CATE_CONTENT A
+		   SET A.DEL_YN = 'Y'
+         WHERE A.DEL_YN = 'N'
+		   AND A.HV_CATEGORY_ID IN (
+		   							SELECT HV_CATEGORY_ID 
+						  		     	    FROM PT_UX_HV_CATEGORY
+							          START WITH PARENT_ID = #content_id#
+			 			        	CONNECT BY PRIOR HV_CATEGORY_ID = PARENT_ID UNION SELECT #content_id# FROM DUAL)
+	</update>
+		
+	<!-- 컨텐츠 삭제 -->
+	<update id="contentDelete" parameterClass="map">
+		UPDATE /*+ INDEX_DESC(A PK_PT_UX_HV_CONT) */ PT_UX_HV_CATE_CONTENT A
+		   SET A.DEL_YN = 'Y'
+         WHERE A.CONTENT_ID = #content_id#
+           AND A.HV_CATEGORY_ID = #parent_id#
+           AND A.DEL_YN = 'N'
+	</update>	
+	
+	<!-- 컨텐츠 ID 중복검사 -->
+	<select id="contentIdChk" parameterClass="string" resultClass="int">
+		SELECT (
+				SELECT COUNT(1)
+		        FROM   PT_UX_HV_CATEGORY
+		        WHERE  HV_CATEGORY_ID = #content_id#
+		        AND    ROWNUM=1
+		        ) + 
+		        (
+		        SELECT COUNT(1)
+		        FROM   PT_UX_HV_CATE_CONTENT
+		        WHERE  CONTENT_ID = #content_id#
+		        AND    ROWNUM=1
+		        )  AS CNT
+		FROM   DUAL
+	</select>
+	
+	<!-- mims.xml로 이동 -->
+	<!-- 컨텐츠 ID 채번 -->
+	<!-- <select id="getContentId" resultClass="string">
+		SELECT 'C'||LPAD(DECODE(MAX(SUBSTR(CONTENT_ID, 2, 10))+1, '', 1, MAX(SUBSTR(CONTENT_ID, 2, 10))+1), 9, 0)
+		FROM  (
+				SELECT MAX(HV_CATEGORY_ID) AS CONTENT_ID
+		        FROM   PT_UX_HV_CATEGORY
+		        WHERE  LENGTH(HV_CATEGORY_ID)=10
+		        UNION ALL
+				SELECT MAX(CONTENT_ID) AS CONTENT_ID
+		        FROM   PT_UX_HV_CONT
+		        WHERE  LENGTH(CONTENT_ID)=10
+		     )
+	</select> -->
+	
+	<!-- 카테고리 목록 -->
+	<select id="getCategoryList" parameterClass="string" resultClass="hotvodContentVO">
+			SELECT HV_CATEGORY_ID AS CONTENT_ID,
+				   LPAD(' ', ((6*LEVEL)*2), '<![CDATA[&nbsp;]]>')||CATEGORY_NAME AS CONTENT_NAME ,
+				   PARENT_ID ,
+				   CONNECT_BY_ROOT(HV_CATEGORY_ID) AS ROOT_ID
+			  FROM PT_UX_HV_CATEGORY
+			 WHERE NVL(DEL_YN, 'N') != 'Y'
+		START WITH PARENT_ID IS NULL
+  CONNECT BY PRIOR HV_CATEGORY_ID = PARENT_ID
+ ORDER SIBLINGS BY CATEGORY_ORDER, REG_DT DESC
+	</select>
+	
+	<!-- 카테고리 개수 조회 -->
+	<select id="getCategoryCount" parameterClass="hotvodContentVO" resultClass="integer">
+		 SELECT		 	   
+		       COUNT(HV_CATEGORY_ID) AS CNT
+		  FROM PT_UX_HV_CATEGORY
+		 WHERE NVL(DEL_YN, 'N') != 'Y'
+		 START WITH PARENT_ID = #content_id#
+	CONNECT BY PRIOR HV_CATEGORY_ID = PARENT_ID
+		 ORDER SIBLINGS BY HV_CATEGORY_ID
+	</select>
+	
+	<!-- 카테고리 순서바꾸기 목록 -->
+	<select id="getChangeList" parameterClass="hotvodContentVO" resultClass="hotvodContentVO">
+		SELECT HV_CATEGORY_ID AS CONTENT_ID,
+			   'C' AS CONTENT_TYPE,
+			   CATEGORY_NAME AS CONTENT_NAME
+		  FROM PT_UX_HV_CATEGORY
+		 WHERE NVL(DEL_YN, 'N') != 'Y'
+		 <isNotEmpty property="content_id">
+		   AND PARENT_ID = #content_id#
+		 </isNotEmpty>
+		 <isEmpty property="content_id">
+		   AND PARENT_ID IS NULL
+		 </isEmpty>
+	  ORDER BY CATEGORY_ORDER, REG_DT DESC
+	</select>
+	
+	<!-- 카테고리 순서바꾸기 저장 -->
+	<update id="changeSave" parameterClass="hotvodContentVO">
+		UPDATE PT_UX_HV_CATEGORY
+		   SET CATEGORY_ORDER = #content_order#
+		 WHERE HV_CATEGORY_ID = #content_id# 
+	</update>
+	
+	<!-- 컨텐츠 순서바꾸기 목록 -->
+	<select id="getChangeContentList" parameterClass="hotvodContentVO" resultClass="hotvodContentVO">
+		SELECT CONT.CONTENT_ID,
+		       CONT.CONTENT_TYPE,
+			   CONT.CONTENT_NAME,
+			   CC.HV_CATEGORY_ID AS PARENT_ID,
+			   CC.CONTENT_ORDER
+		  FROM PT_UX_HV_CATE_CONTENT CC,
+		       PT_UX_HV_CONT CONT
+		 WHERE CC.CONTENT_ID = CONT.CONTENT_ID 
+		   AND NVL(CC.DEL_YN, 'N') != 'Y'
+		   AND CC.HV_CATEGORY_ID = #content_id#
+	  ORDER BY CC.CONTENT_ORDER, CONT.REG_DT DESC
+	</select>	
+	
+	<!-- 컨텐츠 순서바꾸기 저장 -->
+	<update id="changeContentsSave" parameterClass="hotvodContentVO">
+		UPDATE PT_UX_HV_CATE_CONTENT
+		   SET CONTENT_ORDER = #content_order#
+		 WHERE CONTENT_ID = #content_id# 
+		   AND HV_CATEGORY_ID = #parent_id#
+	</update>	
+	
+	<!-- 하위 목록 개수 -->
+	<select id="getSubListCnt" parameterClass="hotvodSearchVO" resultClass="int">
+		SELECT COUNT(CONTENT_ID)
+		  FROM VW_UX_HV_CONTENT C
+		 WHERE NVL(DEL_YN, 'N') = #delYn#
+		 <isNotEmpty property="content_id" prepend="AND">
+		 	   PARENT_ID = #content_id#
+		 </isNotEmpty>
+		 <isEmpty property="content_id" prepend="AND">
+		 	   PARENT_ID IS NULL
+		 	   AND CONTENT_TYPE !='C'
+		 </isEmpty>
+		<isNotEmpty prepend="AND" property="findValue">
+			<isEqual property="findName" compareValue="CONTENT_NAME">
+				$findName$ LIKE '%$findValue$%'
+			</isEqual>
+			<isEqual property="findName" compareValue="SITE_NAME">
+				SITE_ID IN (SELECT SITE_ID FROM PT_UX_HV_SITE WHERE SITE_NAME LIKE '%$findValue$%' )
+			</isEqual>
+		</isNotEmpty>
+	</select>
+	
+	<!-- 하위목록 -->
+	<select id="getSubList" parameterClass="hotvodSearchVO" resultClass="hotvodContentVO">
+		  SELECT *
+		   FROM   (SELECT ROWNUM AS ROWNO, A.*
+		           FROM   ( SELECT T.CONTENT_ID,
+	                               MAX(T.CONTENT_TYPE) AS CONTENT_TYPE,
+	                               MAX(T.CONTENT_NAME) AS CONTENT_NAME,
+	                               MAX(T.PARENT_ID) AS PARENT_ID,
+	                               MAX(T.CONTENT_IMG) AS CONTENT_IMG,
+	                               MAX(T.CONTENT_IMG_TV) AS CONTENT_IMG_TV,
+	                               MAX(T.SITE_NAME) AS SITE_NAME,
+	                               MAX(T.HIT_CNT) AS HIT_CNT,
+	                               MAX(T.REG_DT) AS REG_DT,
+	                               MAX(T.CONTENT_ORDER) AS CONTENT_ORDER,
+	                               MAX(T.PARENT_NAME) AS PARENT_NAME,
+	                               MAX(T.STILL_IMG) AS STILL_IMG,
+	                               MAX(T.CONTENTS_NAME) AS CONTENTS_NAME,
+	                               MAX(T.CATEGORY_ID) AS CATEGORY_ID,
+	                               MAX(T.ALBUM_ID) AS ALBUM_ID,
+	                               MAX(T.DEL_YN) AS DEL_YN
+	                        FROM ( SELECT  C.CONTENT_ID ,
+	                                       CON.CONTENT_TYPE ,
+	                                       CON.CONTENT_NAME ,
+	                                       C.HV_CATEGORY_ID AS PARENT_ID,
+	                                       CASE
+	                                                WHEN CON.CONTENT_IMG IS NOT NULL
+	                                                THEN F_SERVER_URL('I')
+	                                                                  ||'smartux/hotvod/'
+	                                                                  ||CON.CONTENT_IMG
+	                                                ELSE NULL
+	                                       END AS CONTENT_IMG ,
+	                                       
+	                                       CASE
+	                                                WHEN CON.CONTENT_IMG_TV IS NOT NULL
+	                                                THEN F_SERVER_URL('I')
+	                                                                  ||'iptv/hotvod/'
+	                                                                  ||CON.CONTENT_IMG_TV
+	                                                ELSE NULL
+	                                       END AS CONTENT_IMG_TV ,
+	                                       
+	                                       (SELECT SITE_NAME
+	                                       FROM    PT_UX_HV_SITE
+	                                       WHERE   SITE_ID = EXT.SITE_ID
+	                                       AND     ROWNUM  =1
+	                                       )
+	                                       AS SITE_NAME ,
+	                                       CON.HIT_CNT ,
+	                                       CON.REG_DT ,
+	                                       C.CONTENT_ORDER,
+	                                       (SELECT CATEGORY_NAME
+	                                        FROM   PT_UX_HV_CATEGORY
+	                                        WHERE  HV_CATEGORY_ID = #content_id#
+	                                       )
+	                                       AS PARENT_NAME ,
+	                                     DECODE(AI.MAIN_IMG_FILE_NAME, NULL, '', F_SERVER_URL('P')||'resize.php?filename='||AI.MAIN_IMG_FILE_NAME||'<![CDATA[&width=215&height=125&type=still]]>') AS STILL_IMG,
+	                                     CM.CONTENTS_NAME,
+	                                     EXT.CATEGORY_ID ,
+	                                     EXT.ALBUM_ID ,
+	                                     NVL(C.DEL_YN, 'N') AS DEL_YN
+	                              FROM   PT_UX_HV_CATE_CONTENT C ,
+	                                     PT_UX_HV_CONT CON,
+	                                     PT_UX_HV_CONT_EXT EXT,
+	                                     PT_VO_CATEGORY_MAP CM,
+	                                     IMCSUSER.PT_LA_ALBUM_IMG AI
+	                              WHERE  NVL(C.DEL_YN, 'N') = #delYn#
+	                              AND    C.CONTENT_ID     = CON.CONTENT_ID
+	                              AND    CON.CONTENT_ID   = EXT.CONTENT_ID(+)
+	                              AND    EXT.CATEGORY_ID  = CM.CATEGORY_ID(+)
+	                              AND    EXT.ALBUM_ID     = CM.CONTENTS_ID(+)
+	                              AND    CM.CONTENTS_ID   = AI.ADI_ALBUM_ID(+)
+								<isEmpty property="content_id">
+									AND C.HV_CATEGORY_ID IS NULL
+								</isEmpty>
+						       	<isNotEmpty property="content_id">
+						        	   AND C.HV_CATEGORY_ID = #content_id#
+						      	</isNotEmpty>
+						      	 
+						       	<isNotEmpty prepend="AND" property="findValue">
+						       	    <isEqual property="findName" compareValue="CONTENT_NAME">
+						            	$findName$ LIKE '%$findValue$%'
+						            </isEqual>
+						            <isEqual property="findName" compareValue="SITE_NAME">
+						           		SITE_ID IN (SELECT SITE_ID FROM PT_UX_HV_SITE WHERE SITE_NAME LIKE '%$findValue$%' )
+						            </isEqual>
+						        </isNotEmpty>	                              
+	                        ) T
+                       GROUP BY T.CONTENT_ID
+				      	  
+					   UNION ALL
+					                   
+		               SELECT HV_CATEGORY_ID AS CONTENT_ID,
+		                      'C' AS CONTENT_TYPE,
+		                      CATEGORY_NAME AS CONTENT_NAME,
+		                      PARENT_ID,
+		                      '' AS CONTENT_IMG,
+		                      '' AS CONTENT_IMG_TV,
+		                      '' AS SITE_NAME,
+		                      NULL AS HIT_CNT,
+		                      REG_DT,
+		                      CATEGORY_ORDER AS CONTENT_ORDER,
+		                      (SELECT CATEGORY_NAME
+		                       FROM   PT_UX_HV_CATEGORY
+		                       WHERE  HV_CATEGORY_ID = #content_id#
+		                      ) AS PARENT_NAME,
+		                      '' AS STILL_IMG,
+		                      '' AS CONTENTS_NAME,
+		                      '' AS CATEGORY_ID,
+		                      '' AS ALBUM_ID,
+		                      DEL_YN                      
+		               FROM  PT_UX_HV_CATEGORY
+		               WHERE NVL(DEL_YN, 'N') = #delYn#
+			           AND   PARENT_ID = #content_id#
+		               START WITH PARENT_ID IS NULL
+		               CONNECT BY PRIOR HV_CATEGORY_ID = PARENT_ID  
+		               ORDER BY CONTENT_ORDER, REG_DT DESC
+		               )
+		              A
+		          )
+		   WHERE  ROWNO BETWEEN  '$start_rnum$' AND '$end_rnum$'
+	</select>
+	
+	<!-- 앨범카테고리 정보 -->
+	<select id="getAlbumCateInfo" parameterClass="map" resultClass="hotvodContentVO">
+		SELECT S_B.CATEGORY_ID AS CATEGORY_ID, 
+               S_B.CONTENTS_ID AS ALBUM_ID, 
+               MAX(S_D.ASSET_NAME) AS CONTENTS_NAME, 
+               DECODE(MAX(S_A.SERIES_YN), 'Y', MAX(S_C.SERIES_NO), '') AS SERIES_NO, 
+               MAX(S_E.GENRE_SMALL) AS SPONSOR_NAME, 
+               DECODE(MIN(S_F.MAIN_IMG_FILE_NAME), NULL, '', F_SERVER_URL('P')||'resize.php?filename='||MIN(S_F.MAIN_IMG_FILE_NAME)||'<![CDATA[&width=215&height=125&type=still]]>') AS STILL_IMG
+          FROM PT_VO_CATEGORY S_A, 
+               PT_VO_CATEGORY_MAP S_B, 
+               PT_LA_ALBUM_MST S_C, 
+               PT_LA_PACKAGE_ASSET S_D, 
+               PT_LA_TITLE_ASSET S_E, 
+               IMCSUSER.PT_LA_ALBUM_IMG S_F 
+         WHERE S_A.CATEGORY_ID=S_B.CATEGORY_ID 
+           AND S_B.CONTENTS_ID=S_C.ADI_ALBUM_ID 
+           AND (
+                  (
+                      (S_C.PRE_MAPPING_YN IS NULL OR S_C.PRE_MAPPING_YN = 'N') AND (S_B.VIEWING_FLAG = 'V' OR S_B.VIEWING_FLAG IS NULL)
+                  )
+                OR
+                  (
+                      S_C.PRE_MAPPING_YN = 'Y' AND S_B.VIEWING_FLAG = 'V'
+                  )
+                )
+           AND S_C.ADI_ALBUM_ID = S_D.ADI_ALBUM_ID 
+           AND S_D.ALBUM_TYPE != 'PR'
+           AND S_D.ADI_PRODUCT_ID = S_E.ADI_PRODUCT_ID 
+           AND S_B.CONTENTS_ID = S_F.ADI_ALBUM_ID(+)
+           AND S_F.IMG_FLAG(+) = 'N'
+           AND S_A.TEST_SBC = 'N'
+           AND S_A.CATEGORY_ID = #category_id#
+           AND S_C.ADI_ALBUM_ID = #album_id#
+      GROUP BY S_B.CATEGORY_ID, 
+               S_B.CONTENTS_ID
+	</select>
+				
+	<resultMap class="java.util.HashMap" id="imgMap">
+		<result property="zipFile" column="ZIP_FILE"/>
+		<result property="timeList" column="TIME_LIST"/>
+	</resultMap>
+	
+	<!-- 구간점프 이미지 정보 -->
+	<select id="getImgInfo" parameterClass="String" resultMap="imgMap">
+		SELECT SUBSTR(D.ADI_PRODUCT_ID,1, 15),
+			   MAX(F.CONTENT_VALUE) AS ZIP_FILE,
+			   MAX(F.SECOND_VALUE) AS TIME_LIST
+		  FROM  PT_VO_CATEGORY_MAP B, PT_LA_ALBUM_MST C, PT_LA_PACKAGE_ASSET D, PT_LA_POSTER_ASSET F
+		 WHERE 
+		      (
+                      NVL(C.PRE_MAPPING_YN,'N') = 'N' AND NVL(B.VIEWING_FLAG,'V') = 'V'
+                OR
+                      (C.PRE_MAPPING_YN = 'Y' AND B.VIEWING_FLAG = 'V')
+               )
+		   AND B.CONTENTS_ID = C.ADI_ALBUM_ID
+		   AND C.ADI_ALBUM_ID = D.ADI_ALBUM_ID
+		   AND D.ADI_PRODUCT_ID = F.ADI_PRODUCT_ID
+		   AND NVL(B.QD_FLAG, '2') = '2'
+		   AND NVL(B.VIEWING_FLAG, 'V') = 'V'
+		   AND F.POSTER_TYPE='Z'
+		   AND B.CONTENTS_ID=#albumId#
+	  GROUP BY SUBSTR(D.ADI_PRODUCT_ID,1, 15)
+	</select>
+	
+	<!-- 컨텐츠일때 상위 카테고리의 노출여부 조회 -->
+	<select id="getParentContentDelYn" parameterClass="hotvodContentVO" resultClass="hotvodContentVO">
+		SELECT 
+				NVL(C.DEL_YN, 'N') AS DEL_YN, 
+				C.CATEGORY_NAME AS CONTENT_NAME
+		FROM    PT_UX_HV_CATEGORY C, 
+		        PT_UX_HV_CATE_CONTENT CONT 
+		WHERE  C.HV_CATEGORY_ID = CONT.HV_CATEGORY_ID
+		AND    CONT.HV_CATEGORY_ID = #parent_id#
+		AND    CONT.CONTENT_ID = #content_id#	
+	</select>
+	
+	<!-- 카테고리일때 상위 카테고리의 노출여부 조회 -->
+	<select id="getParentCategoryDelYn" parameterClass="hotvodContentVO" resultClass="hotvodContentVO">
+		SELECT NVL(DEL_YN, 'N') AS DEL_YN,
+		       CATEGORY_NAME AS CONTENT_NAME
+		FROM   PT_UX_HV_CATEGORY
+		WHERE  HV_CATEGORY_ID = #parent_id#
+	</select>
+	
+	<!-- 통합검색 컨텐츠 조회  -->
+	<select id="getHotvodListAll" resultClass="hotvodFileUploadVO">
+		<!-- 콘텐츠 CONTENT_TYPE = V --> 
+		SELECT C.HV_CATEGORY_ID AS CAT_ID,
+		       C.CATEGORY_NAME  AS CAT_NAME,
+		       B.CONTENT_ID ,
+		       B.CONTENT_TYPE,
+		       B.CONTENT_NAME,
+		       B.CONTENT_INFO,
+		       B.CONTENT_URL,
+		       B.CONTENT_IMG AS IMG_URL_HDTV,
+		       B.CONTENT_IMG_TV AS IMG_URL_IPTV,
+		       B.DURATION,
+		       B.HIT_CNT,
+		       E.SITE_ID,
+		       S.SITE_NAME,
+		       S.SITE_URL,
+		       S.SITE_IMG AS SITE_ICON_HDTV,
+		       S.SITE_IMG_TV AS SITE_ICON_IPTV,
+		       TO_CHAR(B.REG_DT, 'YYYYMMDDHH24MISS') AS REG_DATE,
+		       E.BADGE_DATA
+		FROM   PT_UX_HV_CONT B,
+		       PT_UX_HV_CONT_EXT E,
+		       PT_UX_HV_CATE_CONTENT CC,
+		       PT_UX_HV_CATEGORY C,
+		       PT_UX_HV_SITE S
+		WHERE  B.CONTENT_ID      = CC.CONTENT_ID
+		AND    CC.HV_CATEGORY_ID = C.HV_CATEGORY_ID
+		AND    B.CONTENT_ID      = E.CONTENT_ID(+)
+		AND    E.SITE_ID         = S.SITE_ID(+)
+		AND    B.CONTENT_TYPE      = 'V'
+		AND    NVL(CC.DEL_YN, 'N') = 'N'
+		AND    NVL(C.TEST_YN, 'N') = 'N'
+		AND    NVL(C.UNIFY_SEARCH_YN, 'Y') = 'Y'
+	</select>
+		
+	<!-- 통합검색 하이라이트 조회 -->  
+	<select id="getHotvodHighListAll" resultClass="hotvodFileUploadVO">
+		SELECT MAX(CAT_ID) AS CAT_ID,
+		       MAX(CAT_NAME) AS CAT_NAME,
+		       T.CONTENT_ID,
+		       MAX(CONTENT_TYPE) AS CONTENT_TYPE,
+		       MAX(CONTENT_NAME) AS CONTENT_NAME,
+		       MAX(CONTENT_INFO) AS CONTENT_INFO,
+		       MAX(IMG_URL_HDTV) AS IMG_URL_HDTV,
+		       MAX(DURATION) AS DURATION,
+		       MAX(HIT_CNT) AS HIT_CNT,
+		       MAX(SITE_ICON_HDTV) AS SITE_ICON_HDTV,
+		       MAX(SITE_ICON_IPTV) AS SITE_ICON_IPTV,
+		       MAX(REG_DATE) AS REG_DATE,
+		       MAX(ALBUM_ID) AS ALBUM_ID,
+		       MAX(CATEGORY_ID) AS CATEGORY_ID,
+		       MAX(START_TIME) AS START_TIME,
+		       MAX(END_TIME) AS END_TIME,
+		       MAX(CONTENTS_NAME) AS CONTENTS_NAME,
+		       MAX(SERIES_NO) AS SERIES_NO,
+		       MAX(SPONSOR_NAME) AS SPONSOR_NAME,
+		       MAX(STILL_IMG) AS STILL_IMG,
+		       MAX(SERIES_DESC) AS SERIES_DESC
+		FROM (
+		   	    SELECT C.HV_CATEGORY_ID AS CAT_ID,
+				       C.CATEGORY_NAME  AS CAT_NAME,
+				       B.CONTENT_ID ,
+				       B.CONTENT_TYPE,
+				       B.CONTENT_NAME,
+				       B.CONTENT_INFO,
+				       B.CONTENT_IMG AS IMG_URL_HDTV,
+				       B.DURATION,
+				       B.HIT_CNT,
+				       S.SITE_IMG AS SITE_ICON_HDTV,
+				       S.SITE_IMG_TV AS SITE_ICON_IPTV,
+				       TO_CHAR(B.REG_DT, 'YYYYMMDDHH24MISS') AS REG_DATE,
+				       E.ALBUM_ID                            AS ALBUM_ID,
+				       E.CATEGORY_ID                         AS CATEGORY_ID,
+				       E.START_TIME                          AS START_TIME,
+				       E.END_TIME                            AS END_TIME,
+				       AM.ADI_ALBUM_NAME                     AS CONTENTS_NAME,
+				       AM.SERIES_NO                          AS SERIES_NO,
+				       (SELECT TA.GENRE_SMALL
+				       FROM    PT_LA_PACKAGE_ASSET PA,
+				               PT_LA_TITLE_ASSET TA
+				       WHERE   PA.ADI_PRODUCT_ID = TA.ADI_PRODUCT_ID
+				       AND     PA.CREATE_DATE    = TA.CREATE_DATE
+				       AND     PA.ADI_ALBUM_ID   = E.ALBUM_ID
+				       AND     ROWNUM            =1
+				       )
+				       AS SPONSOR_NAME,
+				       AI.MAIN_IMG_FILE_NAME AS STILL_IMG,
+				       DECODE(CA.SERIES_YN,'Y',CM.SERIES_NO,'') AS SERIES_DESC
+				FROM   PT_UX_HV_CONT B,
+				       PT_UX_HV_CONT_EXT E,
+				       PT_UX_HV_CATE_CONTENT CC,
+				       PT_UX_HV_CATEGORY C,
+				       PT_VO_CATEGORY CA,
+				       PT_VO_CATEGORY_MAP CM,
+				       PT_LA_ALBUM_MST AM,
+				       PT_LA_ALBUM_IMG AI,
+				       PT_UX_HV_SITE S
+				WHERE  B.CONTENT_ID           = CC.CONTENT_ID
+				AND    CC.HV_CATEGORY_ID      = C.HV_CATEGORY_ID
+				AND    B.CONTENT_ID           = E.CONTENT_ID
+				AND    E.CATEGORY_ID          = CM.CATEGORY_ID
+				AND    E.ALBUM_ID             = CM.CONTENTS_ID
+				AND    E.CATEGORY_ID          = CA.CATEGORY_ID
+				AND    CM.CONTENTS_ID         = AM.ADI_ALBUM_ID(+)
+				AND    AM.ADI_ALBUM_ID        = AI.ADI_ALBUM_ID(+)
+				AND    E.SITE_ID              = S.SITE_ID(+)
+				AND    AI.IMG_FLAG(+)         = 'N'
+			    AND    B.CONTENT_TYPE         = 'H'
+				AND    NVL(CA.TEST_SBC, 'N') != 'Y'
+				AND    NVL(CC.DEL_YN, 'N')         = 'N'
+				AND    NVL(C.TEST_YN, 'N')         = 'N'
+				AND    NVL(C.UNIFY_SEARCH_YN, 'Y') = 'Y'
+		    ) T
+		GROUP BY T.CONTENT_ID
+	</select>
+	
+	<!-- mims.xml로 이동 -->
+	<!-- 통합검색 컨텐츠 조회 -->
+	<!-- <select id="getHotvodServiceListAll" parameterClass="string" resultClass="hotvodFileUploadVO">
+		SELECT C.HV_CATEGORY_ID AS CAT_ID,
+		       C.CATEGORY_NAME  AS CAT_NAME,
+		       B.CONTENT_ID ,
+		       B.CONTENT_TYPE,
+		       B.CONTENT_NAME,
+		       B.CONTENT_INFO,
+		       B.CONTENT_URL,
+		       B.CONTENT_IMG AS IMG_URL_HDTV,
+		       B.CONTENT_IMG_TV AS IMG_URL_IPTV,
+		       B.DURATION,
+		       B.HIT_CNT,
+		       E.SITE_ID,
+		       S.SITE_NAME,
+		       S.SITE_URL,
+		       S.SITE_IMG AS SITE_ICON_HDTV,
+		       S.SITE_IMG_TV AS SITE_ICON_IPTV,
+		       TO_CHAR(B.REG_DT, 'YYYYMMDDHH24MISS') AS REG_DATE,
+		       E.BADGE_DATA
+		FROM   PT_UX_HV_CONT B,
+		       PT_UX_HV_CONT_EXT E,
+		       PT_UX_HV_CATE_CONTENT CC,
+		       PT_UX_HV_CATEGORY C,
+		       PT_UX_HV_SITE S
+		WHERE  B.CONTENT_ID      = CC.CONTENT_ID
+		AND    CC.HV_CATEGORY_ID = C.HV_CATEGORY_ID
+		AND    B.CONTENT_ID      = E.CONTENT_ID(+)
+		AND    E.SITE_ID         = S.SITE_ID(+)
+		AND    B.CONTENT_TYPE    = 'V'
+		AND    BITAND(C.MULTI_SERVICE_TYPE,#multi_service_type#) > 0
+		AND    NVL(CC.DEL_YN, 'N') = 'N'
+		AND    NVL(C.TEST_YN, 'N') = 'N'
+		AND    NVL(C.UNIFY_SEARCH_YN, 'Y') = 'Y'
+	</select> -->
+		
+	<!--뱃지 대표컨텐츠여부 조회 -->
+	<select id="getMasterContentValidList" parameterClass="map" resultClass="hotvodContentVO">
+		SELECT
+			 BADGE_DATA    
+			FROM
+			 VW_UX_HV_CONTENT CONT
+			  LEFT OUTER JOIN		
+			  (
+			  SELECT
+			      CATE.CATEGORY_ID,		      
+			      CATE.TEST_SBC,
+			      CATEMAP.CONTENTS_ID      
+			    FROM
+			     PT_VO_CATEGORY CATE
+			     INNER JOIN
+			     PT_VO_CATEGORY_MAP CATEMAP
+			     ON CATE.CATEGORY_ID = CATEMAP.CATEGORY_ID
+			   INNER JOIN
+			   PT_LA_ALBUM_MST ALBUM
+			   ON CATEMAP.CONTENTS_ID = ALBUM.ADI_ALBUM_ID
+			    WHERE NVL(CATE.TEST_SBC,'N') != 'Y'
+			      AND ( ( (ALBUM.PRE_MAPPING_YN IS NULL OR ALBUM.PRE_MAPPING_YN = 'N') AND (CATEMAP.VIEWING_FLAG = 'V' OR CATEMAP.VIEWING_FLAG IS NULL) )
+			      OR ( ALBUM.PRE_MAPPING_YN = 'Y' AND CATEMAP.VIEWING_FLAG = 'V' )     
+			     )
+			  ) IMCSDATA
+			  ON CONT.CATEGORY_ID = IMCSDATA.CATEGORY_ID
+			 AND CONT.ALBUM_ID = IMCSDATA.CONTENTS_ID
+			WHERE 1=1		
+		    AND CONT.PARENT_ID IN (
+				SELECT PARENT_ID 
+				FROM   PT_UX_HV_CATEGORY
+				WHERE  HV_CATEGORY_ID = #content_id#
+				UNION ALL
+				SELECT HV_CATEGORY_ID
+				FROM   PT_UX_HV_CATE_CONTENT
+				WHERE  CONTENT_ID = #content_id#
+		    )
+			AND NVL(CONT.DEL_YN, 'N') != 'Y'		
+			AND ( ( CONT.CONTENT_TYPE != 'H' AND CONT.CONTENT_TYPE != 'M' ) OR ( ( CONT.CONTENT_TYPE = 'H' OR CONT.CONTENT_TYPE = 'M' ) AND IMCSDATA.CONTENTS_ID IS NOT NULL ) )
+			AND BADGE_DATA IS NOT NULL 
+	    AND BADGE_DATA NOT IN(1,0)
+	</select>
+	
+	<!-- 뱃지 카테고리포커싱 여부 조회 -->
+	<select id="getFocusValidList" parameterClass="map" resultClass="hotvodContentVO">		
+		SELECT  BADGE_DATA    
+		  FROM  PT_UX_HV_CATEGORY CATE
+		 WHERE  CATE.PARENT_ID IN (
+			    	SELECT A.HV_CATEGORY_ID
+			        FROM   PT_UX_HV_CATEGORY A
+			        WHERE  A.PARENT_ID IN (
+				        SELECT   PARENT_ID
+				          FROM   PT_UX_HV_CATEGORY TEMP
+				         WHERE   LEVEL = 2  
+				        START WITH TEMP.HV_CATEGORY_ID = #content_id#
+				        CONNECT BY PRIOR TEMP.PARENT_ID=TEMP.HV_CATEGORY_ID
+			        )
+			    ) 		 			
+		   AND NVL(CATE.DEL_YN, 'N') != 'Y'
+		   AND CATE.BADGE_DATA IS NOT NULL 
+		   AND CATE.BADGE_DATA NOT IN(0)
+	</select>
+	
+	<!-- 화제동영상 엑셀다운로드 -->
+	<select id ="getExcelCategory" parameterClass="hotvodSearchVO" resultClass="hotvodExcelVo">
+		SELECT * FROM (
+			SELECT
+				A.hvCategoryId,
+		        A.categoryOrder,
+		        D.CONTENT_ORDER as contentsOrder,
+		        ROW_NUMBER() OVER(PARTITION BY A.rowNo ORDER BY D.CONTENT_ORDER) AS sort,
+		        NVL(B.CONTENT_ID, A.hvCategoryId) AS contentsId,
+	    		DECODE(B.CONTENT_TYPE, null, '카테고리', 'M', 'VOD 상세', 'V', '대박영상', 'C', '카테고리', 'N', 'VOD 카테고리') AS contentsType,
+	    		A.fullCategoryName,
+	    		B.CONTENT_NAME AS contentsName,
+		        NVL(C.ALBUM_ID, ' ') AS albumId,
+		        NVL(B.DURATION, DECODE(C.START_TIME, null, ' ', C.START_TIME||'~'||C.END_TIME)) AS viewTime,		        
+		        NVL(D.DEL_YN, 'N') AS delYn,
+		        NVL(B.CONTENT_URL, ' ') AS contentsUrl,
+		        NVL(C.CATEGORY_ID, ' ') AS vodCategoryId
+			FROM (		
+				SELECT 
+					ROWNUM as rowNo,
+				    C.CATEGORY_ORDER AS categoryOrder,
+				    SYS_CONNECT_BY_PATH(C.CATEGORY_ORDER,',') AS fullCategoryOrder,
+				    C.HV_CATEGORY_ID AS hvCategoryId,
+				    CONNECT_BY_ISLEAF as isLeaf,
+				    SYS_CONNECT_BY_PATH(C.CATEGORY_NAME,'>>') AS fullCategoryName,
+				    C.CATEGORY_NAME AS CONTENT_NAME ,
+				    CONNECT_BY_ROOT(C.CATEGORY_ORDER) AS rootCategoryOrder
+				FROM PT_UX_HV_CATEGORY C
+				WHERE 1=1	
+				START WITH C.PARENT_ID IS NULL
+				CONNECT BY PRIOR C.HV_CATEGORY_ID = C.PARENT_ID
+				ORDER SIBLINGS BY C.CATEGORY_ORDER, C.REG_DT DESC
+				) A,
+			     PT_UX_HV_CONT B,
+    		     PT_UX_HV_CONT_EXT C,
+      		     PT_UX_HV_CATE_CONTENT D
+		   WHERE A.hvCategoryId = D.HV_CATEGORY_ID(+)
+             AND B.CONTENT_ID = D.CONTENT_ID
+             AND D.CONTENT_ID = C.CONTENT_ID(+)      			
+			<isNotEmpty prepend="AND" property="findValue">
+		    	<isEqual property="findName" compareValue="CONTENT_NAME">
+		        	B.CONTENT_NAME LIKE '%$findValue$%'
+		        </isEqual>
+		        <isEqual property="findName" compareValue="SITE_NAME">
+		        	C.SITE_ID IN (SELECT SITE_ID FROM PT_UX_HV_SITE WHERE DEL_YN='N' AND SITE_NAME LIKE '%$findValue$%')
+		        </isEqual>
+	      	</isNotEmpty>  			
+			AND   D.HV_CATEGORY_ID = #parent_id#
+		)
+		WHERE 1=1
+		<isEqual property="delYn" compareValue="N">
+		 	AND NVL(delYn, 'N') = 'N'
+		</isEqual>
+		<isEqual property="delYn" compareValue="Y">
+		 	AND NVL(delYn, 'N') = 'Y'
+		</isEqual>
+	</select>
+		
+	<!-- 컨텐츠 복사존재여부 체크 -->
+	<select id="contentCopyChk" parameterClass ="map" resultClass="int">
+		SELECT COUNT(CONTENT_ID)
+		 FROM  PT_UX_HV_CATE_CONTENT 
+		WHERE  HV_CATEGORY_ID = #parent_id# 
+		  AND  CONTENT_ID     = #content_id#  
+		  AND  DEL_YN         = 'N'
+	</select>
+	
+	<!-- 컨텐츠 복사 -->
+	<insert id="contentCopy" parameterClass ="map">
+		INSERT INTO PT_UX_HV_CATE_CONTENT 
+		VALUES (#parent_id#, #content_id#, #order#, 'N')
+	</insert>
+	
+	<update id="contentDelYnUpdate"  parameterClass ="map">
+		UPDATE PT_UX_HV_CATE_CONTENT
+		   SET DEL_YN         = #del_yn#,
+		       CONTENT_ORDER  = #order# 
+	     WHERE HV_CATEGORY_ID = #parent_id# 
+		   AND CONTENT_ID     = #content_id#  	
+	</update>
+	
+	<select id="contentDelYn"  parameterClass ="map" resultClass="string">
+		SELECT DEL_YN
+		  FROM PT_UX_HV_CATE_CONTENT
+	     WHERE HV_CATEGORY_ID = #parent_id# 
+		   AND CONTENT_ID     = #content_id#  	
+	</select>
+	
+	<!-- 카테고리 ID변경을 위한 등록 -->
+	<insert id="cateContentSelectInsert" parameterClass="hotvodContentVO">
+		INSERT
+		INTO   PT_UX_HV_CATE_CONTENT
+		       (
+		              HV_CATEGORY_ID,
+		              CONTENT_ID,
+		              CONTENT_ORDER,
+		              DEL_YN
+		       )
+		SELECT #parent_id# AS HV_CATEGORY_ID,
+		       CONTENT_ID,
+		       '0',
+		       DEL_YN
+		FROM   PT_UX_HV_CATE_CONTENT
+		WHERE  HV_CATEGORY_ID=#pre_parent_id#
+		AND    CONTENT_ID    =#content_id#
+	</insert>
+	
+	<select id="getImgServerUrl" resultClass="string">
+		SELECT
+			/*hotvod.getImgServerUrl*/
+			F_SERVER_URL(#VALUE#)
+		FROM DUAL
+  	</select>        	
+	
+</sqlMap>

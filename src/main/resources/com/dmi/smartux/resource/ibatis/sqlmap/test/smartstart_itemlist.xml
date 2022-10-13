@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="test_smartstartitemlist">
+
+	<!-- 백업 테이블 create  -->
+	<statement id="create_item_temp_table">
+		CREATE TABLE PT_UX_PANEL_TITLE_BP (
+			  PANNEL_ID        VARCHAR2(4)        NOT NULL, 
+			  TITLE_ID         VARCHAR2(2)        NOT NULL, 
+			  TITLE_NM         VARCHAR2(100)      NOT NULL, 
+			  P_TITLE_ID       VARCHAR2(2)            NULL, 
+			  CATEGORY_ID      VARCHAR2(100)          NULL, 
+			  CATEGORY_TYPE    VARCHAR2(10)           NULL, 
+			  ALBUM_CNT        VARCHAR2(100)          NULL, 
+			  UI_TYPE          VARCHAR2(100)          NULL, 
+			  BG_IMG_FILE      VARCHAR2(100)          NULL, 
+			  DESCRIPTION      VARCHAR2(1000)         NULL, 
+			  ORDERED          NUMBER             NOT NULL, 
+			  USE_YN           VARCHAR2(1)        NOT NULL, 
+			  VERSION          VARCHAR2(20)       NOT NULL, 
+			  CREATED          DATE              DEFAULT SYSDATE               NOT NULL, 
+			  UPDATED          DATE              DEFAULT SYSDATE               NOT NULL, 
+			  CREATE_ID        VARCHAR2(30)       NOT NULL, 
+			  UPDATE_ID        VARCHAR2(30)       NOT NULL,
+			  PAGE_TYPE        VARCHAR2(10)           NULL, 
+  			  PAGE_CODE        VARCHAR2(100)          NULL
+		)
+	</statement>
+	
+	<!-- 기존 테이블의 기존 데이터를 백업 테이블에 insert -->
+	<insert id="insert_item_to_temp_table">
+		INSERT INTO PT_UX_PANEL_TITLE_BP
+		SELECT * FROM PT_UX_PANEL_TITLE WHERE PANNEL_ID='CP06'
+	</insert>
+	
+	<!-- 기존 테이블의 기존 데이터 삭제 -->
+	<delete id="delete_org_item_data">
+		DELETE FROM PT_UX_PANEL_TITLE WHERE PANNEL_ID='CP06'
+	</delete>
+	
+	<!-- 테스트 데이터를 기존 테이블에 insert-->
+	<insert id="insert_test_data_to_org_item_table1">
+		INSERT INTO PT_UX_PANEL_TITLE(PANNEL_ID , TITLE_ID , TITLE_NM , P_TITLE_ID  ,CATEGORY_ID, CATEGORY_TYPE, ALBUM_CNT , UI_TYPE , BG_IMG_FILE , DESCRIPTION , ORDERED , USE_YN , VERSION , CREATED , UPDATED , CREATE_ID , UPDATE_ID )
+		VALUES(
+			'CP06'
+			, '01'
+    		, '실시간 시청률_TEST1'
+    		, ''
+    		, ''
+    		,'LIVE'
+    		,''
+    		,''
+    		,'TEST1.gif'
+    		,''
+    		,'1'
+    		, 'Y'
+    		, '1337673058073'
+    		, SYSDATE
+    		, SYSDATE
+   	 		, 'admin'
+    		, 'admin'
+    	)
+	</insert>
+	
+	<insert id="insert_test_data_to_org_item_table2">
+		INSERT INTO PT_UX_PANEL_TITLE(PANNEL_ID , TITLE_ID , TITLE_NM , P_TITLE_ID  ,CATEGORY_ID, CATEGORY_TYPE, ALBUM_CNT , UI_TYPE , BG_IMG_FILE , DESCRIPTION , ORDERED , USE_YN , VERSION , CREATED , UPDATED , CREATE_ID , UPDATE_ID )
+		VALUES(
+			'CP06'
+			, '02'
+    		, 'Best VOD_TEST2'
+    		, ''
+    		, 'R0001'
+    		,'VOD'
+    		,''
+    		,''
+    		,'TEST2.gif'
+    		,''
+    		,'2'
+    		, 'Y'
+    		, '1337673058073'
+    		, SYSDATE
+    		, SYSDATE
+   	 		, 'admin'
+    		, 'admin'
+    	)
+	</insert>
+	
+	<insert id="insert_test_data_to_org_item_table3">
+		INSERT INTO PT_UX_PANEL_TITLE(PANNEL_ID , TITLE_ID , TITLE_NM , P_TITLE_ID  ,CATEGORY_ID, CATEGORY_TYPE, ALBUM_CNT , UI_TYPE , BG_IMG_FILE , DESCRIPTION , ORDERED , USE_YN , VERSION , CREATED , UPDATED , CREATE_ID , UPDATE_ID )
+		VALUES(
+			'CP06'
+			, '03'
+    		, '카테고리 매핑_TEST3'
+    		, ''
+    		, 'T600'
+    		,'CAT_MAP'
+    		,''
+    		,''
+    		,'TEST3.gif'
+    		,''
+    		,'3'
+    		, 'Y'
+    		, '1337673058073'
+    		, SYSDATE
+    		, SYSDATE
+   	 		, 'admin'
+    		, 'admin'
+    	)
+	</insert>
+	
+	<insert id="insert_test_data_to_org_item_table4">
+		INSERT INTO PT_UX_PANEL_TITLE(PANNEL_ID , TITLE_ID , TITLE_NM , P_TITLE_ID  ,CATEGORY_ID, CATEGORY_TYPE, ALBUM_CNT , UI_TYPE , BG_IMG_FILE , DESCRIPTION , ORDERED , USE_YN , VERSION , CREATED , UPDATED , CREATE_ID , UPDATE_ID )
+		VALUES(
+			'CP06'
+			, '04'
+    		, '자체편성_TEST4'
+    		, ''
+    		, '1'
+    		,'SCHEDULE'
+    		,''
+    		,''
+    		,'TEST4.gif'
+    		,''
+    		,'4'
+    		, 'Y'
+    		, '1337673058073'
+    		, SYSDATE
+    		, SYSDATE
+   	 		, 'admin'
+    		, 'admin'
+    	)
+	</insert>
+	
+	<insert id="insert_test_data_to_org_item_table5">
+		INSERT INTO PT_UX_PANEL_TITLE(PANNEL_ID , TITLE_ID , TITLE_NM , P_TITLE_ID  ,CATEGORY_ID, CATEGORY_TYPE, ALBUM_CNT , UI_TYPE , BG_IMG_FILE , DESCRIPTION , ORDERED , USE_YN , VERSION , CREATED , UPDATED , CREATE_ID , UPDATE_ID )
+		VALUES(
+			'CP06'
+			, '05'
+    		, ' 찜목록 Recent_TEST5'
+    		, ''
+    		, ''
+    		,'WISH'
+    		,''
+    		,''
+    		,'TEST5.gif'
+    		,''
+    		,'5'
+    		, 'Y'
+    		, '1337673058073'
+    		, SYSDATE
+    		, SYSDATE
+   	 		, 'admin'
+    		, 'admin'
+    	)
+	</insert>
+	
+	
+	<!-- 기존 테이블의 테스트 데이터 삭제 -->
+	<delete id="delete_test_item_data">
+		DELETE FROM PT_UX_PANEL_TITLE WHERE PANNEL_ID='CP06'
+	</delete>
+	
+	<!-- 백업 테이블에 보관된 데이터를 기존 테이블에 insert -->
+	<insert id="insert_item_to_org_table">
+		INSERT INTO PT_UX_PANEL_TITLE
+		SELECT * FROM PT_UX_PANEL_TITLE_BP WHERE PANNEL_ID='CP06'
+	</insert>
+	
+	<!-- 백업 테이블 drop  -->
+	<statement id="drop_item_temp_table">
+		DROP TABLE PT_UX_PANEL_TITLE_BP
+	</statement>	
+		
+</sqlMap>

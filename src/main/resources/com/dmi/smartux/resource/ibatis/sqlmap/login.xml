@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="login">
+	
+	<resultMap id="loginVOMap" class="com.dmi.smartux.admin.login.vo.LoginVO"> 
+		<result property="user_id" column="USER_ID" />
+		<result property="password" column="PASSWORD" />
+		<result property="name" column="NAME" />
+		<result property="email" column="EMAIL" />
+		<result property="memo" column="MEMO" />
+		<result property="created" column="CREATED" />
+		<result property="loginfailcnt" column="LOGINFAILCNT"  />
+		<result property="exp_date" column="EXP_DATE" />	
+		<result property="exp_day" column="EXP_DAY" />
+		<result property="user_auth" column="USER_AUTH" />
+		<result property="salt_key" column="SALT_KEY" />
+	</resultMap>
+	
+	<select id="getAdminData" parameterClass="map" resultMap="loginVOMap">
+			SELECT 
+				 USER_ID
+				,PASSWORD
+				,NAME
+				,EMAIL
+				,MEMO
+				,CREATED
+				,LOGINFAILCNT
+				,EXP_DATE
+				,EXP_DAY
+				,USER_AUTH
+				,SALT_KEY
+			FROM PT_UX_ADMIN
+			WHERE 
+				USER_ID = #user_id#
+	</select>
+
+	<select id="cntAdminData" parameterClass="map" resultClass="int">
+			SELECT 
+				 COUNT(USER_ID)
+			FROM PT_UX_ADMIN
+			WHERE 
+				USER_ID = #user_id#
+	</select>
+	
+	<update id="setAdminLoginFail" parameterClass="map">
+			UPDATE PT_UX_ADMIN
+			SET 
+				LOGINFAILCNT = LOGINFAILCNT+1 
+			WHERE 
+				USER_ID = #user_id#
+	</update>
+	
+	<update id="setAdminLoginSuccess" parameterClass="map">
+			UPDATE PT_UX_ADMIN
+			SET 
+				LOGINFAILCNT = 0 
+			WHERE 
+				USER_ID = #user_id#
+	</update>
+
+
+	<update id="setAdminExpDate" parameterClass="com.dmi.smartux.admin.login.vo.LoginVO">
+			UPDATE PT_UX_ADMIN
+			SET 
+				 PASSWORD = #password#
+				,LOGINFAILCNT = 0
+				,EXP_DAY = #exp_day#
+				,EXP_DATE = #exp_date#
+				,SALT_KEY = #salt_key#
+			WHERE 
+				USER_ID = #user_id#
+	</update>
+	
+	
+	<select id="getAdminList" parameterClass="com.dmi.smartux.admin.login.vo.LoginVO" resultMap="loginVOMap" resultClass="com.dmi.smartux.admin.login.vo.LoginVO">
+		SELECT B.* FROM(SELECT ROWNUM RNUM,A.* FROM(
+		    SELECT 
+		        USER_ID
+		        ,PASSWORD
+		        ,NAME
+		        ,EMAIL
+		        ,MEMO
+		        ,CREATED
+		        ,LOGINFAILCNT
+		        ,EXP_DATE
+		        ,EXP_DAY
+		        ,USER_AUTH
+		        ,SALT_KEY
+		    FROM PT_UX_ADMIN
+		    WHERE 1=1
+		        <isNotEmpty prepend="AND" property="findValue">
+			  	<isNotNull property="findName">
+			  		$findName$ LIKE '%$findValue$%'
+			  	</isNotNull>
+			  </isNotEmpty>
+		        ORDER BY CREATED DESC
+		        ) A 
+		) B
+		WHERE RNUM BETWEEN '$start_rnum$' AND '$end_rnum$'
+	</select>
+	
+	<select id="getAdminListCtn" resultClass="int">
+		SELECT 
+		       COUNT(USER_ID)
+		   FROM PT_UX_ADMIN
+		   WHERE 1=1
+		   <isNotEmpty prepend="AND" property="findValue">
+		  	<isNotNull property="findName">
+		  		$findName$ LIKE '%$findValue$%'
+		  	</isNotNull>
+		  </isNotEmpty>
+	</select>
+	
+	<insert id="setAdminInsert" parameterClass="com.dmi.smartux.admin.login.vo.LoginVO">
+		INSERT INTO PT_UX_ADMIN
+		(
+			USER_ID
+			,PASSWORD
+			,NAME
+			,EMAIL
+			,MEMO
+			,CREATED
+			,LOGINFAILCNT
+			,EXP_DATE
+			,EXP_DAY
+			,USER_AUTH
+			,SALT_KEY
+		)
+		VALUES
+		(
+			#user_id#
+			,#password#
+			,#name#
+			,#email#
+			,#memo#
+			,sysdate
+			,0
+			,#exp_date#
+			,#exp_day#
+			,#user_auth#
+			,#salt_key#
+		)
+	</insert>
+	
+	<update id="setAdminUpdate" parameterClass="com.dmi.smartux.admin.login.vo.LoginVO">
+		UPDATE 
+			PT_UX_ADMIN 
+		SET
+			NAME = #name#
+			,EMAIL = #email#
+			,MEMO = #memo#
+			,LOGINFAILCNT = 0			
+			,EXP_DATE = #exp_date#
+			,EXP_DAY = #exp_day#
+			,USER_AUTH = #user_auth#
+			<isNotEmpty property="password">
+			,PASSWORD = #password#
+			,SALT_KEY = #salt_key#
+			</isNotEmpty>
+		WHERE
+			USER_ID = #user_id#
+	</update>
+	
+	<delete id="setAdminDelete" parameterClass="map">
+		DELETE FROM
+			PT_UX_ADMIN
+		WHERE
+			USER_ID = #user_id#
+	</delete>
+	
+	<update id="setSuperAdminAuthinit">
+		UPDATE 
+			PT_UX_ADMIN
+		SET
+			LOGINFAILCNT = 0
+		WHERE
+			USER_AUTH = '00'
+	</update>
+	
+	<select id="getCodeItem" parameterClass="map" resultClass="String">
+		SELECT ITEM_NM
+		FROM PT_UX_CODE_ITEMS 
+		WHERE ITEM_CODE = #item_code_2#
+		AND USE_YN ='Y'
+		AND CODE = (
+						SELECT  A.CODE
+            			  FROM  PT_UX_CODE_ITEMS A,
+                                PT_UX_CODE B
+              			 WHERE A.ITEM_CODE = #item_code_1#
+              			   AND A.ITEM_NM <![CDATA[<=]]>  TO_CHAR(SYSDATE,'YYYYMMDDHH24MISS')
+              			   AND A.USE_YN = 'Y'
+                           AND A.CODE = B.CODE
+                           AND B.CODE = #code#
+					)
+	</select>
+	
+	<select id="getCodeItemNm" parameterClass="map" resultClass="String">
+		SELECT  A.ITEM_NM
+          FROM  PT_UX_CODE_ITEMS A,
+	            PT_UX_CODE B
+	     WHERE A.ITEM_CODE = #item_code#
+	       AND A.USE_YN = 'Y'
+	       AND A.CODE = B.CODE
+	       AND B.CODE = #code#
+	</select>
+</sqlMap>

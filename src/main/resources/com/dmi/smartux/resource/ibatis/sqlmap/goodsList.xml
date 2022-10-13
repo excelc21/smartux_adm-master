@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="goodsList">
+	<typeAlias alias="goodsVO" type="com.dmi.smartux.admin.imcs.vo.goodsVO"/>
+	<typeAlias alias="paramVO" type="com.dmi.smartux.admin.imcs.vo.paramVO"/>
+	
+	<!-- imcs view 에서 goods 목록 조회 -->
+	<select id="getGoodsList" parameterClass="paramVO" resultClass="goodsVO">
+		SELECT 
+			 GOODS_ID
+			,GOODS_NM 
+			,GOODS_TYPE 
+			,GOODS_INFO 
+			,VIEWING_FLAG 
+			,IMAGE_URL 
+			,IMAGE_FILE_NM
+		FROM
+			IMCSUSER.VW_KD_GOODS_MST
+		WHERE VIEWING_FLAG = 'V' /*V=노출/T=검수/N=비노출 */
+		<isNotEmpty prepend="AND" property="goods_type">
+			GOODS_TYPE = #goods_type#
+		</isNotEmpty>
+	</select>
+</sqlMap>

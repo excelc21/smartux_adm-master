@@ -1,0 +1,355 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="pvs">
+    <typeAlias alias="targetVO" type="com.dmi.smartux.admin.news.vo.TargetVO"/>
+
+    <resultMap id="pvsProductMap" class="com.dmi.smartux.admin.pvs.vo.PvsProductVO">
+        <result property="code" column="PROD_CD" />
+        <result property="name" column="PROD_NM" />
+    </resultMap>
+
+	<!-- PVS 상품 리스트 조회 -->
+	<select id="getPvsProductList" resultMap="pvsProductMap">
+        SELECT
+            PROD_CD,
+            PROD_NM
+        FROM
+            STV_PROD
+        WHERE BILLING_TYP LIKE 'BT%'
+        ORDER BY PROD_NM ASC
+	</select>
+
+    <!-- PVS 부가 상품 리스트 조회 -->
+	<select id="getOptionalServiceList" resultMap="pvsProductMap">
+        SELECT
+            PROD_CD, PROD_NM
+        FROM
+            STV_PROD
+        WHERE BILLING_TYP = 'P'
+        ORDER BY PROD_NM ASC
+	</select>
+
+    <!-- 타겟팅된 가입자의 가입번호 리스트 조회(ALL) -->
+    <select id="getAllSaIDList" parameterClass="targetVO" resultClass="String">
+        SELECT
+            DISTINCT SBC_CONT_NO
+        FROM
+            STV_USER
+        WHERE 1=1
+        <isNotEmpty property="targetNetType">
+            <isNotEqual property="targetNetType" compareValue="00">
+                AND NET_TYP = #targetNetType#
+            </isNotEqual>
+        </isNotEmpty>
+        <isNotEmpty property="modelType">
+            <isNotEqual property="modelType" compareValue="GA">
+                AND STYPE = #modelType#
+            </isNotEqual>
+        </isNotEmpty>
+        <isNotEmpty property="gender">
+            <isNotEqual property="gender" compareValue="A">
+                AND GENDER_TYP = #gender#
+            </isNotEqual>
+        </isNotEmpty>
+        <isNotEmpty property="productionCode">
+            AND PROD_CD = #productionCode#
+        </isNotEmpty>
+        <isNotEmpty property="locationCodeAry">
+			AND DONG_NO IN
+			<iterate property="locationCodeAry" open="(" close=")" conjunction=",">
+				#locationCodeAry[]#
+			</iterate>
+        </isNotEmpty>
+        <isNotEmpty property="minAge">
+            <isNotEmpty property="maxAge">
+                AND AGE <![CDATA[>=]]> #minAge# AND AGE <![CDATA[<]]> #maxAge#
+            </isNotEmpty>
+        </isNotEmpty>
+        AND billing_typ like 'BT%'
+    </select>
+
+    <!-- 타겟팅된 가입자의 가입번호 개수 조회(ALL) -->
+    <select id="getAllSaIDCount" parameterClass="targetVO" resultClass="int">
+        SELECT
+            COUNT(DISTINCT SBC_CONT_NO)
+        FROM
+            STV_USER
+        WHERE 1=1
+        <isNotEmpty property="targetNetType">
+            <isNotEqual property="targetNetType" compareValue="00">
+                AND NET_TYP = #targetNetType#
+            </isNotEqual>
+        </isNotEmpty>
+        <isNotEmpty property="modelType">
+            <isNotEqual property="modelType" compareValue="GA">
+                AND STYPE = #modelType#
+            </isNotEqual>
+        </isNotEmpty>
+        <isNotEmpty property="gender">
+            <isNotEqual property="gender" compareValue="A">
+                AND GENDER_TYP = #gender#
+            </isNotEqual>
+        </isNotEmpty>
+        <isNotEmpty property="productionCode">
+            AND PROD_CD = #productionCode#
+        </isNotEmpty>
+        <isNotEmpty property="locationCodeAry">
+			AND DONG_NO IN
+			<iterate property="locationCodeAry" open="(" close=")" conjunction=",">
+				#locationCodeAry[]#
+			</iterate>
+        </isNotEmpty>
+        <isNotEmpty property="minAge">
+            <isNotEmpty property="maxAge">
+                AND AGE <![CDATA[>=]]> #minAge# AND AGE <![CDATA[<]]> #maxAge#
+            </isNotEmpty>
+        </isNotEmpty>
+        AND billing_typ like 'BT%'
+    </select>
+
+    <!-- 타겟팅된 가입자의 가입번호 리스트 조회(부가 서비스 포함) -->
+    <select id="getIncludeSaIDList" parameterClass="targetVO" resultClass="String">
+        SELECT
+            DISTINCT A.SBC_CONT_NO
+        FROM
+            (
+            SELECT
+                SBC_CONT_NO,
+                MAC_ADDR
+            FROM
+                STV_USER
+            WHERE 1=1
+            <isNotEmpty property="targetNetType">
+                <isNotEqual property="targetNetType" compareValue="00">
+                    AND NET_TYP = #targetNetType#
+                </isNotEqual>
+            </isNotEmpty>
+            <isNotEmpty property="modelType">
+                <isNotEqual property="modelType" compareValue="GA">
+                    AND STYPE = #modelType#
+                </isNotEqual>
+            </isNotEmpty>
+            <isNotEmpty property="gender">
+                <isNotEqual property="gender" compareValue="A">
+                    AND GENDER_TYP = #gender#
+                </isNotEqual>
+            </isNotEmpty>
+            <isNotEmpty property="productionCode">
+                AND PROD_CD = #productionCode#
+            </isNotEmpty>
+            <isNotEmpty property="locationCodeAry">
+				AND DONG_NO IN
+				<iterate property="locationCodeAry" open="(" close=")" conjunction=",">
+					#locationCodeAry[]#
+				</iterate>
+            </isNotEmpty>
+            <isNotEmpty property="minAge">
+                <isNotEmpty property="maxAge">
+                    AND AGE <![CDATA[>=]]> #minAge# AND AGE <![CDATA[<]]> #maxAge#
+                </isNotEmpty>
+            </isNotEmpty>
+            AND BILLING_TYP like 'BT%') A,
+            (
+            SELECT
+                SBC_CONT_NO,
+                MAC_ADDR
+            FROM
+                STV_USER
+            WHERE 1 = 1
+            AND BILLING_TYP = 'P'
+            <isNotEmpty property="optionalServiceCodeAry">
+				AND PROD_CD IN
+				<iterate property="optionalServiceCodeAry" open="(" close=")" conjunction=",">
+					#optionalServiceCodeAry[]#
+				</iterate>
+            </isNotEmpty>
+            ) B
+        WHERE A.SBC_CONT_NO = B.SBC_CONT_NO
+        AND A.MAC_ADDR = B.MAC_ADDR
+    </select>
+
+    <!-- 타겟팅된 가입자의 가입번호 개 조회(부가 서비스 포함) -->
+    <select id="getIncludeSaIDCount" parameterClass="targetVO" resultClass="int">
+        SELECT
+            COUNT(DISTINCT A.SBC_CONT_NO)
+        FROM
+            (
+            SELECT
+                SBC_CONT_NO,
+                MAC_ADDR
+            FROM
+                STV_USER
+            WHERE 1=1
+            <isNotEmpty property="targetNetType">
+                <isNotEqual property="targetNetType" compareValue="00">
+                    AND NET_TYP = #targetNetType#
+                </isNotEqual>
+            </isNotEmpty>
+            <isNotEmpty property="modelType">
+                <isNotEqual property="modelType" compareValue="GA">
+                    AND STYPE = #modelType#
+                </isNotEqual>
+            </isNotEmpty>
+            <isNotEmpty property="gender">
+                <isNotEqual property="gender" compareValue="A">
+                    AND GENDER_TYP = #gender#
+                </isNotEqual>
+            </isNotEmpty>
+            <isNotEmpty property="productionCode">
+                AND PROD_CD = #productionCode#
+            </isNotEmpty>
+            <isNotEmpty property="locationCodeAry">
+				AND DONG_NO IN
+				<iterate property="locationCodeAry" open="(" close=")" conjunction=",">
+					#locationCodeAry[]#
+				</iterate>
+            </isNotEmpty>
+            <isNotEmpty property="minAge">
+                <isNotEmpty property="maxAge">
+                    AND AGE <![CDATA[>=]]> #minAge# AND AGE <![CDATA[<]]> #maxAge#
+                </isNotEmpty>
+            </isNotEmpty>
+            AND BILLING_TYP like 'BT%') A,
+            (
+            SELECT
+                SBC_CONT_NO,
+                MAC_ADDR
+            FROM
+                STV_USER
+            WHERE 1 = 1
+            AND BILLING_TYP = 'P'
+            <isNotEmpty property="optionalServiceCodeAry">
+				AND PROD_CD IN
+				<iterate property="optionalServiceCodeAry" open="(" close=")" conjunction=",">
+					#optionalServiceCodeAry[]#
+				</iterate>
+            </isNotEmpty>
+            ) B
+        WHERE A.SBC_CONT_NO = B.SBC_CONT_NO
+        AND A.MAC_ADDR = B.MAC_ADDR
+    </select>
+
+    <!-- 타겟팅된 가입자의 가입번호 리스트 조회(부가 서비스 미포함) -->
+    <select id="getExcludeSaIDList" parameterClass="targetVO" resultClass="String">
+        SELECT
+            DISTINCT A.SBC_CONT_NO
+        FROM
+            (
+            SELECT
+                SBC_CONT_NO,
+                MAC_ADDR
+            FROM
+                STV_USER
+            WHERE 1=1
+            <isNotEmpty property="targetNetType">
+                <isNotEqual property="targetNetType" compareValue="00">
+                    AND NET_TYP = #targetNetType#
+                </isNotEqual>
+            </isNotEmpty>
+            <isNotEmpty property="modelType">
+                <isNotEqual property="modelType" compareValue="GA">
+                    AND STYPE = #modelType#
+                </isNotEqual>
+            </isNotEmpty>
+            <isNotEmpty property="gender">
+                <isNotEqual property="gender" compareValue="A">
+                    AND GENDER_TYP = #gender#
+                </isNotEqual>
+            </isNotEmpty>
+            <isNotEmpty property="productionCode">
+                AND PROD_CD = #productionCode#
+            </isNotEmpty>
+            <isNotEmpty property="locationCodeAry">
+				AND DONG_NO IN
+				<iterate property="locationCodeAry" open="(" close=")" conjunction=",">
+					#locationCodeAry[]#
+				</iterate>
+            </isNotEmpty>
+            <isNotEmpty property="minAge">
+                <isNotEmpty property="maxAge">
+                    AND AGE <![CDATA[>=]]> #minAge# AND AGE <![CDATA[<]]> #maxAge#
+                </isNotEmpty>
+            </isNotEmpty>
+            AND BILLING_TYP like 'BT%') A,
+            (
+            SELECT
+                SBC_CONT_NO,
+                MAC_ADDR
+            FROM
+                STV_USER
+            WHERE 1 = 1
+            AND BILLING_TYP = 'P'
+            <isNotEmpty property="optionalServiceCodeAry">
+				AND PROD_CD IN
+				<iterate property="optionalServiceCodeAry" open="(" close=")" conjunction=",">
+					#optionalServiceCodeAry[]#
+				</iterate>
+            </isNotEmpty>
+            ) B
+        WHERE A.SBC_CONT_NO = B.SBC_CONT_NO(+)
+        AND A.MAC_ADDR = B.MAC_ADDR(+)
+        AND B.SBC_CONT_NO IS NULL AND B.MAC_ADDR IS NULL
+    </select>
+
+    <!-- 타겟팅된 가입자의 가입번호 개수 조회(부가 서비스 미포함) -->
+    <select id="getExcludeSaIDCount" parameterClass="targetVO" resultClass="int">
+        SELECT
+            COUNT(DISTINCT A.SBC_CONT_NO)
+        FROM
+            (
+            SELECT
+                SBC_CONT_NO,
+                MAC_ADDR
+            FROM
+                STV_USER
+            WHERE 1=1
+            <isNotEmpty property="targetNetType">
+                <isNotEqual property="targetNetType" compareValue="00">
+                    AND NET_TYP = #targetNetType#
+                </isNotEqual>
+            </isNotEmpty>
+            <isNotEmpty property="modelType">
+                <isNotEqual property="modelType" compareValue="GA">
+                    AND STYPE = #modelType#
+                </isNotEqual>
+            </isNotEmpty>
+            <isNotEmpty property="gender">
+                <isNotEqual property="gender" compareValue="A">
+                    AND GENDER_TYP = #gender#
+                </isNotEqual>
+            </isNotEmpty>
+            <isNotEmpty property="productionCode">
+                AND PROD_CD = #productionCode#
+            </isNotEmpty>
+            <isNotEmpty property="locationCodeAry">
+				AND DONG_NO IN
+				<iterate property="locationCodeAry" open="(" close=")" conjunction=",">
+					#locationCodeAry[]#
+				</iterate>
+            </isNotEmpty>
+            <isNotEmpty property="minAge">
+                <isNotEmpty property="maxAge">
+                    AND AGE <![CDATA[>=]]> #minAge# AND AGE <![CDATA[<]]> #maxAge#
+                </isNotEmpty>
+            </isNotEmpty>
+            AND BILLING_TYP like 'BT%') A,
+            (
+            SELECT
+                SBC_CONT_NO,
+                MAC_ADDR
+            FROM
+                STV_USER
+            WHERE 1 = 1
+            AND BILLING_TYP = 'P'
+            <isNotEmpty property="optionalServiceCodeAry">
+				AND PROD_CD IN
+				<iterate property="optionalServiceCodeAry" open="(" close=")" conjunction=",">
+					#optionalServiceCodeAry[]#
+				</iterate>
+            </isNotEmpty>
+            ) B
+        WHERE A.SBC_CONT_NO = B.SBC_CONT_NO(+)
+        AND A.MAC_ADDR = B.MAC_ADDR(+)
+        AND B.SBC_CONT_NO IS NULL AND B.MAC_ADDR IS NULL
+    </select>
+</sqlMap>

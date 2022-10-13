@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="test_selfschedule">
+
+	<!-- 백업 테이블 create  -->
+	<statement id="create_selfschedule_backup_table">
+		CREATE TABLE PT_UX_SMUX_VOD_SCHEDULE_D_BACK (
+		  SCHEDULE_CODE    NUMBER               NULL, 
+		  ALBUM_ID         VARCHAR2(30)         NULL, 
+		  CATEGORY_ID      VARCHAR2(30)         NULL, 
+		  ORDERED          NUMBER               NULL, 
+		  CREATED          DATE            DEFAULT SYSDATE                 NULL, 
+		  UPDATED          DATE            DEFAULT SYSDATE                 NULL, 
+		  CREATE_ID        VARCHAR2(30)         NULL, 
+		  UPDATE_ID        VARCHAR2(30)         NULL
+		)
+	</statement>
+	
+	<!-- 기존 테이블의 기존 데이터를 백업 테이블에 insert -->
+	<insert id="insert_selfschedule_backup_table" >
+		INSERT INTO PT_UX_SMUX_VOD_SCHEDULE_D_BACK
+		SELECT * FROM PT_UX_SMUX_VOD_SCHEDULE_DETAIL WHERE SCHEDULE_CODE = '1'
+	</insert>
+	
+	<!-- 기존 테이블의 기존 데이터 삭제 -->
+	<delete id="delete_org_selfschedule_data" >
+		DELETE FROM PT_UX_SMUX_VOD_SCHEDULE_DETAIL WHERE SCHEDULE_CODE = '1'
+	</delete>
+	
+	<!-- 테스트 데이터를 기존 테이블에 insert-->
+	<insert id="insert_test_data_to_org_selfschedule_table1" >
+		INSERT INTO PT_UX_SMUX_VOD_SCHEDULE_DETAIL( SCHEDULE_CODE, ALBUM_ID, CATEGORY_ID, ORDERED, CREATED, UPDATED, CREATE_ID , UPDATE_ID )
+		VALUES(			
+			'1'
+			, 'M01126KA34PPV00'
+    		, 'M201'
+    		, '1'	
+    		,SYSDATE
+    		,SYSDATE	
+    		, 'admin_test1'
+			, 'admin_test1'
+		)
+	</insert>
+	
+	<insert id="insert_test_data_to_org_selfschedule_table2" >
+		INSERT INTO PT_UX_SMUX_VOD_SCHEDULE_DETAIL( SCHEDULE_CODE, ALBUM_ID, CATEGORY_ID, ORDERED, CREATED, UPDATED, CREATE_ID , UPDATE_ID )
+		VALUES(			
+			'1'
+			, 'M011267B71PPV00'
+    		, 'M201'
+    		, '2'
+    		,SYSDATE
+    		,SYSDATE	
+    		, 'admin_test2'
+			, 'admin_test2'
+		)
+	</insert>
+	
+	<insert id="insert_test_data_to_org_selfschedule_table3" >
+		INSERT INTO PT_UX_SMUX_VOD_SCHEDULE_DETAIL( SCHEDULE_CODE, ALBUM_ID, CATEGORY_ID, ORDERED, CREATED, UPDATED, CREATE_ID , UPDATE_ID )
+		VALUES(		
+			'1'
+			, 'M011264A45PPV00'
+    		, 'M201'
+    		, '3'
+    		,SYSDATE
+    		,SYSDATE	
+    		, 'admin_test3'
+			, 'admin_test3'
+		)
+	</insert>
+	
+	<insert id="insert_test_data_to_org_selfschedule_table4" >
+		INSERT INTO PT_UX_SMUX_VOD_SCHEDULE_DETAIL( SCHEDULE_CODE, ALBUM_ID, CATEGORY_ID, ORDERED, CREATED, UPDATED, CREATE_ID , UPDATE_ID )
+		VALUES(		 
+			'1'
+			, 'M01125VA30PPV00'
+    		, 'T84AD'
+    		, '4'
+    		,SYSDATE
+    		,SYSDATE	
+    		, 'admin_test4'
+			, 'admin_test4'
+		)
+	</insert>
+	
+	<insert id="insert_test_data_to_org_selfschedule_table5" >
+		INSERT INTO PT_UX_SMUX_VOD_SCHEDULE_DETAIL( SCHEDULE_CODE, ALBUM_ID, CATEGORY_ID, ORDERED, CREATED, UPDATED, CREATE_ID , UPDATE_ID )
+		VALUES(					
+			'1'
+			, 'M011265A65PPV00'
+    		, 'M79BM'
+    		, '5'
+    		,SYSDATE
+    		,SYSDATE	
+    		, 'admin_test5'
+			, 'admin_test5'
+		)
+	</insert>
+	
+	<!-- 기존 테이블의 테스트 데이터 삭제 -->
+	<delete id="delete_test_selfschedule_data" >
+		DELETE FROM PT_UX_SMUX_VOD_SCHEDULE_DETAIL WHERE SCHEDULE_CODE = '1'
+	</delete>
+	
+	<!-- 백업 테이블에 보관된 데이터를 기존 테이블에 insert -->
+	<insert id="insert_selfschedule_to_org_table" >
+		INSERT INTO PT_UX_SMUX_VOD_SCHEDULE_DETAIL
+		SELECT * FROM PT_UX_SMUX_VOD_SCHEDULE_D_BACK WHERE SCHEDULE_CODE = '1'
+	</insert>
+	
+	<!-- 백업 테이블 drop  -->
+	<statement id="drop_selfschedule_backup_table">
+		DROP TABLE PT_UX_SMUX_VOD_SCHEDULE_D_BACK
+	</statement>
+		
+</sqlMap>

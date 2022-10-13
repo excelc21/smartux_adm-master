@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="admin_rank">
+	<typeAlias alias="admin_rankvo" type="com.dmi.smartux.admin.rank.vo.EcrmRankVO"/>
+	<typeAlias alias="genrevo" type="com.dmi.smartux.smartstart.vo.GenreVodBestListVO"/>
+	<typeAlias alias="admin_rulevo" type="com.dmi.smartux.admin.rule.vo.RuleVO"/>
+		
+	<select id="getRankList" resultClass="admin_rankvo">
+		SELECT
+            A.RANK_CODE,
+            A.RANK_NAME,            
+            A.GENRE_CODE,
+            A.RULE_CODE,
+            A.RANK_TERM,
+            TO_CHAR(A.CREATED, 'YYYYMMDDHH24MISS'),
+            NVL(A.CATEGORY_GB, 'I20') AS CATEGORY_GB,
+            B.RULE_TYPE
+        FROM 
+            PT_UX_ECRM_RANK A,
+            PT_UX_ECRM_RULE B
+        WHERE TO_CHAR(B.RULE_CODE(+)) = A.RULE_CODE
+        <isNotEmpty property="category_gb">
+			AND NVL(CATEGORY_GB, 'I20') = #category_gb#
+		</isNotEmpty>
+		<isEqual property="catrank_yn" compareValue="Y">
+			AND B.RULE_TYPE = 'S'
+		</isEqual>
+		<isEqual property="catrank_yn" compareValue="N">
+			AND B.RULE_TYPE != 'S'
+		</isEqual>
+        ORDER BY RANK_CODE
+	</select>
+	
+	<select id="viewRankList" resultClass="admin_rankvo">
+		SELECT
+			RANK_CODE,
+		    RANK_NAME,		    
+		    GENRE_CODE,
+		    RULE_CODE,
+		    RULE_CODE AS RULE_CODE_ORIGIN,
+		    RANK_TERM,
+		    NVL(CATEGORY_GB, 'I20') AS CATEGORY_GB
+		FROM 
+		    PT_UX_ECRM_RANK
+		WHERE
+			RANK_CODE = #rank_code#
+		ORDER BY RANK_CODE
+	</select>
+	
+	<select id="viewAlbumList" resultClass="admin_rankvo">
+		SELECT
+	           ADI_ALBUM_ID          	AS ALBUM_ID,
+	           ADI_ALBUM_NAME			AS ALBUM_NAME
+	    FROM 	
+	           PT_LA_ALBUM_MST 
+	    WHERE 
+	           ADI_ALBUM_ID = #album_id#
+	           
+	    <!-- SELECT ADI_ALBUM_ID AS ALBUM_ID, 
+		       ASSET_NAME AS ALBUM_NAME 
+		  FROM PT_LA_PACKAGE_ASSET 
+		 WHERE ADI_ALBUM_ID = #album_id# 
+		 GROUP BY ADI_ALBUM_ID,
+		       ASSET_NAME
+		 -->
+	</select>
+	
+	<select id="getAlbumDetailList" resultClass="admin_rankvo">
+		SELECT 			 
+		      RANKING			AS ORDERED,
+		      A.album_id		AS ALBUM_ID,
+              A.ADI_PRODUCT_ID	AS ADI_PRODUCT_ID,
+		      A.cat_id			AS CATEGORY_ID,
+		      A.album_title		AS ALBUM_NAME,
+              A.RANK_NAME		AS RANK_NAME,
+              A.GENRE			AS RANK_CODE
+		FROM 				
+		(
+		      SELECT
+		            c.ADI_ALBUM_ID          AS ALBUM_ID,
+                    MAX(Z.RANK_CODE)		AS RANK_CODE,
+                    MAX(D.ADI_PRODUCT_ID)   AS ADI_PRODUCT_ID, 
+		            MAX(c.service_icon)     AS SERVICE_GB,
+		            MAX(b.category_id)      AS CAT_ID, 
+		            MAX(D.ASSET_NAME)      AS ALBUM_TITLE, 
+		            MAX(G.smi_yn)           AS IS_CAPTION, 
+		            MAX(F.CONTENT_VALUE)    AS IMG_URL,
+		            MAX(E.CATEGORY)         AS CATEGORY,       
+		            MAX(WI.GENRE)           AS GENRE,
+               		MAX(WI.RANKING)         AS RANKING,
+               		MAX(Z.RANK_NAME)		AS RANK_NAME			
+		      FROM 	PT_UX_BEST_VOD WI, 
+		            PT_VO_CATEGORY A, 
+		            PT_VO_CATEGORY_MAP B, 
+		            PT_LA_ALBUM_MST C, 
+		            PT_LA_PACKAGE_ASSET D, 
+		            PT_LA_TITLE_ASSET E, 
+		            PT_LA_POSTER_ASSET F, 
+		            PT_LA_CONTENT_ASSET G,
+                    PT_UX_ECRM_RANK Z 
+		      WHERE 1 = 1
+		            AND   WI.CONTENTS_ID  = B.CONTENTS_ID
+		            AND   A.category_id = B.category_id
+		            AND   A.category_gb  = NVL(Z.CATEGORY_GB, 'I20')
+		            AND   B.CONTENTS_ID  = C.ADI_ALBUM_ID
+		            AND   C.ADI_ALBUM_ID = D.ADI_ALBUM_ID
+		            AND   D.ADI_PRODUCT_ID = E.ADI_PRODUCT_ID 
+		            AND   D.ADI_PRODUCT_ID = F.ADI_PRODUCT_ID
+		            AND   D.ADI_PRODUCT_ID = G.ADI_PRODUCT_ID	
+                    AND   Z.RANK_CODE(+) = WI.GENRE
+                    <isEqual property="rule_type" compareValue="S">
+                    AND   A.SERIES_YN = 'Y'
+                    </isEqual>
+                    AND
+                        (
+                            (
+                                (C.PRE_MAPPING_YN IS NULL OR C.PRE_MAPPING_YN = 'N') AND (B.VIEWING_FLAG = 'V' OR B.VIEWING_FLAG IS NULL)
+                            )
+                        OR
+                            (
+                                C.PRE_MAPPING_YN = 'Y' AND B.VIEWING_FLAG = 'V'
+                            )
+                        )
+		      GROUP BY C.ADI_ALBUM_ID, WI.RANKING, WI.GENRE
+		)A
+		WHERE 1=1 
+			<isNotEmpty property="rank_code">	
+				AND  GENRE = #rank_code#
+			</isNotEmpty>	
+    	ORDER BY RANKING ASC
+	</select>
+	
+
+	<select id="previewVodPopup" resultClass="genrevo">
+		SELECT 
+              A.RANKING            AS rank_no,
+              A.album_id        AS album_id,
+              DECODE(A.RULE_TYPE, 'S', A.CATEGORY_ID, A.cat_id)    AS cat_id,
+              A.album_title        AS album_title
+        FROM 
+        (
+              SELECT
+                    c.ADI_ALBUM_ID          AS ALBUM_ID,
+                    MAX(b.category_id)      AS CAT_ID, 
+                    MAX(WI.ASSET_NAME)      AS ALBUM_TITLE,   
+                    MAX(E.CATEGORY)         AS CATEGORY,       
+                    MAX(WI.GENRE)           AS GENRE,
+                    MAX(WI.RANKING)         AS RANKING,
+                    MAX(WI.CATEGORY_ID)     AS CATEGORY_ID,
+                    (SELECT RULE_TYPE FROM PT_UX_ECRM_RULE WHERE TO_CHAR(RULE_CODE) = WR.RULE_CODE) AS RULE_TYPE
+              FROM     PT_UX_BEST_VOD WI, 
+                    PT_UX_ECRM_RANK WR,
+                    PT_VO_CATEGORY A, 
+                    PT_VO_CATEGORY_MAP B, 
+                    PT_LA_ALBUM_MST C, 
+                    PT_LA_PACKAGE_ASSET D, 
+                    PT_LA_TITLE_ASSET E, 
+                    PT_LA_POSTER_ASSET F, 
+                    PT_LA_CONTENT_ASSET G 
+              WHERE 1 = 1
+                    AND   WI.CONTENTS_ID  = B.CONTENTS_ID
+                    AND WI.GENRE = WR.RANK_CODE
+                    AND   A.category_id = B.category_id
+                    AND   A.category_gb  = NVL(WR.CATEGORY_GB, 'I20')
+                    AND   B.CONTENTS_ID  = C.ADI_ALBUM_ID
+                    AND   C.ADI_ALBUM_ID = D.ADI_ALBUM_ID
+                    AND   D.ADI_PRODUCT_ID = E.ADI_PRODUCT_ID 
+                    AND   D.ADI_PRODUCT_ID = F.ADI_PRODUCT_ID
+                    AND   D.ADI_PRODUCT_ID = G.ADI_PRODUCT_ID
+                    AND
+                        (
+                            (
+                                (C.PRE_MAPPING_YN IS NULL OR C.PRE_MAPPING_YN = 'N') AND (B.VIEWING_FLAG = 'V' OR B.VIEWING_FLAG IS NULL)
+                            )
+                        OR
+                            (
+                                C.PRE_MAPPING_YN = 'Y' AND B.VIEWING_FLAG = 'V'
+                            )
+                        )   
+                    <isNotEmpty property="rank_code">	
+						AND   WI.GENRE = #rank_code#
+					</isNotEmpty>	
+              GROUP BY C.ADI_ALBUM_ID, WR.RULE_CODE
+        )A
+           ORDER BY  GENRE, RANKING   ASC
+	</select>
+	
+	<select id="viewRule" parameterClass="map" resultClass="admin_rulevo">
+		SELECT RULE_CODE
+			, RULE_NAME
+			, RULE_TYPE
+		FROM PT_UX_ECRM_RULE
+		WHERE RULE_CODE = #rule_code#
+	</select>
+	
+	<update id="updateRank" parameterClass="map">
+		UPDATE PT_UX_ECRM_RANK
+		SET 
+		  RANK_NAME = #rank_name#
+		, GENRE_CODE = #hgenre# 
+		, RULE_CODE = #rule_name#
+		, RANK_TERM = #rank_term#
+		, UPDATED = SYSDATE
+		, UPDATE_ID = #update_id#
+		WHERE RANK_CODE = #rank_code#
+	</update>
+	
+	<select id="getGenreLargeList" resultClass="admin_rankvo">
+		SELECT 
+			DISTINCT GENRE_LARGE 
+		FROM VW_PT_CD_GENRE
+	</select>
+	
+	<select id="getGenreMidList" resultClass="admin_rankvo">
+		SELECT 
+		  GENRE_LARGE,
+		  GENRE_MID 
+		FROM
+		(
+		SELECT 
+			DISTINCT GENRE_LARGE, GENRE_MID 
+			FROM VW_PT_CD_GENRE
+		    ORDER BY GENRE_LARGE
+		)
+	</select>
+	
+	<select id="getGenreSmallList" resultClass="admin_rankvo">
+		SELECT 
+		  GENRE_MID,
+		  GENRE_SMALL 
+		FROM
+		(
+		SELECT 
+			DISTINCT GENRE_MID,GENRE_SMALL 
+			FROM VW_PT_CD_GENRE
+		    ORDER BY GENRE_MID
+		)
+	</select>
+	
+	<!-- 코드값의 길이가 5이고 코드 앞이 C로 시작하며 나머지 뒤의 4자리가 숫자로 되어 있는 것들중의 MAX값 찾기 -->
+	<select id="getMaxCode" resultClass="string">
+		SELECT NVL(MAX(TO_NUMBER(SUBSTR(RANK_CODE, 2, 4))), 0) + 1 FROM PT_UX_ECRM_RANK
+		WHERE RANK_CODE LIKE 'R%'
+		AND LENGTH(RANK_CODE) = 5
+		AND IS_NUMBER(SUBSTR(RANK_CODE, 2, 4)) = 1
+	</select>	 
+	
+	<insert id="insertRank" parameterClass="map">
+		INSERT INTO PT_UX_ECRM_RANK(RANK_CODE, RANK_NAME, GENRE_CODE, RULE_CODE, RANK_TERM, CREATED, UPDATED, CREATE_ID, UPDATE_ID, CATEGORY_GB)
+		VALUES(
+			#rank_code#
+    		, #rank_name#
+    		, #hgenre#
+    		, #rule_name#
+    		, #rank_term#
+    		, SYSDATE
+    		, SYSDATE
+   	 		, #create_id#
+    		, #update_id#
+    		, #category_gb#
+    	)
+	</insert>
+	
+	<insert id="insertAlbumVod" parameterClass="map">
+		INSERT INTO PT_UX_BEST_VOD( RANKING, CONTENTS_ID, ASSET_NAME, GENRE, CATEGORY_ID )
+		VALUES(
+			TO_NUMBER(#ordered#) 
+    		, #album_id#
+    		, #album_name#
+    		, #rank_code#
+    		, #category_id#
+    	)
+	</insert>
+	
+	
+	<delete id="deleteRank" parameterClass="map">
+		DELETE PT_UX_ECRM_RANK
+		WHERE rank_code = #rank_code#         
+	</delete>
+	
+	<delete id="deleteAlbumBestList" parameterClass="map">
+		DELETE PT_UX_BEST_VOD
+		WHERE GENRE = #rank_code#         
+	</delete>
+	
+</sqlMap>

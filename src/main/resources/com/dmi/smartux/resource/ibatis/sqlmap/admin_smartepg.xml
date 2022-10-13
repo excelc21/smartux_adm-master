@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="admin_smartepg">
+	<typeAlias alias="admin_themeinfo" type="com.dmi.smartux.admin.smartepg.vo.ThemeInfoVO"/>
+	
+	<select id="getThemeInfo" resultClass="admin_themeinfo">
+		SELECT THEME_CODE, THEME_NAME, USE_YN
+		FROM T_PROGRAM_THEME
+		ORDER BY SEQ
+	</select>
+	
+	<select id="viewThemeInfo" parameterClass="map" resultClass="admin_themeinfo">
+		SELECT THEME_CODE, THEME_NAME, USE_YN
+		FROM T_PROGRAM_THEME
+		WHERE THEME_CODE = #theme_code#
+	</select>
+	
+	<insert id="insertThemeInfo" parameterClass="map">
+		INSERT INTO T_PROGRAM_THEME(THEME_CODE, THEME_NAME, SEQ, USE_YN, CREATE_DATE, CREATE_ID)
+		VALUES(
+			#theme_code#
+    		, #theme_name#
+    		, (SELECT NVL(MAX(SEQ), 0) + 1 FROM T_PROGRAM_THEME)
+    		, #use_yn#
+   	 		, TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+    		, #create_id#
+    	)
+	</insert>
+	
+	<update id="updateThemeInfo" parameterClass="map">
+		UPDATE T_PROGRAM_THEME
+		SET THEME_NAME = #THEME_NAME#
+		, USE_YN = #USE_YN#
+		, UPDATE_DATE = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+		, UPDATE_ID = #ID#
+		WHERE THEME_CODE = #THEME_CODE#
+	</update>
+	
+	<update id="updateThemeInfoSeq" parameterClass="map">
+		UPDATE T_PROGRAM_THEME
+		SET SEQ = #seq#
+		WHERE THEME_CODE = #THEME_CODE#
+	</update>
+	
+	<delete id="deleteThemeInfo" parameterClass="map">
+		DELETE T_PROGRAM_THEME
+		WHERE THEME_CODE = #THEME_CODE#
+	</delete>
+	
+</sqlMap>

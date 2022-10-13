@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="admin_dayinfo">
+	<typeAlias alias="dayinfoprocVo" type="com.dmi.smartux.admin.dayinfo.vo.DayInfoProcVo"/>
+	<typeAlias alias="dayinfoparamVo" type="com.dmi.smartux.admin.dayinfo.vo.DayInfoParamVo"/>
+	<typeAlias alias="deletedayinfoprocVo" type="com.dmi.smartux.admin.dayinfo.vo.DeleteDayInfoProcVo"/>
+	<typeAlias alias="insertdayinfoVo" type="com.dmi.smartux.admin.dayinfo.vo.InsertDayInfoVo"/>
+	<typeAlias alias="selectdayinfodtailVo" type="com.dmi.smartux.admin.dayinfo.vo.SelectDayInfoDtailVo"/>
+	<typeAlias alias="updatedayinfoVo" type="com.dmi.smartux.admin.dayinfo.vo.UpdateDayInfoVo"/>
+	
+	<select id="getDayInfoList" parameterClass="dayinfoparamVo" resultClass="dayinfoprocVo">
+		SELECT SEQ,
+		       DISPLAY_YEAR,
+		       DISPLAY_DATE,
+		       DISPLAY_TYPE,
+		       DISPLAY_TIME,
+		       MESSAGE,
+		       SPEAKER,
+		       ETC
+		FROM   PT_UX_DAY_INFO WHERE 1=1 
+		<isEqual property="search_type" compareValue="1">
+			<isNotEmpty property="start_dt">
+				<isNotEmpty property="end_dt">
+					<isLessEqual property="start_dt" compareProperty="end_dt" prepend="AND">
+						DISPLAY_DATE BETWEEN #start_dt# AND #end_dt#
+					</isLessEqual>
+					<isGreaterThan property="start_dt" compareProperty="end_dt" prepend="AND">
+						(DISPLAY_DATE BETWEEN '0101' AND #end_dt# 
+						OR DISPLAY_DATE BETWEEN #start_dt# AND '1231')
+					</isGreaterThan>
+				</isNotEmpty>
+			</isNotEmpty>
+		</isEqual>
+		<isEqual property="search_type" compareValue="2">
+			<isNotEmpty property="display_type" prepend="AND">
+				DISPLAY_TYPE=#display_type#
+			</isNotEmpty>
+		</isEqual>
+		AND DELETE_YN='N'
+		ORDER BY (CASE WHEN DISPLAY_YEAR='00' THEN '2' WHEN DISPLAY_YEAR <![CDATA[>=]]> TO_CHAR(SYSDATE,'YY') THEN '1' ELSE '3' END) ASC, DISPLAY_YEAR ASC, DISPLAY_DATE ASC,  MOD_DT DESC
+	</select>
+	
+	<update id="deleteDayInfo" parameterClass="deletedayinfoprocVo">
+		UPDATE PT_UX_DAY_INFO
+		SET    DELETE_YN='Y',
+		       MOD_ID   = #mod_id#,
+		       MOD_DT   = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+		WHERE  SEQ      = #seq#
+	</update>
+	
+	<insert id="insertDayInfoProc" parameterClass="insertdayinfoVo">
+		<selectKey keyProperty="seq" resultClass="int">
+			SELECT NVL(MAX(SEQ),0)+1 FROM PT_UX_DAY_INFO
+		</selectKey>
+		
+		INSERT INTO   PT_UX_DAY_INFO
+       (
+              SEQ,
+              DISPLAY_YEAR,
+              DISPLAY_DATE,
+              DISPLAY_TYPE,
+              DISPLAY_TIME,
+              MESSAGE,
+              SPEAKER,
+              ETC,
+              REG_DT,
+              REG_ID,
+              MOD_DT,
+              MOD_ID
+       )
+       VALUES
+       (
+              #seq#,
+              #display_year#,
+              #display_date#,
+              #display_type#,
+              #display_time#,
+              #message#,
+              #speaker#,
+              #etc#,
+              TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS'),
+              #reg_id#,
+              TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS'),
+              #reg_id#
+       )
+	</insert>
+	
+	<select id="getDayInfoDatail" parameterClass="int" resultClass="selectdayinfodtailVo">
+		SELECT SEQ,
+		       DISPLAY_YEAR,
+		       DISPLAY_DATE,
+		       DISPLAY_TYPE,
+		       DISPLAY_TIME,
+		       MESSAGE,
+		       SPEAKER,
+		       ETC
+		FROM   PT_UX_DAY_INFO
+		WHERE  SEQ=#seq#
+	</select>
+	
+	<update id="updateDayInfoProc" parameterClass="updatedayinfoVo">
+		UPDATE PT_UX_DAY_INFO
+		SET    DISPLAY_YEAR=#display_year#,
+		       DISPLAY_DATE=#display_date#,
+		       DISPLAY_TYPE=#display_type#,
+		       DISPLAY_TIME=#display_time#,
+		       MESSAGE     =#message#,
+		       SPEAKER     =#speaker#,
+		       ETC    	   =#etc#,
+		       MOD_DT      =TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS'),
+		       MOD_ID      =#mod_id#
+		WHERE  SEQ         =#seq#
+	</update>
+	
+</sqlMap>

@@ -1,0 +1,773 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="gpack_promotion">
+	<typeAlias alias="gpackPromotionVO" type="com.dmi.smartux.admin.gpack.event.vo.GpackPromotionVO"/>
+	<typeAlias alias="tvChannelVO" type="com.dmi.smartux.admin.gpack.event.vo.TVChannelVO"/>
+	<typeAlias alias="gpackPlaylistVO" type="com.dmi.smartux.admin.gpack.event.vo.GpackPlaylistVO"/>
+	<typeAlias alias="gpackProductVO" type="com.dmi.smartux.admin.gpack.event.vo.GpackProductVO"/>
+	
+	<resultMap id="gpackPromotionVOMap" class="com.dmi.smartux.admin.gpack.event.vo.GpackPromotionVO">
+		<result property="pack_id"				column="PACK_ID" />
+		<result property="category_id"			column="CATEGORY_ID" />
+		<result property="category_nm"			column="CATEGORY_NM" />
+		<result property="category_comment"		column="CATEGORY_COMMENT" />
+		<result property="category_yn"			column="CATEGORY_YN" />
+		<result property="promotion_video_gb"	column="PROMOTION_VIDEO_GB" />
+		<result property="promotion_chnl"		column="PROMOTION_CHNL" />
+		<result property="promotion_chnl_info"	column="PROMOTION_CHNL_INFO" />
+		<result property="auto_yn"				column="AUTO_YN" />
+		<result property="ordered"				column="ORDERED" />
+		<result property="use_yn"				column="USE_YN" />
+		<result property="create_id"			column="CREATE_ID" />
+		<result property="update_id"			column="UPDATE_ID" />
+		<result property="contents_count"		column="CONTENTS_COUNT" />
+		<result property="c_use_yn"		column="C_USE_YN" />
+	</resultMap>
+	
+	<resultMap id="tvChannelVOMap" class="com.dmi.smartux.admin.gpack.event.vo.TVChannelVO"> 
+		<result property="service_id"			column="SERVICE_ID" />
+		<result property="channel_no"			column="CHANNEL_NO" />
+		<result property="channel_name"			column="CHANNEL_NAME" />
+	</resultMap>
+	
+	<resultMap id="gpackPlaylistVOMap" class="com.dmi.smartux.admin.gpack.event.vo.GpackPlaylistVO"> 
+		<result property="pack_id"							column="PACK_ID" />
+		<result property="category_id"						column="CATEGORY_ID" />
+		<result property="playlist_id"						column="PLAYLIST_ID" />
+		<result property="playlist_nm"						column="PLAYLIST_NM" />
+		<result property="preview_imcs_category_id"			column="PREVIEW_IMCS_CATEGORY_ID" />
+		<result property="preview_imcs_album_id"			column="PREVIEW_IMCS_ALBUM_ID" />
+		<result property="feature_imcs_category_id"			column="FEATURE_IMCS_CATEGORY_ID" />
+		<result property="feature_imcs_album_id"			column="FEATURE_IMCS_ALBUM_ID" />
+		<result property="ordered"							column="ORDERED" />
+		<result property="use_yn"							column="USE_YN" />
+		<result property="created"							column="CREATED" />
+		<result property="updated"							column="UPDATED" />
+		<result property="create_id"						column="CREATE_ID" />
+		<result property="update_id"						column="UPDATE_ID" />
+	</resultMap>
+	
+	<!-- I20 앨범 리스트 조회 쿼리 -->	
+	<sql id="getGpackI20AlbumList">
+			SELECT
+				  A.CATEGORY_ID			  AS CAT_ID,
+				  C.ADI_ALBUM_ID          AS ALBUM_ID,
+				  MAX(C.SERVICE_ICON)     AS SERVICE_GB,
+				  MAX(B.CONTENTS_NAME)    AS ALBUM_TITLE, 
+				  MAX(G.HDCONTENT)        AS IS_HD,
+				  MAX(DECODE(G.HDCONTENT, 'N', 'Y', 'N'))  AS IS_SD,       
+				  MAX(E.SUGGESTED_PRICE)  AS H_PRICE, 
+				  MIN(E.SUGGESTED_PRICE)  AS S_PRICE,       
+				  MAX(E.RATING)           AS PROGRAM_INFO, 
+				  MAX(NVL(E.ONAIR_DATE, '00000000')) AS ONAIR_DATE, 
+				  MAX(DECODE(A.SERIES_YN, NULL, 'N', A.SERIES_YN))        AS SERIES_FLAG,
+				  MAX(DECODE(DECODE(A.SERIES_YN, NULL, 'N', A.SERIES_YN), 'Y', C.SERIES_NO, '')) AS SERIES_DESC,		            
+				  MAX(A.CLOSE_YN)		  AS CLOSE_YN, 
+				  MAX(G.SMI_YN)           AS IS_CAPTION, 
+				  F_SERVER_URL('P')		  AS IMG_URL,
+				  MAX(DECODE(F.POSTER_TYPE, 'Y', F.CONTENT_VALUE, '')) AS WIDTH_IMG,
+				  MAX(DECODE(F.POSTER_TYPE, 'V', F.CONTENT_VALUE, '')) AS HEIGHT_IMG,
+				  MAX(DECODE(F.POSTER_TYPE, 'P', F.CONTENT_VALUE, '')) AS POSTER_IMG,
+				  MAX(E.CATEGORY)         AS CATEGORY,       
+				  MAX(B.RANK_NO)          AS RANKING,
+				  MAX(E.GENRE_LARGE)	  AS GENRE1,
+				  MAX(E.RELEASE_DATE)	  AS RELEASE_DATE,
+				  MAX(DECODE(C.WATCH_RIGHT_YN, NULL, 'Y', C.WATCH_RIGHT_YN))	AS WATCH_RIGHT_YN,
+				  MAX(ROUND(TO_NUMBER(NVL(C.POINT_SUM,'0'))/ (CASE WHEN NVL(C.POINT_CNT,'0')= '0' THEN 1  ELSE TO_NUMBER(NVL(C.POINT_CNT,'0')) END), 0)) POINT,
+				  MAX(DECODE(C.IS_FH, NULL, 'N', C.IS_FH)) AS IS_FH
+			      <!--'N' AS IS_FH-->   
+			FROM  PT_VO_CATEGORY A, 
+			      PT_VO_CATEGORY_MAP B, 
+			      PT_LA_ALBUM_MST C, 
+			      PT_LA_PACKAGE_ASSET D, 
+			      PT_LA_TITLE_ASSET E, 
+			      PT_LA_POSTER_ASSET F, 
+			      PT_LA_CONTENT_ASSET G 
+			WHERE 1=1
+		<isEqual property="auto_yn" compareValue="N">
+			  AND A.CATEGORY_ID IN (SELECT IMCS_CATEGORY_ID FROM PT_GP_CONTENTS_INFO WHERE PACK_ID = #pack_id# AND IMCS_CATEGORY_ID IS NOT NULL)
+		</isEqual>
+			  AND (((C.PRE_MAPPING_YN IS NULL OR C.PRE_MAPPING_YN = 'N') AND (B.VIEWING_FLAG = 'V' OR B.VIEWING_FLAG IS NULL)) OR ((C.PRE_MAPPING_YN = 'Y') AND (B.VIEWING_FLAG = 'V')))
+			  AND A.CATEGORY_ID = B.CATEGORY_ID
+			  AND A.CATEGORY_GB  = 'I20'
+			  AND B.CONTENTS_ID  = C.ADI_ALBUM_ID
+			  AND B.CONTENTS_ID  = D.ADI_ALBUM_ID
+			  AND C.ADI_ALBUM_ID = D.ADI_ALBUM_ID
+			  AND D.ADI_PRODUCT_ID = E.ADI_PRODUCT_ID 
+			  AND D.ADI_PRODUCT_ID = F.ADI_PRODUCT_ID
+			  AND D.ADI_PRODUCT_ID = G.ADI_PRODUCT_ID
+			  AND F.POSTER_TYPE IN ('Y', 'V', 'P')
+		 GROUP BY A.CATEGORY_ID, C.ADI_ALBUM_ID
+	</sql>
+	
+	<!-- 프로모션 정보 목록 조회  -->
+	<select id="getGpackPromotionList" parameterClass="gpackPromotionVO" resultMap="gpackPromotionVOMap">
+		SELECT
+			PACK_ID
+			, CATEGORY_ID
+			, CATEGORY_NM
+			, CATEGORY_COMMENT
+			, CATEGORY_YN
+			, PROMOTION_VIDEO_GB
+			, PROMOTION_CHNL
+			, (SELECT CHANNELNUMBER || '번 ' || CHNL_NAME FROM PT_CD_PLAY_CHNL WHERE SERVICE_ID = D.PROMOTION_CHNL AND USE_YN = 'Y') AS PROMOTION_CHNL_INFO
+			, AUTO_YN
+			, ORDERED
+			, USE_YN
+			, CREATE_ID
+			, UPDATE_ID
+			, (
+				SELECT COUNT(*) FROM PT_GP_CONTENTS_INFO_TEMP
+					WHERE D.PACK_ID = PACK_ID AND D.CATEGORY_ID = CATEGORY_ID
+				) AS CONTENTS_COUNT
+			,CASE WHEN AUTO_YN = 'Y'
+	         THEN
+	                DECODE ( (SELECT USE_YN  FROM PT_GP_AUTO_SET_INFO_TEMP  WHERE D.PACK_ID = PACK_ID AND D.CATEGORY_ID = CATEGORY_ID), NULL, 'N', 'N', 'N', 'Y')
+	          ELSE
+	                ( SELECT 
+	                    CASE WHEN 
+	                        (
+	                            SELECT COUNT(CONTENTS_ID) CNT
+	                            FROM PT_GP_CONTENTS_INFO_TEMP TM
+	                            WHERE 1=1
+	                            AND TM.CATEGORY_ID = D.CATEGORY_ID
+	                            AND TM.PACK_ID = #pack_id#                       
+	                            AND TM.USE_YN = 'Y'
+	                        )  >= 1  THEN 'Y'  ELSE 'N' 
+	                    END 
+	                    FROM DUAL
+	                )
+	          END     
+	          AS C_USE_YN
+		FROM
+			PT_GP_CATEGORY_INFO_TEMP D
+		 WHERE 
+		 	PACK_ID = #pack_id#
+		 	AND CATEGORY_YN = 'N'
+	 	<isNotEmpty property="where_use_yn">
+			AND USE_YN = #where_use_yn#
+		</isNotEmpty> 
+		 ORDER BY ORDERED, PACK_ID DESC, CATEGORY_ID DESC
+	</select>
+	
+	<!-- 프로모션 정보 목록 조회(상용)  -->
+	<select id="getGpackPromotionListBiz" parameterClass="gpackPromotionVO" resultMap="gpackPromotionVOMap">
+		SELECT
+			PACK_ID
+			, CATEGORY_ID
+			, CATEGORY_NM
+			, CATEGORY_COMMENT
+			, CATEGORY_YN
+			, PROMOTION_VIDEO_GB
+			, PROMOTION_CHNL
+			, (SELECT CHANNELNUMBER || '번 ' || CHNL_NAME FROM PT_CD_PLAY_CHNL WHERE SERVICE_ID = D.PROMOTION_CHNL AND USE_YN = 'Y') AS PROMOTION_CHNL_INFO
+			, AUTO_YN
+			, ORDERED
+			, USE_YN
+			, CREATE_ID
+			, UPDATE_ID
+			, (
+				SELECT COUNT(*) FROM PT_GP_CONTENTS_INFO
+					WHERE D.PACK_ID = PACK_ID AND D.CATEGORY_ID = CATEGORY_ID
+				) AS CONTENTS_COUNT
+			,CASE WHEN AUTO_YN = 'Y'
+	         THEN
+	                DECODE ( (SELECT USE_YN  FROM PT_GP_AUTO_SET_INFO_TEMP  WHERE D.PACK_ID = PACK_ID AND D.CATEGORY_ID = CATEGORY_ID), NULL, 'N', 'N', 'N', 'Y')
+	          ELSE
+	                ( SELECT 
+	                    CASE WHEN 
+	                        (
+	                            SELECT COUNT(CONTENTS_ID) CNT
+	                            FROM PT_GP_CONTENTS_INFO_TEMP TM
+	                            WHERE 1=1
+	                            AND TM.CATEGORY_ID = D.CATEGORY_ID
+	                            AND TM.PACK_ID = #pack_id#                       
+	                            AND TM.USE_YN = 'Y'
+	                        )  >= 1  THEN 'Y'  ELSE 'N' 
+	                    END 
+	                    FROM DUAL
+	                )
+	          END     
+	          AS C_USE_YN  
+		FROM
+			PT_GP_CATEGORY_INFO D
+		 WHERE 
+		 	PACK_ID = #pack_id#
+		 	AND CATEGORY_YN = 'N'
+	 	<isNotEmpty property="where_use_yn">
+			AND USE_YN = #where_use_yn#
+		</isNotEmpty> 
+		 ORDER BY ORDERED, PACK_ID DESC, CATEGORY_ID DESC
+	</select>
+	
+	<!-- 프로모션 정보 조회  -->
+	<select id="getGpackPromotionDetail" parameterClass="gpackPromotionVO" resultClass="gpackPromotionVO">
+		SELECT
+			PACK_ID
+			, CATEGORY_ID
+			, CATEGORY_NM
+			, CATEGORY_COMMENT
+			, CATEGORY_YN
+			, PROMOTION_VIDEO_GB
+			, PROMOTION_CHNL
+      		, (SELECT D.CHANNELNUMBER || '번 ' || D.CHNL_NAME FROM PT_CD_PLAY_CHNL D WHERE D.SERVICE_ID = PROMOTION_CHNL AND D.USE_YN = 'Y') AS PROMOTION_CHNL_INFO
+			, AUTO_YN
+			, ORDERED
+			, USE_YN
+			, CREATE_ID
+			, UPDATE_ID
+		FROM
+			PT_GP_CATEGORY_INFO_TEMP
+		 WHERE 
+		 	PACK_ID = #pack_id#
+		 	AND CATEGORY_ID = #category_id#
+	</select>
+	
+	<!-- 영상 프로모션 개수 조회  -->
+    <select id="countGprackVideoPromotion" parameterClass="gpackPromotionVO" resultClass="int">
+		SELECT
+		  	COUNT(CATEGORY_ID)
+		FROM
+		  	PT_GP_CATEGORY_INFO_TEMP
+		WHERE
+		  	PACK_ID = #pack_id#
+		  	AND CATEGORY_YN = 'N'
+		  	AND USE_YN = 'Y'
+		  	AND (PROMOTION_VIDEO_GB = 'PV001' OR PROMOTION_VIDEO_GB = 'PV002')
+    </select>
+	
+	<!-- TV 채널 목록 조회  -->
+	<select id="getTVChannelList" parameterClass="tvChannelVO" resultClass="tvChannelVO">
+		SELECT B.* FROM(SELECT ROWNUM RNUM,A.* FROM(
+				SELECT 
+					D.CHANNELNUMBER AS CHANNEL_NO
+		     		, D.CHNL_NAME AS CHANNEL_NAME
+		     		, D.SERVICE_ID AS SERVICE_ID
+		     		, C.CHNL_CD AS CHANNEL_ID
+				FROM 
+					PT_CD_CHNL_INFO C,
+		     		PT_CD_PLAY_CHNL D
+				WHERE 
+					C.SERVICE_ID = D.SERVICE_ID
+		    		AND D.USE_YN = 'Y' 
+				<isNotEmpty property="srch_channel_name">
+					AND UPPER(D.CHNL_NAME) LIKE '%'||UPPER('$srch_channel_name$')||'%'
+				</isNotEmpty> 
+				ORDER BY 
+					D.CHANNELNUMBER
+		        ) A 
+		) B
+		WHERE RNUM BETWEEN '$start_rnum$' AND '$end_rnum$'
+	</select>
+	
+	<!-- TV 채널 카운트  -->
+    <select id="countTVChannelList" parameterClass="tvChannelVO" resultClass="int">
+        SELECT 
+        	COUNT(D.SERVICE_ID) 
+        FROM 
+			PT_CD_CHNL_INFO C,
+     		PT_CD_PLAY_CHNL D
+		WHERE 
+			C.SERVICE_ID = D.SERVICE_ID
+    		AND D.USE_YN = 'Y' 
+		<isNotEmpty property="srch_channel_name">
+			AND UPPER(D.CHNL_NAME) LIKE '%'||UPPER('$srch_channel_name$')||'%'
+		</isNotEmpty> 
+		ORDER BY 
+			D.SERVICE_ID
+    </select>
+    
+    <!-- 월정액 상품 목록 조회  -->
+	<select id="getProductList" parameterClass="gpackProductVO" resultClass="gpackProductVO">
+		SELECT B.* FROM(SELECT ROWNUM RNUM,A.* FROM(
+				SELECT 
+					PRODUCT_ID
+					, PRODUCT_NAME
+					, PRICE
+				FROM 
+					IMCSUSER.PT_PD_PACKAGE
+				WHERE 
+					PRODUCT_TYPE = '3'
+					AND NSC_PROD_KIND='0' 
+					AND PRODUCT_START_DATETIME  <![CDATA[<=]]> TO_CHAR(SYSDATE, 'yyyymmdd')
+					AND PRODUCT_EXPIRY_DATETIME <![CDATA[>=]]> TO_CHAR(SYSDATE, 'yyyymmdd')
+				<isNotEmpty property="srch_product_name">
+					AND UPPER(PRODUCT_NAME) LIKE '%'||UPPER('$srch_product_name$')||'%'
+				</isNotEmpty> 
+				ORDER BY 
+					PRODUCT_ID DESC
+		        ) A 
+		) B
+		WHERE RNUM BETWEEN '$start_rnum$' AND '$end_rnum$'
+	</select>
+	
+	<!-- 월정액 상품 카운트  -->
+    <select id="countProductList" parameterClass="gpackProductVO" resultClass="int">
+        SELECT 
+        	COUNT(PRODUCT_ID) 
+        FROM 
+			IMCSUSER.PT_PD_PACKAGE
+		WHERE 
+			PRODUCT_TYPE = '3'
+			AND NSC_PROD_KIND='0' 
+			AND PRODUCT_START_DATETIME  <![CDATA[<=]]> TO_CHAR(SYSDATE, 'yyyymmdd')
+			AND PRODUCT_EXPIRY_DATETIME <![CDATA[>=]]> TO_CHAR(SYSDATE, 'yyyymmdd')
+		<isNotEmpty property="srch_product_name">
+			AND UPPER(PRODUCT_NAME) LIKE '%'||UPPER('$srch_product_name$')||'%'
+		</isNotEmpty> 
+    </select>
+	
+	<!-- 플레이리스트 정보 목록 조회  -->
+	<select id="getGpackPlaylistList" parameterClass="gpackPlaylistVO" resultMap="gpackPlaylistVOMap">
+		SELECT
+            PACK_ID
+			, CATEGORY_ID
+			, PLAYLIST_ID
+			, PLAYLIST_NM
+			, PREVIEW_IMCS_CATEGORY_ID
+			, PREVIEW_IMCS_ALBUM_ID
+			, FEATURE_IMCS_CATEGORY_ID
+			, FEATURE_IMCS_ALBUM_ID
+			, ORDERED
+			, USE_YN
+			, CREATED
+			, UPDATED
+			, CREATE_ID
+			, UPDATE_ID
+        FROM
+        	PT_GP_PLAYLIST_INFO_TEMP
+        WHERE
+		   PACK_ID = #pack_id#
+		   AND CATEGORY_ID = #category_id#
+	 	<isNotEmpty property="where_use_yn">
+			AND USE_YN = #where_use_yn#
+		</isNotEmpty>
+		ORDER BY
+			ORDERED, PACK_ID DESC, CATEGORY_ID DESC
+	</select>
+	
+	<!-- 플레이리스트 정보 목록 조회(상용)  -->
+	<select id="getGpackPlaylistListBiz" parameterClass="gpackPlaylistVO" resultMap="gpackPlaylistVOMap">
+		SELECT
+            PACK_ID
+			, CATEGORY_ID
+			, PLAYLIST_ID
+			, PLAYLIST_NM
+			, PREVIEW_IMCS_CATEGORY_ID
+			, PREVIEW_IMCS_ALBUM_ID
+			, FEATURE_IMCS_CATEGORY_ID
+			, FEATURE_IMCS_ALBUM_ID
+			, ORDERED
+			, USE_YN
+			, CREATED
+			, UPDATED
+			, CREATE_ID
+			, UPDATE_ID
+        FROM
+        	PT_GP_PLAYLIST_INFO
+        WHERE
+		   PACK_ID = #pack_id#
+		   AND CATEGORY_ID = #category_id#
+	 	<isNotEmpty property="where_use_yn">
+			AND USE_YN = #where_use_yn#
+		</isNotEmpty>
+		ORDER BY
+			ORDERED, PACK_ID DESC, CATEGORY_ID DESC
+	</select>
+	
+	<!-- 플레이리스트 정보 조회  -->
+	<select id="getGpackPlaylistDetail" parameterClass="gpackPlaylistVO" resultClass="gpackPlaylistVO">
+		SELECT
+            PACK_ID
+			, CATEGORY_ID
+			, PLAYLIST_ID
+			, PLAYLIST_NM
+			, PREVIEW_IMCS_CATEGORY_ID
+			, PREVIEW_IMCS_ALBUM_ID
+			, (SELECT MAX(ASSET_NAME) FROM PT_LA_PACKAGE_ASSET WHERE ADI_ALBUM_ID = PREVIEW_IMCS_ALBUM_ID) AS PREVIEW_IMCS_TEXT
+			, FEATURE_IMCS_CATEGORY_ID
+			, FEATURE_IMCS_ALBUM_ID
+			, (SELECT MAX(ASSET_NAME) FROM PT_LA_PACKAGE_ASSET WHERE ADI_ALBUM_ID = FEATURE_IMCS_ALBUM_ID) AS FEATURE_IMCS_TEXT
+			, ORDERED
+			, USE_YN
+			, CREATED
+			, UPDATED
+			, CREATE_ID
+			, UPDATE_ID
+        FROM
+        	PT_GP_PLAYLIST_INFO_TEMP
+        WHERE
+		   PACK_ID = #pack_id#
+		   AND CATEGORY_ID = #category_id#
+		   AND PLAYLIST_ID = #playlist_id#
+	</select>
+	
+	<!-- VOD 최저가 검색  -->
+	<select id="getGpackVodPrice" parameterClass="map" resultClass="string">
+		SELECT
+		  	MIN(P.PRICE)
+		FROM
+		  	IMCSUSER.PT_LA_TITLE_ASSET TITLE
+		  	, IMCSUSER.PT_LA_PACKAGE_ASSET PACK
+		  	, IMCSUSER.PT_PD_PACKAGE_DETAIL DETAIL
+		  	, IMCSUSER.PT_PD_PACKAGE P
+		WHERE
+		  	1 = 1
+		  	AND TITLE.ADI_PRODUCT_ID = PACK.ADI_PRODUCT_ID
+		  	AND PACK.ASSET_ID = DETAIL.CONTENTS_ID
+		  	AND DETAIL.PRODUCT_ID = P.PRODUCT_ID
+  			AND PACK.ADI_ALBUM_ID= #album_id#
+	</select>
+	
+	<!-- 콘텐츠(수동) 정보 조회 -->
+	<select id="getGpackContentsView" parameterClass="map" resultClass="com.dmi.smartux.admin.gpack.event.vo.GpackPromotionContentsVO">
+		SELECT 
+		       GP.MOVEPATH_TYPE AS TYPE,
+		       (CASE WHEN GP.MOVEPATH_TYPE = 'MT005' THEN 
+		       		(SELECT CH.CHANNELNUMBER || '번 ' || CH.CHNL_NAME FROM PT_CD_PLAY_CHNL CH WHERE CH.SERVICE_ID = GP.MOVEPATH AND CH.USE_YN = 'Y')
+		       	 ELSE GP.CONTENTS_NM
+		        END) AS TITLE, 
+		       F_SERVER_URL('P') AS IMGURL, 
+		       GP.IMG_FILE AS IMG, 
+		       (CASE WHEN GP.MOVEPATH_TYPE = 'MT005' THEN '' ELSE GP.MOVEPATH END) AS LINK,
+		       (CASE WHEN GP.MOVEPATH_TYPE = 'MT005' THEN GP.MOVEPATH ELSE '' END) AS SERVICE_ID,
+		       GP.IMCS_CATEGORY_ID AS CATEGORY_ID,
+		       IMCS.CAT_ID AS CAT_ID,
+		       GP.ALBUM_ID AS ALBUM_ID,
+		       IMCS.ALBUM_TITLE AS ALBUM_TITLE,
+		       GP.ORDERED AS ORDERED,
+		       IMCS.IMG_URL AS IMG_URL,
+		       IMCS.HEIGHT_IMG AS H_IMG,
+		       IMCS.WIDTH_IMG AS W_IMG,
+			   IMCS.SERIES_FLAG AS SERIES_FLAG,
+			   IMCS.SERIES_DESC AS SERIES_DESC,
+			   IMCS.CLOSE_YN AS CLOSE_YN,
+			   IMCS.IS_HD AS IS_HD,
+			   IMCS.PROGRAM_INFO AS PROGRAM_INFO,
+			   IMCS.ONAIR_DATE AS ONAIR_DATE,
+			   IMCS.IS_CAPTION AS IS_CAPTION,
+			   IMCS.GENRE1 AS GENRE1,
+			   IMCS.RELEASE_DATE AS RELEASE_DATE,
+			   IMCS.WATCH_RIGHT_YN AS WATCH_RIGHT_YN, 
+			   IMCS.IS_FH
+		  FROM PT_GP_CONTENTS_INFO_TEMP GP,
+		       (
+		       <include refid="getGpackI20AlbumList"/>    
+		       )IMCS
+		 WHERE 1=1
+		   AND GP.PACK_ID = #pack_id#
+		   AND GP.CATEGORY_ID = #category_id#
+		   AND GP.USE_YN = 'Y'
+		   AND GP.IMCS_CATEGORY_ID = IMCS.CAT_ID (+)
+		   AND NVL(GP.ALBUM_ID, '1') = IMCS.ALBUM_ID (+)
+		 ORDER BY GP.ORDERED
+	</select>
+	
+	<!-- 콘텐츠(수동) 정보 조회(상용) -->
+	<select id="getGpackContentsViewBiz" parameterClass="map" resultClass="com.dmi.smartux.admin.gpack.event.vo.GpackPromotionContentsVO">
+		SELECT 
+		       GP.MOVEPATH_TYPE AS TYPE,
+		       (CASE WHEN GP.MOVEPATH_TYPE = 'MT005' THEN 
+		       		(SELECT CH.CHANNELNUMBER || '번 ' || CH.CHNL_NAME FROM PT_CD_PLAY_CHNL CH WHERE CH.SERVICE_ID = GP.MOVEPATH AND CH.USE_YN = 'Y')
+		       	 ELSE GP.CONTENTS_NM
+		        END) AS TITLE, 
+		       F_SERVER_URL('P') AS IMGURL, 
+		       GP.IMG_FILE AS IMG, 
+		       (CASE WHEN GP.MOVEPATH_TYPE = 'MT005' THEN '' ELSE GP.MOVEPATH END) AS LINK,
+		       (CASE WHEN GP.MOVEPATH_TYPE = 'MT005' THEN GP.MOVEPATH ELSE '' END) AS SERVICE_ID,
+		       GP.IMCS_CATEGORY_ID AS CATEGORY_ID,
+		       IMCS.CAT_ID AS CAT_ID,
+		       GP.ALBUM_ID AS ALBUM_ID,
+		       IMCS.ALBUM_TITLE AS ALBUM_TITLE,
+		       GP.ORDERED AS ORDERED,
+		       IMCS.IMG_URL AS IMG_URL,
+		       IMCS.HEIGHT_IMG AS H_IMG,
+		       IMCS.WIDTH_IMG AS W_IMG,
+			   IMCS.SERIES_FLAG AS SERIES_FLAG,
+			   IMCS.SERIES_DESC AS SERIES_DESC,
+			   IMCS.CLOSE_YN AS CLOSE_YN,
+			   IMCS.IS_HD AS IS_HD,
+			   IMCS.PROGRAM_INFO AS PROGRAM_INFO,
+			   IMCS.ONAIR_DATE AS ONAIR_DATE,
+			   IMCS.IS_CAPTION AS IS_CAPTION,
+			   IMCS.GENRE1 AS GENRE1,
+			   IMCS.RELEASE_DATE AS RELEASE_DATE,
+			   IMCS.WATCH_RIGHT_YN AS WATCH_RIGHT_YN, 
+			   IMCS.IS_FH
+		  FROM PT_GP_CONTENTS_INFO GP,
+		       (
+		       <include refid="getGpackI20AlbumList"/>    
+		       )IMCS
+		 WHERE 1=1
+		   AND GP.PACK_ID = #pack_id#
+		   AND GP.CATEGORY_ID = #category_id#
+		   AND GP.USE_YN = 'Y'
+		   AND GP.IMCS_CATEGORY_ID = IMCS.CAT_ID (+)
+		   AND NVL(GP.ALBUM_ID, '1') = IMCS.ALBUM_ID (+)
+		 ORDER BY GP.ORDERED
+	</select>
+	
+	<!-- 콘텐츠(자동) 정보 조회 -->
+	<select id="getGpackPromotionAlbumList" parameterClass="map" resultClass="com.dmi.smartux.admin.gpack.event.vo.GpackPromotionContentsVO">
+		SELECT * FROM (
+		
+				SELECT 	IMCS.ALBUM_ID, 
+				       	IMCS.CAT_ID AS CATEGORY_ID, 
+				       	IMCS.ALBUM_TITLE, 
+				       	IMCS.RANKING AS ORDERED, 
+				       	IMCS.IMG_URL, 
+				       	IMCS.WIDTH_IMG AS W_IMG, 
+				       	IMCS.HEIGHT_IMG AS H_IMG, 
+				       	IMCS.SERIES_FLAG, 
+				       	IMCS.SERIES_DESC, 
+				       	IMCS.CLOSE_YN, 
+				       	IMCS.RANKING,
+				       	IMCS.IS_HD, 
+				       	IMCS.PROGRAM_INFO, 
+				       	IMCS.ONAIR_DATE, 
+				       	IMCS.IS_CAPTION, 
+				       	IMCS.GENRE1, 
+				       	IMCS.RELEASE_DATE, 
+				       	IMCS.WATCH_RIGHT_YN, 
+			   			IMCS.IS_FH
+				  FROM 	PT_GP_AUTO_SET_INFO_TEMP AI,
+					    (  
+							<include refid="getGpackI20AlbumList"/>
+					    ) IMCS
+				 WHERE 	1=1
+				 	AND AI.USE_YN = 'Y'
+				 	AND AI.IMCS_CATEGORY_ID = IMCS.CAT_ID
+				   	AND AI.PACK_ID = #pack_id#
+		   			AND AI.CATEGORY_ID = #category_id#
+				   
+		 ) 
+		 WHERE 1=1
+		 ORDER BY ORDERED
+	</select>
+	
+	<!-- 콘텐츠(자동) 정보 조회(상용) -->
+	<select id="getGpackPromotionAlbumListBiz" parameterClass="map" resultClass="com.dmi.smartux.admin.gpack.event.vo.GpackPromotionContentsVO">
+		SELECT * FROM (
+		
+				SELECT 	IMCS.ALBUM_ID, 
+				       	IMCS.CAT_ID AS CATEGORY_ID, 
+				       	IMCS.ALBUM_TITLE, 
+				       	IMCS.RANKING AS ORDERED, 
+				       	IMCS.IMG_URL, 
+				       	IMCS.WIDTH_IMG AS W_IMG, 
+				       	IMCS.HEIGHT_IMG AS H_IMG, 
+				       	IMCS.SERIES_FLAG, 
+				       	IMCS.SERIES_DESC, 
+				       	IMCS.CLOSE_YN, 
+				       	IMCS.RANKING,
+				       	IMCS.IS_HD, 
+				       	IMCS.PROGRAM_INFO, 
+				       	IMCS.ONAIR_DATE, 
+				       	IMCS.IS_CAPTION, 
+				       	IMCS.GENRE1, 
+				       	IMCS.RELEASE_DATE, 
+				       	IMCS.WATCH_RIGHT_YN, 
+			   			IMCS.IS_FH
+				  FROM 	PT_GP_AUTO_SET_INFO AI,
+					    (  
+							<include refid="getGpackI20AlbumList"/>
+					    ) IMCS
+				 WHERE 	1=1
+				 	AND AI.USE_YN = 'Y'
+				 	AND AI.IMCS_CATEGORY_ID = IMCS.CAT_ID
+				   	AND AI.PACK_ID = #pack_id#
+		   			AND AI.CATEGORY_ID = #category_id#
+				   
+		 ) 
+		 WHERE 1=1
+		 ORDER BY ORDERED
+	</select>
+	
+	<!-- 프로모션 정보 등록  -->
+	<insert id="insertGpackPromotion" parameterClass="gpackPromotionVO">
+		<selectKey resultClass="string" keyProperty="category_id">
+			SELECT SEQ_PT_GP_CATEGORY_INFO.NEXTVAL AS CATEGORY_ID FROM DUAL
+		</selectKey>
+		INSERT INTO PT_GP_CATEGORY_INFO_TEMP(
+			PACK_ID
+			, CATEGORY_ID
+			, CATEGORY_NM
+			, CATEGORY_COMMENT
+			, CATEGORY_YN
+			, PROMOTION_VIDEO_GB
+			, PROMOTION_CHNL
+			, ORDERED
+			, AUTO_YN
+			, USE_YN
+			, CREATED
+			, UPDATED
+			, CREATE_ID
+			, UPDATE_ID
+			)
+		VALUES(
+			#pack_id#
+    		, #category_id#
+    		, #category_nm#
+    		, #category_comment#
+    		, 'N'
+    		, #promotion_video_gb#
+    		, #promotion_chnl#
+    		, NVL((SELECT MAX(ORDERED) FROM PT_GP_CATEGORY_INFO_TEMP WHERE PACK_ID = #pack_id# AND CATEGORY_YN = 'N'), 0)+1
+    		, #auto_yn#
+    		, #use_yn#
+    		, SYSDATE
+    		, SYSDATE
+    		, #create_id#
+    		, #update_id#
+    	)
+	</insert>
+	
+	<!-- 프로모션 수정  -->
+	<update id="updateGpackPromotion" parameterClass="gpackPromotionVO">
+		UPDATE PT_GP_CATEGORY_INFO_TEMP
+		SET    CATEGORY_NM = #category_nm#,
+			   CATEGORY_COMMENT = #category_comment#,
+		<isNotEmpty property="promotion_video_gb">
+		   	   PROMOTION_VIDEO_GB = #promotion_video_gb#,
+		</isNotEmpty>
+		<isNotEmpty property="promotion_chnl">
+		   	   PROMOTION_CHNL = #promotion_chnl#,
+		</isNotEmpty>
+			   AUTO_YN = #auto_yn#,
+			   USE_YN = #use_yn#,
+		       UPDATED = SYSDATE,
+		       UPDATE_ID = #update_id#
+		WHERE  PACK_ID = #pack_id#
+			   AND CATEGORY_ID = #category_id#
+	</update>
+	
+	<!-- 프로모션 순서 수정  -->
+	<update id="updateGpackPromotionOrderby" parameterClass="gpackPromotionVO">
+		UPDATE PT_GP_CATEGORY_INFO_TEMP
+		SET    
+			   ORDERED = #ordered#,
+		       UPDATED = SYSDATE,
+		       UPDATE_ID = #update_id#
+		WHERE  PACK_ID = #pack_id#
+			   AND CATEGORY_ID = #category_id#
+	</update>
+	
+	<!-- 프로모션 정보 삭제  -->
+	<delete id="deleteGpackPromotion" parameterClass="gpackPromotionVO">
+		DELETE FROM PT_GP_CATEGORY_INFO_TEMP
+		WHERE  
+			PACK_ID = #pack_id#
+			AND CATEGORY_ID = #category_id#
+	</delete>
+	
+	<!-- 플레이리스트 정보 등록  -->
+	<insert id="insertGpackPlaylist" parameterClass="gpackPlaylistVO">
+		<selectKey resultClass="string" keyProperty="playlist_id">
+			SELECT SEQ_PT_GP_PLAYLIST_INFO.NEXTVAL AS playlist_id FROM DUAL
+		</selectKey>
+		INSERT INTO PT_GP_PLAYLIST_INFO_TEMP(
+			PACK_ID
+			, CATEGORY_ID
+			, PLAYLIST_ID
+			, PLAYLIST_NM
+			, PREVIEW_IMCS_CATEGORY_ID
+			, PREVIEW_IMCS_ALBUM_ID
+			, FEATURE_IMCS_CATEGORY_ID
+			, FEATURE_IMCS_ALBUM_ID
+			, ORDERED
+			, USE_YN
+			, CREATED
+			, UPDATED
+			, CREATE_ID
+			, UPDATE_ID
+			)
+		VALUES(
+			#pack_id#
+    		, #category_id#
+    		, #playlist_id#
+    		, #playlist_nm#
+    		, #preview_imcs_category_id#
+    		, #preview_imcs_album_id#
+    		, #feature_imcs_category_id#
+    		, #feature_imcs_album_id#
+    		, NVL((SELECT MAX(ORDERED) FROM PT_GP_PLAYLIST_INFO_TEMP WHERE PACK_ID = #pack_id# AND CATEGORY_ID = #category_id#), 0)+1
+    		, #use_yn#
+    		, SYSDATE
+    		, SYSDATE
+    		, #create_id#
+    		, #update_id#
+    	)
+	</insert>
+	
+	<!-- 플레이리스트 정보 수정  -->
+	<update id="updateGpackPlaylist" parameterClass="gpackPlaylistVO">
+		UPDATE PT_GP_PLAYLIST_INFO_TEMP
+		SET    
+			PLAYLIST_NM = #playlist_nm#,
+		   	PREVIEW_IMCS_CATEGORY_ID = #preview_imcs_category_id#,
+		   	PREVIEW_IMCS_ALBUM_ID = #preview_imcs_album_id#,
+		   	FEATURE_IMCS_CATEGORY_ID = #feature_imcs_category_id#,
+		   	FEATURE_IMCS_ALBUM_ID = #feature_imcs_album_id#,
+		   	USE_YN = #use_yn#,
+		    UPDATED = SYSDATE,
+		    UPDATE_ID = #update_id#
+		WHERE 
+			PACK_ID = #pack_id#
+			AND CATEGORY_ID = #category_id#
+			AND PLAYLIST_ID = #playlist_id#
+	</update>
+	
+	<!-- 플레이리스트 순서 수정  -->
+	<update id="updateGpackPlaylistOrderby" parameterClass="gpackPlaylistVO">
+		UPDATE PT_GP_PLAYLIST_INFO_TEMP
+		SET    
+			ORDERED = #ordered#,
+		    UPDATED = SYSDATE,
+		    UPDATE_ID = #update_id#
+		WHERE
+			PACK_ID = #pack_id#
+			AND CATEGORY_ID = #category_id#
+			AND PLAYLIST_ID = #playlist_id#
+	</update>
+	
+	<!-- 플레이리스트 정보 삭제  -->
+	<delete id="deleteGpackPlaylist" parameterClass="gpackPlaylistVO">
+		DELETE FROM PT_GP_PLAYLIST_INFO_TEMP
+		WHERE  
+			PACK_ID = #pack_id#
+			AND CATEGORY_ID = #category_id#
+		<isNotEmpty property="playlist_id">
+			AND PLAYLIST_ID = #playlist_id#
+		</isNotEmpty>
+	</delete>
+	
+	<select id="getPromotionByUseYn" parameterClass="gpackPromotionVO" resultClass="string">
+		 SELECT
+         CASE
+            WHEN AUTO_YN = 'Y'
+            THEN
+               DECODE (
+                  (SELECT USE_YN
+                     FROM PT_GP_AUTO_SET_INFO_TEMP
+                    WHERE D.PACK_ID = PACK_ID AND D.CATEGORY_ID = CATEGORY_ID),
+                  NULL, 'N',
+                  'N', 'N',
+                  'Y')
+            ELSE
+               (SELECT CASE
+                          WHEN (SELECT COUNT (CONTENTS_ID) CNT
+                                  FROM PT_GP_CONTENTS_INFO_TEMP TM
+                                 WHERE     1 = 1
+                                       AND TM.CATEGORY_ID = D.CATEGORY_ID
+                                       AND TM.PACK_ID = #pack_id#
+                                       AND TM.USE_YN = 'Y') >= 1 THEN 'Y'
+                          ELSE 'N'
+                       END
+                  FROM DUAL)
+         END
+            AS C_USE_YN
+    	FROM PT_GP_CATEGORY_INFO_TEMP D
+   		WHERE PACK_ID = #pack_id# AND CATEGORY_YN = 'N'
+   		AND CATEGORY_ID = #category_id#
+	</select>	
+</sqlMap>

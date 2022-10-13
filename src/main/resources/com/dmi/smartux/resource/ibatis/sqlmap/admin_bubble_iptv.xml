@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="admin_bubble_iptv">
+	
+	<typeAlias alias="admin_bubbleSearch" type="com.dmi.smartux.admin.mainpanel.vo.BubbleSearch"/>
+    <typeAlias alias="admin_bubbleList" type="com.dmi.smartux.admin.mainpanel.vo.BubbleList"/>
+    <typeAlias alias="admin_bubbleInsert" type="com.dmi.smartux.admin.mainpanel.vo.BubbleInsert"/>
+
+    <!-- 말풍선 목록 -->
+    <select id="getBubbleList" parameterClass="admin_bubbleSearch" resultClass="admin_bubbleList">
+        SELECT
+            tbl2.*
+        FROM(
+            SELECT
+                tbl.*
+                ,ROWNUM rnum
+            FROM (
+                SELECT 
+                    ROW_NUMBER() OVER(ORDER BY REG_NO DESC) AS ROWNO
+                   ,REG_NO
+                   ,INFINITY_YN
+                   ,TO_CHAR(TO_DATE(S_DATE,'YYYYMMDDHH24MISS'), 'YYYY.MM.DD') S_DATE
+                   ,TO_CHAR(TO_DATE(E_DATE,'YYYYMMDDHH24MISS'), 'YYYY.MM.DD') E_DATE
+                   ,SHOW_CNT
+                   ,TITLE
+                   ,CONTENT
+                   ,IMG
+                   ,LINK_TYPE
+                   ,LINK
+                   ,REG_DATE
+                   ,MOD_DATE
+                FROM PT_UX_MENU_NOTI
+                WHERE (DEL_YN = 'N' OR DEL_YN IS NULL) 
+                ORDER BY REG_NO DESC
+            ) tbl
+        ) tbl2
+        WHERE ROWNO BETWEEN '$start_rnum$' AND '$end_rnum$'
+    </select>
+    
+    <!-- 말풍선 목록 개수 -->
+    <select id="getBubbleListCnt" parameterClass="admin_bubbleSearch" resultClass="int">
+        SELECT 
+            COUNT(1)
+          FROM PT_UX_MENU_NOTI
+          WHERE (DEL_YN = 'N' OR DEL_YN IS NULL)
+    </select>
+    
+    <!-- 말풍선 삭제 -->
+    <delete id="deleteBubble" parameterClass="string">
+        UPDATE PT_UX_MENU_NOTI
+        SET
+            DEL_YN = 'Y'
+            ,MOD_DATE = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+        WHERE REG_NO = #reg_no#
+    </delete>
+    
+    <!-- 말풍선 단말 삭제-->
+    <delete id="deleteBubbleTerminal" parameterClass="admin_bubbleInsert">
+        DELETE FROM PT_UX_MENU_NOTI_TERM WHERE REG_NO = #reg_no#
+    </delete>
+    
+    <!-- 말풍선 채번 -->
+    <select id="getRegNo" resultClass="string">
+       SELECT NVL(MAX(REG_NO),0) + 1 FROM PT_UX_MENU_NOTI
+    </select>
+    
+    <!-- 말풍선 등록-->
+    <insert id="insertBubble" parameterClass="admin_bubbleInsert">
+        INSERT INTO PT_UX_MENU_NOTI(
+            REG_NO
+            ,INFINITY_YN
+            ,S_DATE
+            ,E_DATE
+            ,SHOW_CNT
+            ,SHOW_SEC
+            ,TITLE
+            ,CONTENT
+            ,IMG
+            ,LINK_TYPE
+            ,LINK
+            ,REG_DATE
+            ,MOD_DATE
+            ,DEL_YN
+        )VALUES(
+            #reg_no#
+            ,#infinity_yn#
+            ,to_char(to_date(#s_date#, 'YYYY-MM-DD HH24:MI'), 'YYYYMMDDHH24MISS')
+            ,to_char(to_date(#e_date#, 'YYYY-MM-DD HH24:MI'), 'YYYYMMDDHH24MISS')
+            ,#show_cnt#
+            ,#show_sec#
+            ,#title#
+            ,#content#
+            ,#img#
+            ,'MEN'
+            ,#link#
+            ,TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+            ,TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+            ,'N'
+        )
+    </insert>
+    
+    <!-- 말풍선 등록-->
+    <insert id="insertBubbleTerm" parameterClass="admin_bubbleInsert">
+        
+        MERGE INTO PT_UX_MENU_NOTI_TERM S
+            USING DUAL ON (S.REG_NO = #reg_no# AND S.TERM_MODEL = #term_model#)
+        WHEN NOT MATCHED THEN
+            INSERT (S.REG_NO, S.TERM_MODEL) 
+            VALUES (#reg_no#, #term_model#)
+
+    </insert>
+    
+    <!-- 말풍선 목록 -->
+    <select id="getBubbleDetail" parameterClass="string" resultClass="admin_bubbleInsert">
+        SELECT 
+           REG_NO
+           ,INFINITY_YN
+           ,TO_CHAR(TO_DATE(S_DATE,'YYYYMMDDHH24MISS'), 'YYYY-MM-DD HH24:MI') S_DATE
+           ,TO_CHAR(TO_DATE(E_DATE,'YYYYMMDDHH24MISS'), 'YYYY-MM-DD HH24:MI') E_DATE
+           ,SHOW_CNT
+           ,SHOW_SEC
+           ,TITLE
+           ,REPLACE(CONTENT, CHR(10), 'newline') CONTENT
+           ,IMG
+           ,LINK_TYPE
+           ,LINK
+           ,REG_DATE
+           ,MOD_DATE
+        FROM 
+           PT_UX_MENU_NOTI
+        WHERE REG_NO = #reg_no#
+    </select>
+    
+     <!-- 말풍선 단말목록 -->
+    <select id="getBubbleTerminal" parameterClass="string" resultClass="string">
+        SELECT 
+           TERM_MODEL
+        FROM 
+           PT_UX_MENU_NOTI_TERM
+        WHERE REG_NO = #reg_no#
+    </select>
+    
+    <!-- 말풍선 수정-->
+    <update id="updateBubble" parameterClass="admin_bubbleInsert">
+        UPDATE PT_UX_MENU_NOTI
+        SET
+            INFINITY_YN = #infinity_yn#
+            ,S_DATE = to_char(to_date(#s_date#, 'YYYY-MM-DD HH24:MI'), 'YYYYMMDDHH24MISS')
+            ,E_DATE = to_char(to_date(#e_date#, 'YYYY-MM-DD HH24:MI'), 'YYYYMMDDHH24MISS')
+            ,SHOW_CNT = #show_cnt#
+            ,SHOW_SEC = #show_sec#
+            ,TITLE = #title#
+            ,CONTENT = #content#
+            ,IMG = #img#
+            ,LINK = #link#
+            ,MOD_DATE = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+        WHERE REG_NO = #reg_no#
+    </update>
+</sqlMap>

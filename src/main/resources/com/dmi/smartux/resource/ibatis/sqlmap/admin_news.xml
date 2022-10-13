@@ -1,0 +1,380 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="admin_news">
+	<typeAlias alias="newsVO" type="com.dmi.smartux.admin.news.vo.NewsVO"/>
+	<typeAlias alias="targetVO" type="com.dmi.smartux.admin.news.vo.TargetVO"/>
+
+	<resultMap id="newsMap" class="newsVO">
+		<result property="regNumber" column="REG_NO" />
+		<result property="title" column="TITLE" />
+		<result property="content" column="CONTENT" />
+		<result property="notiType" column="NOTI_TYPE" />
+		<result property="notiDetail" column="NOTI_DETAIL" />
+		<result property="notiDetailName" column="NOTI_DETAIL_NAME" />
+		<result property="sendingStatus" column="SEND_YN" />
+		<result property="sendDate" column="S_DATE" />
+		<result property="regDate" column="R_DATE" />
+		<result property="netType" column="NET_TYPE" />
+		<result property="imageName" column="IMAGE_NAME" />
+		<result property="pushType" column="PUSH_TYPE" />
+		<result property="showType" column="SHOW_TYPE" />
+		<result property="screenType" column="SCR_TYPE" />
+		<result property="notiGB" column="NOTI_GB" />
+		<result property="resultCode" column="RESULT_CODE" />
+	</resultMap>
+
+	<resultMap id="newsUrlMap" class="newsVO" extends="newsMap">
+		<result property="imageURL" column="IMAGE_URL" />
+	</resultMap>
+
+    <resultMap id="targetMap" class="targetVO">
+        <result property="targetNetType" column="NET_TYP" />
+        <result property="modelType" column="MODEL_TYP" />
+        <result property="locationCode" column="DONG_TYP" />
+        <result property="productionCode" column="PROD_CD" />
+        <result property="optionalServiceCode" column="PPROD_CD" />
+        <result property="sendType" column="SEND_TYPE" />
+        <result property="gender" column="GENDER" />
+        <result property="minAge" column="S_AGE" />
+        <result property="maxAge" column="E_AGE" />
+    </resultMap>
+
+	<!-- 새소식 시퀀스 -->
+	<select id="getSequence" resultClass="int">
+		SELECT NVL(MAX(REG_NO),0)+1 FROM PT_HDTV_NEWS
+	</select>
+
+    <!-- 이미지 서버 URL -->
+    <select id="getImageURL" resultClass="String">
+        SELECT 	F_SERVER_URL('I') AS IMAGE_URL
+        FROM 	PT_HDTV_NEWS
+        WHERE 	ROWNUM = 1
+    </select>
+
+	<!-- 새소식 리스트 -->
+	<select id="getList" parameterClass="newsVO" resultMap="newsMap">
+		SELECT
+			*
+		FROM
+			(
+			SELECT
+				ROW_NUMBER() OVER(ORDER BY R_DATE DESC) AS RNUM,
+				REG_NO,
+				TITLE,
+				CONTENT,
+				NOTI_TYPE,
+				NOTI_DETAIL,
+				NOTI_DETAIL_NAME,
+				SEND_YN,
+				S_DATE,
+				R_DATE,
+				NET_TYPE,
+				IMAGE_NAME,
+				PUSH_TYPE,
+				SHOW_TYPE,
+				SCR_TYPE,
+				NOTI_GB,
+				RESULT_CODE
+			FROM
+				PT_HDTV_NEWS
+			WHERE 1=1
+			AND SCR_TYPE='T'
+			<isNotEmpty prepend="AND" property="findValue">
+				<isNotNull property="findName">
+					$findName$ LIKE '%$findValue$%'
+				</isNotNull>
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="notiType">
+				NOTI_TYPE = #notiType#
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="sendingStatus">
+				SEND_YN = #sendingStatus#
+			</isNotEmpty>
+			) A
+			WHERE RNUM BETWEEN #startNumber# AND #endNumber#
+			ORDER BY RNUM ASC
+	</select>
+
+	<!-- 새소식 -->
+	<select id="getData" parameterClass="String" resultMap="newsUrlMap">
+		SELECT
+			REG_NO,
+			TITLE,
+			CONTENT,
+			NOTI_TYPE,
+			NOTI_DETAIL,
+			NOTI_DETAIL_NAME,
+			SEND_YN,
+			S_DATE,
+			R_DATE,
+			NET_TYPE,
+			CASE WHEN IMAGE_NAME IS NOT NULL THEN F_SERVER_URL('I')||'push/img/'||IMAGE_NAME ELSE NULL END AS IMAGE_URL,
+			IMAGE_NAME,
+			PUSH_TYPE,
+			SHOW_TYPE,
+			SCR_TYPE,
+			NOTI_GB,
+			RESULT_CODE
+		FROM
+			PT_HDTV_NEWS
+		WHERE
+			REG_NO = #regNumber#
+	</select>
+
+	<!-- 새소식 리스트 총 개수-->
+	<select id="getCount" parameterClass="newsVO" resultClass="int">
+		SELECT
+			COUNT(*)
+		FROM
+			PT_HDTV_NEWS
+		WHERE 1=1
+		AND SCR_TYPE='T'
+		<isNotEmpty prepend="AND" property="findValue">
+			<isNotNull property="findName">
+				$findName$ LIKE '%$findValue$%'
+			</isNotNull>
+		</isNotEmpty>
+		<isNotEmpty prepend="AND" property="notiType">
+			NOTI_TYPE = #notiType#
+		</isNotEmpty>
+		<isNotEmpty prepend="AND" property="sendingStatus">
+			SEND_YN = #sendingStatus#
+		</isNotEmpty>
+	</select>
+
+	<!-- 새소식 등록 -->
+	<!-- <insert id="insert" parameterClass="newsVO" >
+		<selectKey keyProperty="regNumber" resultClass="int">
+			SELECT NVL(MAX(REG_NO),0)+1 FROM PT_HDTV_NEWS
+		</selectKey>
+
+		INSERT INTO PT_HDTV_NEWS(
+			REG_NO,
+			TITLE,
+			CONTENT,
+			NOTI_TYPE,
+			NOTI_DETAIL,
+			NOTI_DETAIL_NAME,
+			SEND_YN,
+			S_DATE,
+			R_DATE,
+			NET_TYPE,
+			IMAGE_NAME,
+			PUSH_TYPE,
+			SHOW_TYPE,
+			SCR_TYPE,
+			NOTI_GB)
+		VALUES(
+			#regNumber#,
+			#title#,
+			#content#,
+			#notiType#,
+			#notiDetail#,
+			#notiDetailName#,
+			#sendingStatus#,
+			#sendDate#,
+			SYSDATE,
+			#netType#,
+			#imageName#,
+			#pushType#,
+			#showType#,
+			#screenType#,
+			#notiGB#)
+	</insert> -->
+
+	<!-- 새소식 로그 등록 -->
+	<!-- <insert id="insertLog" parameterClass="newsVO" >
+		INSERT INTO PT_HDTV_NEWS_LOG(
+			REG_NO,
+			TITLE,
+			CONTENT,
+			NOTI_TYPE,
+			NOTI_DETAIL,
+			NOTI_DETAIL_NAME,
+			SEND_YN,
+			S_DATE,
+			R_DATE,
+			ACT_DT,
+			ACT_ID,
+			ACT_IP,
+			ACT_GBN,
+			NET_TYPE,
+			IMAGE_NAME,
+			PUSH_TYPE,
+			SHOW_TYPE,
+			SCR_TYPE,
+			RESULT_CODE,
+			NOTI_GB)
+		VALUES(
+			#regNumber#,
+			#title#,
+			#content#,
+			#notiType#,
+			#notiDetail#,
+			#notiDetailName#,
+			#sendingStatus#,
+			#sendDate#,
+			SYSDATE,
+			SYSDATE,
+            #actID#,
+            #actIP#,
+            #actGbn#,
+            #netType#,
+			#imageName#,
+			#pushType#,
+			#showType#,
+			#screenType#,
+			#resultCode#,
+			#notiGB#)
+	</insert> -->
+
+	<!--  새소식 수정 -->
+	<!-- <update id="update" parameterClass="newsVO">
+		UPDATE PT_HDTV_NEWS SET
+			TITLE = #title#,
+			CONTENT = #content#,
+			NOTI_TYPE = #notiType#,
+			NOTI_DETAIL = #notiDetail#,
+			NOTI_DETAIL_NAME = #notiDetailName#,
+			S_DATE = #sendDate#,
+			R_DATE = SYSDATE,
+			NET_TYPE = #netType#,
+			IMAGE_NAME = #imageName#,
+			PUSH_TYPE = #pushType#,
+			SHOW_TYPE = #showType#
+		WHERE REG_NO = #regNumber#
+	</update> -->
+
+	<!--  새소식 삭제 -->
+	<!-- <delete id="delete" parameterClass="int">
+		DELETE FROM PT_HDTV_NEWS
+		WHERE REG_NO = #regNumber#
+	</delete> -->
+
+	<!-- 현재 대기중인 새소식중 순번이 먼저인 데이터 하나를 체크한다.(해당WAS번호로) -->
+	<!-- <update id="markNews" parameterClass="String">
+		UPDATE PT_HDTV_NEWS SET SEND_YN=#index#
+		WHERE REG_NO=
+			(
+			SELECT
+				MIN(REG_NO) AS REG_NO
+			FROM PT_HDTV_NEWS
+			WHERE SEND_YN='N'
+			AND SCR_TYPE='T'
+			AND S_DATE <![CDATA[<=]]> SYSDATE
+			)
+	</update> -->
+
+	<!-- 마킹한 데이터를 가져온다. -->
+	<!-- <select id="getMarkingNews" parameterClass="String" resultMap="newsUrlMap">
+		SELECT
+			REG_NO,
+			TITLE,
+			CONTENT,
+			NOTI_TYPE,
+			NOTI_DETAIL,
+			NOTI_DETAIL_NAME,
+			SEND_YN,
+			S_DATE,
+			R_DATE,
+			NET_TYPE,
+			CASE WHEN IMAGE_NAME IS NOT NULL THEN F_SERVER_URL('I')||IMAGE_NAME ELSE NULL END AS IMAGE_URL,
+			IMAGE_NAME,
+			PUSH_TYPE,
+			SHOW_TYPE,
+			SCR_TYPE,
+			RESULT_CODE,
+			NOTI_GB
+		FROM PT_HDTV_NEWS
+		WHERE SEND_YN=#index#
+		AND SCR_TYPE='T'
+		AND ROWNUM = 1
+	</select> -->
+
+	<!-- 스케쥴링한 새소식 상태변경 -->
+	<!-- <update id="updateNewsStatus" parameterClass="HashMap">
+		UPDATE PT_HDTV_NEWS SET
+			SEND_YN=#result#
+			<isNotEmpty property="result_code">
+				, RESULT_CODE=#result_code#
+			</isNotEmpty>
+		 	, R_DATE=SYSDATE
+		WHERE SEND_YN=#index#
+		AND REG_NO=#regNumber#
+		AND SCR_TYPE='T'
+	</update> -->
+
+    <!-- 타겟룰 조회 -->
+    <select id="getTargetRule" parameterClass="int" resultMap="targetMap">
+        SELECT
+            NET_TYP,
+            MODEL_TYP,
+            DONG_TYP,
+            PROD_CD,
+            PPROD_CD,
+            SEND_TYPE,
+            GENDER,
+            S_AGE,
+            E_AGE
+        FROM
+            PT_COMM_TARGET_RULES
+        WHERE REG_NO = #regNumber#
+    </select>
+
+    <!-- 타겟룰 등록 -->
+    <insert id="insertTargetRule" parameterClass="newsVO" >
+        INSERT INTO PT_COMM_TARGET_RULES(
+            REG_NO,
+            NET_TYP,
+            MODEL_TYP,
+            DONG_TYP,
+            PROD_CD,
+            PPROD_CD,
+            SEND_TYPE,
+            GENDER,
+            S_AGE,
+            E_AGE,
+            REG_DATE,
+            MOD_DATE,
+            SEND_CNT,
+            SIGN_UP_TYP)
+        VALUES(
+            #regNumber#,
+            #targetNetType#,
+            #modelType#,
+            #locationCode#,
+            #productionCode#,
+            #optionalServiceCode#,
+            #sendType#,
+            #gender#,
+            #minAge#,
+            #maxAge#,
+            SYSDATE,
+            SYSDATE,
+            #sendCount#,
+            #signUpType#)
+    </insert>
+
+    <!-- 타겟룰 수정 -->
+    <update id="updateTargetRule" parameterClass="newsVO">
+        UPDATE PT_COMM_TARGET_RULES SET
+            NET_TYP = #targetNetType#,
+            MODEL_TYP = #modelType#,
+            DONG_TYP = #locationCode#,
+            PROD_CD = #productionCode#,
+            PPROD_CD = #optionalServiceCode#,
+            SEND_TYPE = #sendType#,
+            GENDER = #gender#,
+            S_AGE = #minAge#,
+            E_AGE = #maxAge#,
+            MOD_DATE = SYSDATE,
+            SEND_CNT = #sendCount#
+        WHERE REG_NO=#regNumber#
+    </update>
+
+    <!--  타겟룰 삭제 -->
+    <delete id="deleteTargetRule" parameterClass="int">
+        DELETE FROM PT_COMM_TARGET_RULES
+        WHERE REG_NO = #regNumber#
+    </delete>
+</sqlMap>

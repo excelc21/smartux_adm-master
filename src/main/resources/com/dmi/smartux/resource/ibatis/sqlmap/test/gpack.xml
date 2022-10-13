@@ -1,0 +1,316 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="test_gpack">
+<!--
+################################################################################### 
+Before Query
+###################################################################################-->
+	<!-- 백업 테이블 create  -->
+	<statement id="create_pack_info_backup_table">
+		CREATE TABLE PT_GP_PACK_INFO_BACKUP
+		(
+			PACK_ID              VARCHAR2(5) NOT NULL ,
+			PACK_NM              VARCHAR2(100) NULL ,
+			VERSION              VARCHAR2(20) NULL ,
+			TEMPLATE_TYPE        VARCHAR2(5) NULL ,
+			IMCS_CATEGORY_ID     VARCHAR2(5) NULL ,
+			CREATED              DATE NULL ,
+			UPDATED              DATE NULL ,
+			CREATE_ID            VARCHAR2(30) NULL ,
+			UPDATE_ID            VARCHAR2(30) NULL 
+		)
+	</statement>
+	<!-- 기존 테이블의 기존 데이터를 백업 테이블에 insert -->
+	<insert id="insert_pack_info_to_backup_table">
+		INSERT INTO PT_GP_PACK_INFO_BACKUP
+		SELECT * FROM PT_GP_PACK_INFO
+	</insert>
+	<!-- 기존 테이블의 기존 데이터 삭제 -->
+	<delete id="delete_org_pack_info_data">
+		DELETE FROM PT_GP_PACK_INFO
+	</delete>
+	
+	<!-- 백업 테이블 create  -->
+	<statement id="create_category_info_backup_table">
+		CREATE TABLE PT_GP_CATEGORY_INFO_BACKUP
+		(
+			PACK_ID              VARCHAR2(5) NOT NULL ,
+			CATEGORY_ID          VARCHAR2(8) NOT NULL ,
+			CATEGORY_NM          VARCHAR2(100) NULL ,
+			CATEGORY_COMMENT     VARCHAR2(300) NULL ,
+			CATEGORY_YN          VARCHAR2(1) NULL ,
+			PROMOTION_VIDEO_GB   VARCHAR2(5) NULL ,
+			PROMOTION_CHNL       VARCHAR2(5) NULL ,
+			AUTO_YN              VARCHAR2(1) NULL ,
+			ORDERED              NUMBER NULL ,
+			USE_YN               VARCHAR2(1) NULL ,
+			CREATED              DATE NULL ,
+			UPDATED              DATE NULL ,
+			CREATE_ID            VARCHAR2(30) NULL ,
+			UPDATE_ID            VARCHAR2(30) NULL 
+		)
+	</statement>
+	<!-- 기존 테이블의 기존 데이터를 백업 테이블에 insert -->
+	<insert id="insert_category_info_to_backup_table">
+		INSERT INTO PT_GP_CATEGORY_INFO_BACKUP
+		SELECT * FROM PT_GP_CATEGORY_INFO
+	</insert>
+	<!-- 기존 테이블의 기존 데이터 삭제 -->
+	<delete id="delete_org_category_info_data">
+		DELETE FROM PT_GP_CATEGORY_INFO
+	</delete>
+	
+	<!-- 백업 테이블 create  -->
+	<statement id="create_contents_info_backup_table">
+		CREATE TABLE PT_GP_CONTENTS_INFO_BACKUP
+		(
+			PACK_ID              VARCHAR2(5) NOT NULL ,
+			CATEGORY_ID          VARCHAR2(8) NOT NULL ,
+			CONTENTS_ID          VARCHAR2(8) NOT NULL ,
+			CONTENTS_NM          VARCHAR2(100) NULL ,
+			MOVEPATH_TYPE        VARCHAR2(5) NULL ,
+			MOVEPATH         	 VARCHAR2(300) NULL ,
+			DAL_TYPE             VARCHAR2(1) NULL ,
+			IMCS_CATEGORY_ID     VARCHAR2(100) NULL ,
+			ALBUM_ID             VARCHAR2(100) NULL ,
+			IMG_PATH             VARCHAR2(100) NULL ,
+			IMG_FILE             VARCHAR2(100) NULL ,
+			ORDERED              NUMBER NULL ,
+			USE_YN               VARCHAR2(1) NULL ,
+			CREATED              DATE NULL ,
+			UPDATED              DATE NULL ,
+			CREATE_ID            VARCHAR2(30) NULL ,
+			UPDATE_ID            VARCHAR2(30) NULL
+		)
+	</statement>
+	<!-- 기존 테이블의 기존 데이터를 백업 테이블에 insert -->
+	<insert id="insert_contents_info_to_backup_table">
+		INSERT INTO PT_GP_CONTENTS_INFO_BACKUP
+		SELECT * FROM PT_GP_CONTENTS_INFO
+	</insert>
+	<!-- 기존 테이블의 기존 데이터 삭제 -->
+	<delete id="delete_org_contents_info_data">
+		DELETE FROM PT_GP_CONTENTS_INFO
+	</delete>
+	
+	<!-- 백업 테이블 create  -->
+	<statement id="create_auto_set_info_backup_table">
+		CREATE TABLE PT_GP_AUTO_SET_INFO_BACKUP
+		(
+			PACK_ID              VARCHAR2(5) NOT NULL ,
+			CATEGORY_ID          VARCHAR2(8) NOT NULL ,
+			AUTO_SET_ID          VARCHAR2(8) NOT NULL ,
+			IMCS_CATEGORY_ID     VARCHAR2(100) NULL ,
+			ORDERED              NUMBER NULL ,
+			USE_YN               VARCHAR2(1) NULL ,
+			CREATED              DATE NULL ,
+			UPDATED              DATE NULL ,
+			CREATE_ID            VARCHAR2(30) NULL ,
+			UPDATE_ID            VARCHAR2(30) NULL
+		)
+	</statement>
+	<!-- 기존 테이블의 기존 데이터를 백업 테이블에 insert -->
+	<insert id="insert_auto_set_info_to_backup_table">
+		INSERT INTO PT_GP_AUTO_SET_INFO_BACKUP
+		SELECT * FROM PT_GP_AUTO_SET_INFO
+	</insert>
+	<!-- 기존 테이블의 기존 데이터 삭제 -->
+	<delete id="delete_org_auto_set_info_data">
+		DELETE FROM PT_GP_AUTO_SET_INFO
+	</delete>
+	
+	<!-- 백업 테이블 create  -->
+	<statement id="create_playlist_info_backup_table">
+		CREATE TABLE PT_GP_PLAYLIST_INFO_BACKUP
+		(
+			PACK_ID              VARCHAR2(5) NOT NULL ,
+			CATEGORY_ID          VARCHAR2(8) NOT NULL ,
+			PLAYLIST_ID          VARCHAR2(8) NOT NULL ,
+			PLAYLIST_NM          VARCHAR2(100) NULL ,
+			PREVIEW_IMCS_CATEGORY_ID VARCHAR2(100) NULL ,
+			PREVIEW_IMCS_ALBUM_ID VARCHAR2(100) NULL ,
+			FEATURE_IMCS_CATEGORY_ID VARCHAR2(100) NULL ,
+			FEATURE_IMCS_ALBUM_ID VARCHAR2(100) NULL ,
+			ORDERED              NUMBER NULL ,
+			USE_YN               VARCHAR2(1) NULL ,
+			CREATED              DATE NULL ,
+			UPDATED              DATE NULL ,
+			CREATE_ID            VARCHAR2(30) NULL ,
+			UPDATE_ID            VARCHAR2(30) NULL
+		)
+	</statement>
+	<!-- 기존 테이블의 기존 데이터를 백업 테이블에 insert -->
+	<insert id="insert_playlist_info_to_backup_table">
+		INSERT INTO PT_GP_PLAYLIST_INFO_BACKUP
+		SELECT * FROM PT_GP_PLAYLIST_INFO
+	</insert>
+	<!-- 기존 테이블의 기존 데이터 삭제 -->
+	<delete id="delete_org_playlist_info_data">
+		DELETE FROM PT_GP_PLAYLIST_INFO
+	</delete>
+	
+	
+<!--
+################################################################################### 
+Data Insert Query
+###################################################################################-->
+	
+	<!-- 테스트 데이터를 기존 테이블에 insert-->
+	<insert id="insert_test_data_to_org_pack_info_table1">
+		INSERT INTO PT_GP_PACK_INFO
+		(PACK_ID, PACK_NM, VERSION, TEMPLATE_TYPE, IMCS_CATEGORY_ID, CREATED, UPDATED, CREATE_ID, UPDATE_ID)
+		SELECT 'P0002', '영화애니', '20140325001', 'TP001', 'M000', TO_DATE(20140324095207, 'yyyymmddhh24miss'), TO_DATE(20140325095349, 'yyyymmddhh24miss'), 'SYS', 'admin' FROM DUAL UNION ALL
+		SELECT 'P0001', 'TV다시보기', '20140325002', 'TP002', 'T000', TO_DATE(20140324095207, 'yyyymmddhh24miss'), TO_DATE(20140325101749, 'yyyymmddhh24miss'), 'SYS', 'admin' FROM DUAL UNION ALL
+		SELECT 'P0003', '키즈교육', '20140325001', 'TP001', 'K000', TO_DATE(20140324095207, 'yyyymmddhh24miss'), TO_DATE(20140325102756, 'yyyymmddhh24miss'), 'SYS', 'admin' FROM DUAL	
+	</insert>
+	
+	<!-- 테스트 데이터를 기존 테이블에 insert-->
+	<insert id="insert_test_data_to_org_category_info_table1">
+		INSERT INTO PT_GP_CATEGORY_INFO
+		(PACK_ID, CATEGORY_ID, CATEGORY_NM, CATEGORY_COMMENT, CATEGORY_YN, PROMOTION_VIDEO_GB, PROMOTION_CHNL, AUTO_YN, ORDERED, USE_YN, CREATED, UPDATED, CREATE_ID, UPDATE_ID)
+		SELECT 'P0003','2','봄개편 특집',null,'N','PV001','677','Y',1,'Y',to_date('14/03/24','RR/MM/DD'),to_date('14/03/24','RR/MM/DD'),'admin','admin' FROM DUAL UNION ALL
+		SELECT 'P0002','3','서울에 온 어벤저스!!! 그들을 미리 만나보자','아이언맨 캡틴아메리카 헐크 토르','N',null,null,'Y',1,'Y',to_date('14/03/24','RR/MM/DD'),to_date('14/03/24','RR/MM/DD'),'admin','admin' FROM DUAL UNION ALL
+		SELECT 'P0001','5','사용불가',null,'N','PV003',null,'Y',4,'N',to_date('14/03/24','RR/MM/DD'),to_date('14/03/24','RR/MM/DD'),'admin','admin' FROM DUAL UNION ALL
+		SELECT 'P0001','6','LG U+만의 컬렉션','이런 콘텐츠 올레TV에는 없어요...','N','PV003',null,'Y',1,'Y',to_date('14/03/24','RR/MM/DD'),to_date('14/03/24','RR/MM/DD'),'admin','admin' FROM DUAL UNION ALL
+		SELECT 'P0002','7','난 컨텐츠가 없어요',null,'N',null,null,'N',2,'Y',to_date('14/03/25','RR/MM/DD'),to_date('14/03/25','RR/MM/DD'),'admin','admin' FROM DUAL UNION ALL
+		SELECT 'P0001','1','개학 이벤트','새로 시작하는 그대들에게','N','PV002',null,'N',2,'Y',to_date('14/03/24','RR/MM/DD'),to_date('14/03/24','RR/MM/DD'),'admin','admin' FROM DUAL UNION ALL
+		SELECT 'P0001','57','추적자 전편 다시보기',null,'N','PV003',null,'Y',7,'Y',to_date('14/03/27','RR/MM/DD'),to_date('14/03/27','RR/MM/DD'),'admin','admin' FROM DUAL UNION ALL
+		SELECT 'P0001','55','빅 전편 다시보기',null,'N','PV003',null,'Y',5,'Y',to_date('14/03/27','RR/MM/DD'),to_date('14/03/27','RR/MM/DD'),'admin','admin' FROM DUAL UNION ALL
+		SELECT 'P0001','56','각시탈 전편 다시보기',null,'N','PV003',null,'Y',6,'Y',to_date('14/03/27','RR/MM/DD'),to_date('14/03/27','RR/MM/DD'),'admin','admin' FROM DUAL UNION ALL
+		SELECT 'P0001','58','유령 전편 다시보기',null,'N','PV003',null,'Y',8,'Y',to_date('14/03/27','RR/MM/DD'),to_date('14/03/27','RR/MM/DD'),'admin','admin' FROM DUAL UNION ALL
+		SELECT 'P0002', '24', '최신개봉작', '최근 개봉한 영화 다시보기', 'Y', '', '', 'Y', 1, 'Y', TO_DATE(20140324, 'yyyymmddhh24miss'), NULL, 'admin', '' FROM DUAL UNION ALL
+		SELECT 'P0002', '26', '명탐정 코난 7기', '명탐정 코난 7기 다시보기', 'Y', '', '', 'Y', 2, 'Y', TO_DATE(20140324, 'yyyymmddhh24miss'), NULL, 'admin', '' FROM DUAL UNION ALL
+		SELECT 'P0002', '28', '공주소매', '공주소매(상)', 'Y', '', '', 'Y', 3, 'Y', TO_DATE(20140324, 'yyyymmddhh24miss'), TO_DATE(20140324, 'yyyymmddhh24miss'), 'admin', 'admin' FROM DUAL UNION ALL
+		<!-- SELECT 'P0001', '10', '각시탈', '드라마 각시탈을 다시 볼 수 있습니다.', 'Y', '', '', 'Y', 1, 'Y', TO_DATE(20140324, 'yyyymmddhh24miss'), TO_DATE(20140324, 'yyyymmddhh24miss'), 'admin', 'admin' FROM DUAL UNION ALL -->
+		SELECT 'P0001', '13', '넝쿨당', '넝쿨째 굴러온 당신 다시 보기', 'Y', '', '', 'Y', 2, 'Y', TO_DATE(20140324, 'yyyymmddhh24miss'), TO_DATE(20140324, 'yyyymmddhh24miss'), 'admin', 'admin' FROM DUAL UNION ALL
+		SELECT 'P0001', '12', '빛과 그림자', '빛과 그림자 다시 보기', 'Y', '', '', 'Y', 3, 'Y', TO_DATE(20140324, 'yyyymmddhh24miss'), TO_DATE(20140324, 'yyyymmddhh24miss'), 'admin', 'admin' FROM DUAL UNION ALL
+		SELECT 'P0001', '8', '어제방송', '어제 반영한 방송을 다시 볼 수 있습니다. ', 'Y', '', '', 'Y', 4, 'Y', TO_DATE(20140324, 'yyyymmddhh24miss'), TO_DATE(20140324, 'yyyymmddhh24miss'), 'admin', 'admin' FROM DUAL UNION ALL
+		SELECT 'P0003', '31', '방귀대장 뿡뿡이', '방귀대장 뿡뿡이 다시보기', 'Y', '', '', 'Y', 1, 'Y', TO_DATE(20140324, 'yyyymmddhh24miss'), NULL, 'admin', '' FROM DUAL UNION ALL
+		SELECT 'P0003', '33', '마다가스카', '마다가스카 쇼타임 다시보기', 'Y', '', '', 'Y', 2, 'Y', TO_DATE(20140324, 'yyyymmddhh24miss'), NULL, 'admin', '' FROM DUAL UNION ALL
+		SELECT 'P0003', '35', '딩동댕 유치원', '딩동댕 유치원 다시보기', 'Y', '', '', 'Y', 3, 'Y', TO_DATE(20140324, 'yyyymmddhh24miss'), NULL, 'admin', '' FROM DUAL
+	</insert>
+	
+	<!-- 테스트 데이터를 기존 테이블에 insert-->
+	<insert id="insert_test_data_to_org_auto_set_info_table1">
+		INSERT INTO PT_GP_AUTO_SET_INFO
+		(PACK_ID, CATEGORY_ID, AUTO_SET_ID, IMCS_CATEGORY_ID, ORDERED, USE_YN, CREATED, UPDATED, CREATE_ID, UPDATE_ID)
+		SELECT 'P0001','6','1','T7011',null,'Y',to_date('14/03/24','RR/MM/DD'),to_date('14/03/24','RR/MM/DD'),'admin','admin' FROM DUAL UNION ALL
+		SELECT 'P0003','2','5','U09EC',null,'Y',to_date('14/03/25','RR/MM/DD'),to_date('14/03/25','RR/MM/DD'),'admin','admin' FROM DUAL UNION ALL
+		SELECT 'P0001','58','35','T792H',1,'Y',to_date('14/03/27','RR/MM/DD'),null,'admin',null FROM DUAL UNION ALL
+		SELECT 'P0001','57','34','T792E',1,'Y',to_date('14/03/27','RR/MM/DD'),null,'admin',null FROM DUAL UNION ALL
+		SELECT 'P0001','55','32','T792I',1,'Y',to_date('14/03/27','RR/MM/DD'),null,'admin',null FROM DUAL UNION ALL
+		SELECT 'P0001','56','33','T792G',1,'Y',to_date('14/03/27','RR/MM/DD'),null,'admin',null FROM DUAL UNION ALL
+		SELECT 'P0002','3','2','M803',1,'Y',to_date('14/03/24','RR/MM/DD'),null,'admin',null FROM DUAL  UNION ALL
+		SELECT 'P0002', '24', '15', 'M803', 1, 'Y', TO_DATE(20140324, 'yyyymmddhh24miss'), NULL, 'admin', '' FROM DUAL UNION ALL
+		SELECT 'P0002', '26', '16', 'M7030', 1, 'Y', TO_DATE(20140324, 'yyyymmddhh24miss'), NULL, 'admin', '' FROM DUAL UNION ALL
+		SELECT 'P0002', '28', '18', 'M275V', 1, 'Y', TO_DATE(20140324, 'yyyymmddhh24miss'), NULL, 'admin', '' FROM DUAL UNION ALL
+		SELECT 'P0001', '10', '10', 'T792G', 1, 'Y', TO_DATE(20140324, 'yyyymmddhh24miss'), NULL, 'admin', '' FROM DUAL UNION ALL
+		SELECT 'P0001', '13', '13', 'T7011', 1, 'Y', TO_DATE(20140324, 'yyyymmddhh24miss'), NULL, 'admin', '' FROM DUAL UNION ALL
+		SELECT 'P0001', '12', '11', 'T7816', 1, 'Y', TO_DATE(20140324, 'yyyymmddhh24miss'), NULL, 'admin', '' FROM DUAL UNION ALL
+		SELECT 'P0003', '31', '19', 'K506', 1, 'Y', TO_DATE(20140324, 'yyyymmddhh24miss'), NULL, 'admin', '' FROM DUAL UNION ALL
+		SELECT 'P0003', '33', '20', 'U09D1', 1, 'Y', TO_DATE(20140324, 'yyyymmddhh24miss'), NULL, 'admin', '' FROM DUAL UNION ALL
+		SELECT 'P0001', '8', '9', 'T500', 1, 'Y', TO_DATE(20140324, 'yyyymmddhh24miss'), NULL, 'admin', '' FROM DUAL UNION ALL
+		SELECT 'P0003', '35', '21', 'K507', 1, 'Y', TO_DATE(20140324, 'yyyymmddhh24miss'), NULL, 'admin', '' FROM DUAL
+	</insert>
+	
+	<!-- 테스트 데이터를 기존 테이블에 insert-->
+	<insert id="insert_test_data_to_org_contents_info_table1">
+		INSERT INTO PT_GP_CONTENTS_INFO
+		(PACK_ID,CATEGORY_ID,CONTENTS_ID,CONTENTS_NM,MOVEPATH_TYPE,MOVEPATH,DAL_TYPE,IMCS_CATEGORY_ID,ALBUM_ID,IMG_PATH,IMG_FILE,ORDERED,USE_YN,CREATED,UPDATED,CREATE_ID,UPDATE_ID)
+		SELECT 'P0001','1','15','카테고리_상위(수정)','MT007',null,null,'T6515',null,null,'gpack_contents_bg_P0001_1395652065623.png',9,'N',to_date('14/03/24','RR/MM/DD'),to_date('14/03/24','RR/MM/DD'),'admin','admin' FROM DUAL UNION ALL
+		SELECT 'P0001','1','11','채널(수정)','MT005','503',null,null,null,null,'gpack_contents_bg_P0001_1395651648884.png',10,'N',to_date('14/03/24','RR/MM/DD'),to_date('14/03/24','RR/MM/DD'),'admin','admin' FROM DUAL UNION ALL
+		SELECT 'P0001','1','13','카테고리_시리즈(수정)','MT006',null,null,'T792C','M01126PA14PPV00',null,'gpack_contents_bg_P0001_1395653013742.png',8,'N',to_date('14/03/24','RR/MM/DD'),to_date('14/03/24','RR/MM/DD'),'admin','admin' FROM DUAL UNION ALL
+		SELECT 'P0001','1','14','웰컴투더 시월드','MT007',null,null,'T7011',null,null,'gpack_contents_bg_P0001_1395651990618.png',7,'Y',to_date('14/03/24','RR/MM/DD'),to_date('14/03/24','RR/MM/DD'),'admin','admin' FROM DUAL UNION ALL
+		SELECT 'P0001','1','1','이모든 콘텐츠를 단돈 9900원으로','MT001','20090',null,null,null,null,'gpack_contents_bg_P0001_1395650817407.png',1,'Y',to_date('14/03/24','RR/MM/DD'),to_date('14/03/24','RR/MM/DD'),'admin','admin' FROM DUAL UNION ALL
+		SELECT 'P0001','1','4','충격! 유재석이 하루 종일 달린 이유는???','MT002',null,null,'T6016','M01126PA09PPV00',null,'gpack_contents_bg_P0001_1395651185405.png',2,'Y',to_date('14/03/24','RR/MM/DD'),to_date('14/03/24','RR/MM/DD'),'admin','admin' FROM DUAL UNION ALL
+		SELECT 'P0001','1','6','쇼핑앱','MT003','uplusbox_AppName',null,null,null,null,'gpack_contents_bg_P0001_1395651388429.png',3,'Y',to_date('14/03/24','RR/MM/DD'),to_date('14/03/24','RR/MM/DD'),'admin','admin' FROM DUAL UNION ALL
+		SELECT 'P0001','1','8','호갱님만을 위한 특별한 이벤트','MT004','http://555.666.777.888/dal','H',null,null,null,'gpack_contents_bg_P0001_1395651487945.png',4,'Y',to_date('14/03/24','RR/MM/DD'),to_date('14/03/24','RR/MM/DD'),'admin','admin' FROM DUAL UNION ALL
+		SELECT 'P0001','1','10','가이드 채널','MT005','677',null,null,null,null,'gpack_contents_bg_P0001_1395651600992.png',5,'Y',to_date('14/03/24','RR/MM/DD'),to_date('14/03/24','RR/MM/DD'),'admin','admin' FROM DUAL UNION ALL
+		SELECT 'P0001','1','12','한국형 히어로... 각시탈 전편','MT006',null,null,'T792G','M01128HA09PPV00',null,'gpack_contents_bg_P0001_1395651717959.png',6,'Y',to_date('14/03/24','RR/MM/DD'),to_date('14/03/24','RR/MM/DD'),'admin','admin' FROM DUAL
+	</insert>
+	
+	<!-- 테스트 데이터를 기존 테이블에 insert-->
+	<insert id="insert_test_data_to_org_playlist_info_table1">
+		INSERT INTO PT_GP_PLAYLIST_INFO
+		(PACK_ID, CATEGORY_ID, PLAYLIST_ID, PLAYLIST_NM, PREVIEW_IMCS_CATEGORY_ID, PREVIEW_IMCS_ALBUM_ID, FEATURE_IMCS_CATEGORY_ID, FEATURE_IMCS_ALBUM_ID, ORDERED, USE_YN, CREATED, UPDATED, CREATE_ID, UPDATE_ID)
+		SELECT 'P0001','1','2','무료VOD선택(수정)','T6016','M01126PA09PPV00','T6016','M01126IA11PPV00',2,'Y',to_date('14/03/24','RR/MM/DD'),to_date('14/03/24','RR/MM/DD'),'admin','admin' FROM DUAL UNION ALL
+		SELECT 'P0001','1','1','플레이리스트1','T792G','M011268A07PPV00','T792I','M011266A08PPV00',3,'Y',to_date('14/03/24','RR/MM/DD'),to_date('14/03/24','RR/MM/DD'),'admin','admin' FROM DUAL UNION ALL
+		SELECT 'P0001','1','4','7회 6/16(토) 닥터 진','T792I','M011266A08PPV00','T792D','M01126HA13PPV00',1,'N',to_date('14/03/24','RR/MM/DD'),to_date('14/03/24','RR/MM/DD'),'admin','admin' FROM DUAL
+	</insert>
+	
+	
+<!--
+################################################################################### 
+After Query
+###################################################################################-->
+	<!-- 기존 테이블의 테스트 데이터 삭제 -->
+	<delete id="delete_pack_info_test_data">
+		DELETE FROM PT_GP_PACK_INFO
+	</delete>
+	<!-- 백업 테이블에 보관된 데이터를 기존 테이블에 insert -->
+	<insert id="insert_pack_info_to_org_table">
+		INSERT INTO PT_GP_PACK_INFO
+		SELECT * FROM PT_GP_PACK_INFO_BACKUP
+	</insert>
+	<!-- 백업 테이블 drop  -->
+	<statement id="drop_pack_info_backup_table">
+		DROP TABLE PT_GP_PACK_INFO_BACKUP
+	</statement>
+	
+	<!-- 기존 테이블의 테스트 데이터 삭제 -->
+	<delete id="delete_category_info_test_data">
+		DELETE FROM PT_GP_CATEGORY_INFO
+	</delete>
+	<!-- 백업 테이블에 보관된 데이터를 기존 테이블에 insert -->
+	<insert id="insert_category_info_to_org_table">
+		INSERT INTO PT_GP_CATEGORY_INFO
+		SELECT * FROM PT_GP_CATEGORY_INFO_BACKUP
+	</insert>
+	<!-- 백업 테이블 drop  -->
+	<statement id="drop_category_info_backup_table">
+		DROP TABLE PT_GP_CATEGORY_INFO_BACKUP
+	</statement>
+	
+	<!-- 기존 테이블의 테스트 데이터 삭제 -->
+	<delete id="delete_contents_info_test_data">
+		DELETE FROM PT_GP_CONTENTS_INFO
+	</delete>
+	<!-- 백업 테이블에 보관된 데이터를 기존 테이블에 insert -->
+	<insert id="insert_contents_info_to_org_table">
+		INSERT INTO PT_GP_CONTENTS_INFO
+		SELECT * FROM PT_GP_CONTENTS_INFO_BACKUP
+	</insert>
+	<!-- 백업 테이블 drop  -->
+	<statement id="drop_contents_info_backup_table">
+		DROP TABLE PT_GP_CONTENTS_INFO_BACKUP
+	</statement>
+	
+	<!-- 기존 테이블의 테스트 데이터 삭제 -->
+	<delete id="delete_auto_set_info_test_data">
+		DELETE FROM PT_GP_AUTO_SET_INFO
+	</delete>
+	<!-- 백업 테이블에 보관된 데이터를 기존 테이블에 insert -->
+	<insert id="insert_auto_set_info_to_org_table">
+		INSERT INTO PT_GP_AUTO_SET_INFO
+		SELECT * FROM PT_GP_AUTO_SET_INFO_BACKUP
+	</insert>
+	<!-- 백업 테이블 drop  -->
+	<statement id="drop_auto_set_info_backup_table">
+		DROP TABLE PT_GP_AUTO_SET_INFO_BACKUP
+	</statement>
+	
+	<!-- 기존 테이블의 테스트 데이터 삭제 -->
+	<delete id="delete_playlist_info_test_data">
+		DELETE FROM PT_GP_PLAYLIST_INFO
+	</delete>
+	<!-- 백업 테이블에 보관된 데이터를 기존 테이블에 insert -->
+	<insert id="insert_playlist_info_to_org_table">
+		INSERT INTO PT_GP_PLAYLIST_INFO
+		SELECT * FROM PT_GP_PLAYLIST_INFO_BACKUP
+	</insert>
+	<!-- 백업 테이블 drop  -->
+	<statement id="drop_playlist_info_backup_table">
+		DROP TABLE PT_GP_PLAYLIST_INFO_BACKUP
+	</statement>
+	
+</sqlMap>

@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="admin_guidelink">
+    
+    <typeAlias alias="guideLinkVo" type="com.dmi.smartux.admin.guidelink.vo.GuideLinkVo"/>
+    
+    <select id="duplicateDca" parameterClass="guideLinkVo" resultClass="java.lang.Integer">
+        SELECT 
+            count(1) cnt
+        FROM PT_UX_GUIDE
+        WHERE DCA = #dca#
+    </select>
+    
+    <select id="getGuideLinkListCnt" parameterClass="guideLinkVo" resultClass="java.lang.Integer">
+        SELECT 
+            count(1) cnt
+        FROM PT_UX_GUIDE
+        WHERE 1=1
+        <isNotEmpty property="search_text">
+            <isEqual property="type" compareValue="1">
+                AND TITLE LIKE '%'||#search_text#||'%'
+            </isEqual>
+        </isNotEmpty>
+        <isNotEmpty property="search_text">
+            <isEqual property="type" compareValue="2">
+                AND DCA LIKE '%'||#search_text#||'%'
+            </isEqual>
+        </isNotEmpty>
+    </select>
+    
+    <select id="getGuideLinkList" parameterClass="guideLinkVo" resultClass="guideLinkVo">
+        SELECT
+            tbl2.*
+        FROM(
+            SELECT
+                tbl.*
+                ,ROWNUM rnum
+            FROM (
+                SELECT 
+                    ROW_NUMBER() OVER(ORDER BY REG_DATE DESC) AS ROWNO
+                    ,SEQ              seq
+                    ,TITLE           title
+                    ,DCA             dca
+                    ,LINK_TYPE       linkType
+                    ,LINK            link
+                    ,DETAIL_LINK     detailLink
+                    ,TO_CHAR(TO_DATE(REG_DATE, 'YYYYMMDDHH24MISS'), 'YYYY-MM-DD HH24:MI:SS')     regDate
+                    ,TO_CHAR(TO_DATE(MOD_DATE, 'YYYYMMDDHH24MISS'), 'YYYY-MM-DD HH24:MI:SS')     modDate
+                    ,USE_YN          useYn
+                FROM PT_UX_GUIDE
+                WHERE 1=1
+                <isNotEmpty property="search_text">
+                    <isEqual property="type" compareValue="1">
+                        AND TITLE LIKE '%'||#search_text#||'%'
+                    </isEqual>
+                </isNotEmpty>
+                <isNotEmpty property="search_text">
+                    <isEqual property="type" compareValue="2">
+                        AND DCA LIKE '%'||#search_text#||'%'
+                    </isEqual>
+                </isNotEmpty>
+                ORDER BY REG_DATE DESC
+            ) tbl
+        ) tbl2
+        WHERE ROWNO BETWEEN '$start_rnum$' AND '$end_rnum$'
+    </select>
+    
+    <insert id="insertGuideLink" parameterClass="guideLinkVo">
+       INSERT INTO PT_UX_GUIDE(
+            SEQ
+            ,TITLE
+            ,DCA
+            ,LINK_TYPE
+            ,LINK
+            ,DETAIL_LINK
+            ,REG_DATE
+            ,MOD_DATE
+            ,USE_YN
+       )VALUES(
+           (SELECT NVL(MAX(SEQ), 0)+1 FROM PT_UX_GUIDE)
+           ,#title#
+           ,#dca#
+           ,#linkType#
+           ,#link#
+           ,#detailLink#
+           ,TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+           ,TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+           ,#useYn#
+       )
+    </insert>
+    
+    <select id="getGuideLinkDetail" resultClass="guideLinkVo">
+        SELECT 
+            TITLE            title
+            ,SEQ              seq
+            ,DCA              dca
+            ,LINK_TYPE       linkType
+            ,LINK            link
+            ,DETAIL_LINK     detailLink
+            ,TO_CHAR(TO_DATE(REG_DATE, 'YYYYMMDDHH24MISS'), 'YYYY-MM-DD HH24:MI:SS')     regDate
+            ,TO_CHAR(TO_DATE(MOD_DATE, 'YYYYMMDDHH24MISS'), 'YYYY-MM-DD HH24:MI:SS')     modDate
+            ,USE_YN          useYn
+        FROM PT_UX_GUIDE
+        WHERE SEQ = #seq#
+    </select>
+    
+    <insert id="updateGuideLink" parameterClass="guideLinkVo">
+    
+        UPDATE PT_UX_GUIDE
+        SET TITLE             = #title#
+            ,LINK_TYPE        = #linkType#
+            ,LINK             = #link#
+            ,DETAIL_LINK      = #detailLink#
+            ,MOD_DATE         = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+            ,USE_YN           = #useYn#
+        WHERE SEQ = #seq#
+       
+    </insert>
+    
+    <delete id="deleteGuideLink">
+        DELETE FROM PT_UX_GUIDE
+        WHERE SEQ = #seq#
+    </delete>
+</sqlMap>

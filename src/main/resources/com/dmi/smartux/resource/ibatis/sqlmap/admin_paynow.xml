@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="admin_paynow">
+	<typeAlias alias="paynowSearchVO" type="com.dmi.smartux.admin.paynow.vo.PaynowSearchVO"/>
+	<typeAlias alias="paynowReqVO" type="com.dmi.smartux.admin.paynow.vo.PaynowReqVO"/>
+	<typeAlias alias="paynowAdminBannerVO" type="com.dmi.smartux.admin.paynow.vo.PaynowBannerVO"/>
+
+	<select id="paymentReqList" parameterClass="paynowSearchVO" resultClass="paynowReqVO">
+		SELECT A.*
+			FROM (
+		 		SELECT 
+		 			ROW_NUMBER() OVER(ORDER BY REG_DT DESC) AS ROWNO, 
+		 			PT_YEAR,
+		 			PT_MONTH,
+		   		   	TID, 
+		            M_TYPE, 
+		            SA_ID, 
+		            MAC, 
+		            CTN, 
+		            TO_CHAR(AMOUNT, '99,999') AS AMOUNT, 
+		            PKG_YN,
+		            ALBUM_ID,
+		            ALBUM_NAME, 
+		            CAT_ID,  
+		            APP_TYPE,
+		            DECODE(STATUS,'00','성공','10','대기중','20','요청중','30','취소','99','실패') AS STATUS,
+		            ERR_TYP,
+		            ERR_CD,
+		            ERR_MSG,
+		            TO_CHAR(TO_DATE(REG_DT, 'YYMMDDHH24MISS'), 'YYYY-MM-DD HH24:MI:SS') AS REG_DT,
+		            TO_CHAR(TO_DATE(MOD_DT, 'YYMMDDHH24MISS'), 'YYYY-MM-DD HH24:MI:SS') AS MOD_DT
+				FROM 
+					PT_UX_PAYNOW_REQ_INFO
+				WHERE 
+					M_TYPE != '4'
+				  	<isNotEmpty prepend="AND" property="findValue">
+				  	   	$findName$ LIKE '%$findValue$%'
+				  	</isNotEmpty>
+				  	<isNotEmpty prepend="AND" property="status">
+						STATUS = #status#
+					</isNotEmpty>
+					<isNotEmpty property="startDt">
+						<isNotEmpty prepend="AND" property="endDt">
+							REG_DT BETWEEN REPLACE(#startDt#, '-') || '000000' AND REPLACE(#endDt#, '-') || '235959'
+							<isEqual prepend="AND" property="compareYear" compareValue="1">
+								PT_YEAR = MOD(SUBSTR(#startDt#, 1, 4), 2) AND
+								PT_MONTH BETWEEN TO_NUMBER(SUBSTR(#startDt#, 6, 2)) AND TO_NUMBER(SUBSTR(#endDt#, 6, 2))
+							</isEqual>
+							<isNotEqual prepend="AND" property="compareYear" compareValue="1">
+								((PT_YEAR = MOD(SUBSTR(#startDt#, 1, 4), 2) AND PT_MONTH &gt;= TO_NUMBER(SUBSTR(#startDt#, 6, 2))) OR
+ 								 (PT_YEAR = MOD(SUBSTR(#endDt#, 1, 4), 2) AND PT_MONTH &lt;= TO_NUMBER(SUBSTR(#endDt#, 6, 2)))) 
+							</isNotEqual>
+						</isNotEmpty>
+					</isNotEmpty>
+				) A
+		WHERE ROWNO BETWEEN '$start_rnum$' AND '$end_rnum$' 
+	</select>
+	
+	<select id="paymentReqInfo" parameterClass="paynowSearchVO" resultClass="paynowReqVO">
+ 		SELECT 
+   		   	TID, 
+            M_TYPE, 
+            SA_ID, 
+            MAC, 
+            CTN, 
+            TO_CHAR(AMOUNT, '99,999') AS AMOUNT, 
+            PKG_YN, 
+            ALBUM_ID,
+            ALBUM_NAME, 
+            CAT_ID, 
+            APP_TYPE, 
+            DECODE(STATUS,'00','성공','10','대기중','20','요청중','30','취소','99','실패') AS STATUS,
+            ERR_TYP,
+            ERR_CD,
+            ERR_MSG,
+            TO_CHAR(TO_DATE(REG_DT, 'YYMMDDHH24MISS'), 'YYYY-MM-DD HH24:MI:SS') AS REG_DT,
+		 	TO_CHAR(TO_DATE(MOD_DT, 'YYMMDDHH24MISS'), 'YYYY-MM-DD HH24:MI:SS') AS MOD_DT,
+		 	COUPON_MSG,
+		 	BUYING_GB
+		FROM 
+			PT_UX_PAYNOW_REQ_INFO
+		WHERE 
+			TID = #tid# 
+			AND PT_YEAR = #pt_year# 
+			AND PT_MONTH = #pt_month#
+	</select>
+
+	<select id="paymentListCount" parameterClass="paynowSearchVO" resultClass="int">
+		SELECT
+			COUNT(TID)
+		FROM
+			PT_UX_PAYNOW_REQ_INFO
+		WHERE 
+			M_TYPE != '4'
+			<isNotEmpty prepend="AND" property="findValue">
+		  	   	$findName$ LIKE '%$findValue$%'
+		  	</isNotEmpty>
+		  	<isNotEmpty prepend="AND" property="status">
+				STATUS = #status#
+			</isNotEmpty>
+			<isNotEmpty property="startDt">
+				<isNotEmpty prepend="AND" property="endDt">
+					REG_DT BETWEEN REPLACE(#startDt#, '-') || '000000' AND REPLACE(#endDt#, '-') || '235959'
+					<isEqual prepend="AND" property="compareYear" compareValue="1">
+						PT_YEAR = MOD(SUBSTR(#startDt#, 1, 4), 2) AND
+						PT_MONTH BETWEEN TO_NUMBER(SUBSTR(#startDt#, 6, 2)) AND TO_NUMBER(SUBSTR(#endDt#, 6, 2))
+					</isEqual>
+					<isNotEqual prepend="AND" property="compareYear" compareValue="1">
+						((PT_YEAR = MOD(SUBSTR(#startDt#, 1, 4), 2) AND PT_MONTH &gt;= TO_NUMBER(SUBSTR(#startDt#, 6, 2))) OR
+						 (PT_YEAR = MOD(SUBSTR(#endDt#, 1, 4), 2) AND PT_MONTH &lt;= TO_NUMBER(SUBSTR(#endDt#, 6, 2)))) 
+					</isNotEqual>
+				</isNotEmpty>
+			</isNotEmpty>
+	</select>
+	
+	<select id="getBannerList" parameterClass="String" resultClass="paynowAdminBannerVO">
+		SELECT 
+			ITEM_CODE AS BANNER_ID, ITEM_NM AS BANNER_IMG, USE_YN,
+			F_SERVER_URL('I') || 'paynow/img/' AS IMG_URL
+		FROM 
+			PT_UX_CODE_ITEMS
+		WHERE 
+			CODE = #code#
+		ORDER BY ORDERED
+	</select>
+	
+	<select id="getBanner" parameterClass="map" resultClass="paynowAdminBannerVO">
+		SELECT 
+			ITEM_CODE AS BANNER_ID, ITEM_NM AS BANNER_IMG, USE_YN,
+			F_SERVER_URL('I') || 'paynow/img/' AS IMG_URL
+		FROM 
+			PT_UX_CODE_ITEMS
+		WHERE 
+			CODE = #code#
+			AND ITEM_CODE = #item_code#
+	</select>
+	
+	<insert id="addBanner" parameterClass="map">
+		INSERT INTO 
+			PT_UX_CODE_ITEMS (CODE, ITEM_CODE, ITEM_NM, ORDERED, USE_YN, CREATE_ID, UPDATE_ID)
+		VALUES (
+			#code#
+			, #item_code#
+    		, #item_nm#
+    		, (SELECT NVL(MAX(ORDERED), 0) + 1 FROM PT_UX_CODE_ITEMS WHERE CODE = #code#)
+    		, #use_yn#
+   	 		, #create_id#
+    		, #update_id#
+    	)
+	</insert>
+	
+	<update id="updateBanner" parameterClass="map">
+		UPDATE 
+			PT_UX_CODE_ITEMS
+		SET 
+			ITEM_NM = #item_nm#
+			, USE_YN = #use_yn# 
+			, UPDATED = SYSDATE
+			, UPDATE_ID = #update_id#
+		WHERE 
+			CODE = #code#
+			AND ITEM_CODE = #item_code#
+	</update>
+	
+	<delete id="deleteBanner" parameterClass="map">
+		DELETE 
+			PT_UX_CODE_ITEMS
+		WHERE 
+			CODE = #code#
+			AND ITEM_CODE = #item_code#         
+	</delete>
+	
+</sqlMap>

@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="admin_noticeinfo">
+	<typeAlias alias="noticeinfolistprocvo" type="com.dmi.smartux.admin.noticeinfo.vo.NoticeInfoListProcVo"/>
+	<typeAlias alias="noticeinfolistvo" type="com.dmi.smartux.admin.noticeinfo.vo.NoticeInfoListVo"/>
+	<typeAlias alias="noticodelistVo" type="com.dmi.smartux.admin.noticeinfo.vo.NotiCodeListVo"/>
+	<typeAlias alias="notimaincodelistVo" type="com.dmi.smartux.admin.noticeinfo.vo.NotiMainCodeListVo"/>
+	<typeAlias alias="updateNoticeInfoVo" type="com.dmi.smartux.admin.noticeinfo.vo.UpdateNoticeInfoVo"/>
+	<typeAlias alias="insertnoticeinfoVo" type="com.dmi.smartux.admin.noticeinfo.vo.InsertNoticeInfoVo"/>
+	<typeAlias alias="viewnoticeinfolistVo" type="com.dmi.smartux.admin.noticeinfo.vo.ViewNoticeInfoListVo"/>
+	
+	<select id="getNoticeInfoList" parameterClass="noticeinfolistprocvo" resultClass="noticeinfolistvo">
+		SELECT 
+		  B.SEQ
+		  ,B.NTYPE
+		  ,B.CATEGORY
+		  ,B.CATEGORY_NM
+		  ,B.NVALUE
+		  ,B.ORDERED
+		  ,B.DISPLAY_SEC
+		  ,B.USE_YN
+		  ,B.REG_DATE
+		  ,F_SERVER_URL('I') AS IMG_ADDR
+		FROM(SELECT ROWNUM RNUM,A.* FROM(
+			SELECT
+			  A1.SEQ
+			  ,A1.NTYPE
+			  ,A1.CATEGORY
+        	  ,B1.ITEM_NM AS CATEGORY_NM
+			  ,A1.NVALUE
+			  ,A1.ORDERED
+			  ,A1.DISPLAY_SEC
+			  ,A1.USE_YN
+			  ,TO_CHAR(A1.UPDATED,'YYYY-MM-DD') AS REG_DATE
+			FROM PT_UX_4CH_NOTICE A1,
+      			(SELECT ITEM_CODE,ITEM_NM FROM PT_UX_CODE_ITEMS WHERE CODE=#s_service# AND USE_YN='Y') B1
+		    	WHERE A1.CATEGORY=B1.ITEM_CODE(+)
+		        <isNotEmpty prepend="AND" property="s_use_yn">
+		    		A1.USE_YN=#s_use_yn#
+			    </isNotEmpty>
+		        <isNotEmpty prepend="AND" property="s_category">
+		    		A1.CATEGORY=#s_category#
+			    </isNotEmpty>
+		        <isNotEmpty prepend="AND" property="s_ntype">
+		    		A1.NTYPE=#s_ntype#
+			    </isNotEmpty>
+		        <isNotEmpty prepend="AND" property="s_service">
+		    		A1.SERVICE=#s_service#
+			    </isNotEmpty>
+		        <isNotEmpty prepend="AND" property="findValue">
+			  		A1.NVALUE LIKE '%$findValue$%'
+			    </isNotEmpty>
+			        ORDER BY A1.SEQ DESC
+			    ) A 
+			) B
+		WHERE RNUM BETWEEN #start_rnum# AND #end_rnum#
+	</select>
+	
+	<select id="getNoticeInfoListTotalCnt" parameterClass="noticeinfolistprocvo" resultClass="int">
+		SELECT
+		  COUNT(*)
+		FROM PT_UX_4CH_NOTICE
+	    WHERE 1=1
+	        <isNotEmpty prepend="AND" property="s_use_yn">
+	    		USE_YN=#s_use_yn#
+		    </isNotEmpty>
+	        <isNotEmpty prepend="AND" property="s_category">
+	    		CATEGORY=#s_category#
+		    </isNotEmpty>
+	        <isNotEmpty prepend="AND" property="s_ntype">
+	    		NTYPE=#s_ntype#
+		    </isNotEmpty>
+	        <isNotEmpty prepend="AND" property="s_service">
+	    		SERVICE=#s_service#
+		    </isNotEmpty>
+	        <isNotEmpty prepend="AND" property="findValue">
+		  		NVALUE LIKE '%$findValue$%'
+		    </isNotEmpty>
+	</select>
+	
+	<select id="getNotiMainCodeList" resultClass="notimaincodelistVo">
+		SELECT CODE,CODE_NM FROM PT_UX_CODE WHERE CODE LIKE 'N%' ORDER BY CODE ASC
+	</select>
+	
+	<select id="getNoticeInfoCodeList" resultClass="noticodelistVo">
+		SELECT CODE,ITEM_CODE,ITEM_NM FROM PT_UX_CODE_ITEMS WHERE USE_YN='Y' AND CODE LIKE 'N%' ORDER BY CODE ASC, ORDERED ASC
+	</select>
+	
+	<insert id="insertNoticeInfo" parameterClass="insertnoticeinfoVo">
+		 INSERT INTO PT_UX_4CH_NOTICE(
+		  SEQ
+		  ,SERVICE
+		  ,NTYPE
+		  ,CATEGORY
+		  ,NVALUE
+		  ,ORDERED
+		  ,DISPLAY_SEC
+		  ,USE_YN
+		  ,CREATED
+		  ,UPDATED
+		 )VALUES(
+		   (SELECT NVL(MAX(SEQ), 0) + 1 FROM PT_UX_4CH_NOTICE)
+		  ,#service#
+		  ,#ntype#
+		  ,#category#
+		  ,#nvalue#
+		  ,#ordered#
+		  ,#display_sec#
+		  ,#use_yn#
+		  ,SYSDATE
+		  ,SYSDATE
+		 )
+	</insert>
+	
+	<update id="updateNoticeInfo" parameterClass="updateNoticeInfoVo">
+		UPDATE PT_UX_4CH_NOTICE SET
+		  CATEGORY=#category#
+		  <isEqual property="ntype" compareValue="TXT">
+		  	,NVALUE=#nvalue#
+		  </isEqual>
+		  <isEqual property="ntype" compareValue="IMG">
+	        <isNotEmpty property="nvalue">
+		  		,NVALUE=#nvalue#
+		  	</isNotEmpty>
+		  </isEqual>
+		  ,ORDERED=#ordered#
+		  ,DISPLAY_SEC=#display_sec#
+		  ,USE_YN=#use_yn#
+		  ,UPDATED=SYSDATE
+		WHERE SEQ=#seq#
+	</update>
+	
+	<delete id="deleteNoticeInfo" parameterClass="String">
+		DELETE FROM PT_UX_4CH_NOTICE WHERE SEQ=#seq#
+	</delete>
+	
+	<select id="viewNoticeInfoList" parameterClass="String" resultClass="viewnoticeinfolistVo">
+		SELECT
+		     SERVICE
+		     ,NTYPE
+		     ,CATEGORY
+		     ,CASE WHEN NTYPE='IMG' THEN F_SERVER_URL('I')||NVALUE ELSE NVALUE END AS NVALUE
+		     ,DISPLAY_SEC
+		FROM PT_UX_4CH_NOTICE 
+		WHERE USE_YN='Y'
+    	AND SERVICE=#service#
+		ORDER BY NTYPE ASC, ORDERED DESC
+	</select>
+</sqlMap>

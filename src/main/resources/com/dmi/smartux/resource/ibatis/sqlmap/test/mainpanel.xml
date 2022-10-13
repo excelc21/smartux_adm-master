@@ -1,0 +1,494 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="test_mainpanel">
+	<!-- 백업 테이블 create  -->
+	<statement id="create_pannel_backup_table">
+		CREATE TABLE PT_UX_PANEL_BACKUP (
+  			PANNEL_ID    VARCHAR2(4)       NOT NULL, 
+  			PANNEL_NM    VARCHAR2(100)     NOT NULL, 
+  			USE_YN       VARCHAR2(1)       NOT NULL, 
+  			VERSION      VARCHAR2(20)      NOT NULL, 
+  			CREATED      DATE              DEFAULT SYSDATE              NOT NULL, 
+  			UPDATED      DATE              DEFAULT SYSDATE              NOT NULL, 
+  			CREATE_ID    VARCHAR2(30)      NOT NULL, 
+  			UPDATE_ID    VARCHAR2(30)      NOT NULL
+		)
+	</statement>
+	
+	<!-- 기존 테이블의 기존 데이터를 백업 테이블에 insert -->
+	<insert id="insert_pannel_to_backup_table">
+		INSERT INTO PT_UX_PANEL_BACKUP
+		SELECT * FROM PT_UX_PANEL
+	</insert>
+	
+	<!-- 기존 테이블의 기존 데이터 삭제 -->
+	<delete id="delete_org_pannel_data">
+		DELETE FROM PT_UX_PANEL
+	</delete>
+	
+	<!-- 테스트 데이터를 기존 테이블에 insert-->
+	<insert id="insert_test_data_to_org_pannel_table1">
+		INSERT INTO PT_UX_PANEL(PANNEL_ID, PANNEL_NM, USE_YN, VERSION, CREATED, UPDATED, CREATE_ID, UPDATE_ID)
+		VALUES (
+			'CP01'
+			, '특집 이벤트'
+			, 'Y'
+			, '1335901359234'
+			, TO_DATE('2012-04-19 19:18:33', 'YYYY-MM-DD HH24:MI:SS')
+			, TO_DATE('2012-04-30 19:31:33', 'YYYY-MM-DD HH24:MI:SS')
+			, 'create_id'
+			, 'create_id')
+	</insert>
+	
+	<insert id="insert_test_data_to_org_pannel_table2">
+		INSERT INTO PT_UX_PANEL(PANNEL_ID, PANNEL_NM, USE_YN, VERSION, CREATED, UPDATED, CREATE_ID, UPDATE_ID)
+		VALUES (
+			'CP02'
+			, '채널 가이드'
+			, 'Y'
+			, '1335901359234'
+			, TO_DATE('2012-04-19 19:18:33', 'YYYY-MM-DD HH24:MI:SS')
+			, TO_DATE('2012-04-30 19:31:33', 'YYYY-MM-DD HH24:MI:SS')
+			, 'create_id'
+			, 'create_id')
+	</insert>
+	
+	
+	
+	
+	<!-- 기존 테이블의 테스트 데이터 삭제 -->
+	<delete id="delete_test_pannel_data">
+		DELETE FROM PT_UX_PANEL
+	</delete>
+	
+	<!-- 백업 테이블에 보관된 데이터를 기존 테이블에 insert -->
+	<insert id="insert_pannel_to_org_table">
+		INSERT INTO PT_UX_PANEL
+		SELECT * FROM PT_UX_PANEL_BACKUP
+	</insert>
+	
+	<!-- 백업 테이블 drop  -->
+	<statement id="drop_pannel_backup_table">
+		DROP TABLE PT_UX_PANEL_BACKUP
+	</statement>	
+	
+	
+	
+	
+	
+	
+	
+	
+	<!-- 백업 테이블 create  -->
+	<statement id="create_title_backup_table">
+		CREATE TABLE PT_UX_PANEL_TITLE_BACKUP (
+  			PANNEL_ID      VARCHAR2(4)       NOT NULL, 
+  			TITLE_ID       VARCHAR2(2)       NOT NULL, 
+  			TITLE_NM       VARCHAR2(100)     NOT NULL, 
+  			P_TITLE_ID     VARCHAR2(2)           NULL, 
+  			CATEGORY_ID    VARCHAR2(100)         NULL,
+  			CATEGORY_TYPE  VARCHAR2(10)          NULL,
+  			ALBUM_CNT      VARCHAR2(100)         NULL,
+  			UI_TYPE        VARCHAR2(100)         NULL, 
+  			BG_IMG_FILE    VARCHAR2(100)         NULL,
+  			DESCRIPTION	   VARCHAR2(1000)        NULL,  
+  			ORDERED        NUMBER            NOT NULL, 
+  			USE_YN         VARCHAR2(1)       NOT NULL, 
+  			VERSION        VARCHAR2(20)      NOT NULL, 
+  			CREATED        DATE             DEFAULT SYSDATE              NOT NULL, 
+  			UPDATED        DATE             DEFAULT SYSDATE              NOT NULL, 
+  			CREATE_ID      VARCHAR2(30)      NOT NULL, 
+  			UPDATE_ID      VARCHAR2(30)      NOT NULL,
+  			PAGE_TYPE        VARCHAR2(10)           NULL, 
+  			PAGE_CODE        VARCHAR2(100)          NULL
+		)
+	</statement>
+	
+	<!-- 기존 테이블의 기존 데이터를 백업 테이블에 insert -->
+	<insert id="insert_title_to_backup_table">
+		INSERT INTO PT_UX_PANEL_TITLE_BACKUP
+		SELECT * FROM PT_UX_PANEL_TITLE
+	</insert>
+	
+	<!-- 기존 테이블의 기존 데이터 삭제 -->
+	<delete id="delete_org_title_data">
+		DELETE FROM PT_UX_PANEL_TITLE
+	</delete>
+	
+	
+	<insert id="insert_test_data_to_org_title_table1">
+		INSERT INTO PT_UX_PANEL_TITLE(PANNEL_ID, TITLE_ID, TITLE_NM, P_TITLE_ID, CATEGORY_ID, CATEGORY_TYPE, ALBUM_CNT, UI_TYPE, BG_IMG_FILE, DESCRIPTION, ORDERED, USE_YN, VERSION, CREATED, UPDATED, CREATE_ID, UPDATE_ID)
+		VALUES(
+			'CP01'
+			, '01'
+			, '특집 지면'
+			, ''
+			, ''
+			, ''
+			, ''
+			, NULL
+			, NULL
+			, NULL
+			, 1
+			, 'Y'
+			, '1335901359234'
+			, TO_DATE('2012-05-07 09:49:23', 'YYYY-MM-DD HH24:MI:SS') 
+			, TO_DATE('2012-05-07 09:53:01', 'YYYY-MM-DD HH24:MI:SS') 
+			, 'create_id'
+			, 'create_id')
+	</insert>
+	
+	<insert id="insert_test_data_to_org_title_table2">	
+		INSERT INTO PT_UX_PANEL_TITLE(PANNEL_ID, TITLE_ID, TITLE_NM, P_TITLE_ID, CATEGORY_ID, CATEGORY_TYPE, ALBUM_CNT, UI_TYPE, BG_IMG_FILE, DESCRIPTION, ORDERED, USE_YN, VERSION, CREATED, UPDATED, CREATE_ID, UPDATE_ID)
+		VALUES(
+			'CP01'
+			, '02'
+			, '이벤트 지면'
+			, ''
+			, ''
+			, ''
+			, ''
+			, NULL
+			, NULL
+			, NULL
+			, 2
+			, 'Y'
+			, '1335901359234'
+			, TO_DATE('2012-05-07 09:49:23', 'YYYY-MM-DD HH24:MI:SS') 
+			, TO_DATE('2012-05-07 09:53:01', 'YYYY-MM-DD HH24:MI:SS') 
+			, 'create_id'
+			, 'create_id')
+	</insert>
+	
+	<insert id="insert_test_data_to_org_title_table3">	
+		INSERT INTO PT_UX_PANEL_TITLE(PANNEL_ID, TITLE_ID, TITLE_NM, P_TITLE_ID, CATEGORY_ID, CATEGORY_TYPE, ALBUM_CNT, UI_TYPE, BG_IMG_FILE, DESCRIPTION, ORDERED, USE_YN, VERSION, CREATED, UPDATED, CREATE_ID, UPDATE_ID)
+		VALUES(
+			'CP01'
+			, '03'
+			, '마이특집1'
+			, '01'
+			, ''
+			, 'LIVE'
+			, ''
+			, 'UI_TYPE1'
+			, '1.jpg'
+			, 'desc1'
+			, 1
+			, 'Y'
+			, '1335901359234'
+			, TO_DATE('2012-05-07 09:49:23', 'YYYY-MM-DD HH24:MI:SS') 
+			, TO_DATE('2012-05-07 09:53:01', 'YYYY-MM-DD HH24:MI:SS') 
+			, 'create_id'
+			, 'create_id')
+	</insert>
+	
+	<insert id="insert_test_data_to_org_title_table4">	
+		INSERT INTO PT_UX_PANEL_TITLE(PANNEL_ID, TITLE_ID, TITLE_NM, P_TITLE_ID, CATEGORY_ID, CATEGORY_TYPE, ALBUM_CNT, UI_TYPE, BG_IMG_FILE, DESCRIPTION, ORDERED, USE_YN, VERSION, CREATED, UPDATED, CREATE_ID, UPDATE_ID)
+		VALUES(
+			'CP01'
+			, '04'
+			, '마이특집2'
+			, '01'
+			, 'R0001||R0002'
+			, 'VOD'
+			, ''
+			, 'UI_TYPE2'
+			, '2.jpg'
+			, 'desc2'
+			, 2
+			, 'Y'
+			, '1335901359234'
+			, TO_DATE('2012-05-07 09:49:23', 'YYYY-MM-DD HH24:MI:SS') 
+			, TO_DATE('2012-05-07 09:53:01', 'YYYY-MM-DD HH24:MI:SS') 
+			, 'create_id'
+			, 'create_id')
+	</insert>
+	
+	<insert id="insert_test_data_to_org_title_table5">	
+		INSERT INTO PT_UX_PANEL_TITLE(PANNEL_ID, TITLE_ID, TITLE_NM, P_TITLE_ID, CATEGORY_ID, CATEGORY_TYPE, ALBUM_CNT, UI_TYPE, BG_IMG_FILE, DESCRIPTION, ORDERED, USE_YN, VERSION, CREATED, UPDATED, CREATE_ID, UPDATE_ID)
+		VALUES(
+			'CP01'
+			, '05'
+			, '마이이벤트1'
+			, '02'
+			, 'R0001'
+			, 'VOD'
+			, ''
+			, 'UI_TYPE3'
+			, '3.jpg'
+			, 'desc3'
+			, 1
+			, 'Y'
+			, '1335901359234'
+			, TO_DATE('2012-05-07 09:49:23', 'YYYY-MM-DD HH24:MI:SS') 
+			, TO_DATE('2012-05-07 09:53:01', 'YYYY-MM-DD HH24:MI:SS') 
+			, 'create_id'
+			, 'create_id')
+	</insert>
+	
+	<insert id="insert_test_data_to_org_title_table6">	
+		INSERT INTO PT_UX_PANEL_TITLE(PANNEL_ID, TITLE_ID, TITLE_NM, P_TITLE_ID, CATEGORY_ID, CATEGORY_TYPE, ALBUM_CNT, UI_TYPE, BG_IMG_FILE, DESCRIPTION, ORDERED, USE_YN, VERSION, CREATED, UPDATED, CREATE_ID, UPDATE_ID)
+		VALUES(
+			'CP01'
+			, '06'
+			, '마이이벤트2'
+			, '02'
+			, 'R0003||R0004'
+			, 'VOD'
+			, ''
+			, 'UI_TYPE4'
+			, '4.jpg'
+			, 'desc4'
+			, 2
+			, 'Y'
+			, '1335901359234'
+			, TO_DATE('2012-05-07 09:49:23', 'YYYY-MM-DD HH24:MI:SS') 
+			, TO_DATE('2012-05-07 09:53:01', 'YYYY-MM-DD HH24:MI:SS') 
+			, 'create_id'
+			, 'create_id')
+	</insert>
+	
+	<insert id="insert_test_data_to_org_title_table7">	
+		INSERT INTO PT_UX_PANEL_TITLE(PANNEL_ID, TITLE_ID, TITLE_NM, P_TITLE_ID, CATEGORY_ID, CATEGORY_TYPE, ALBUM_CNT, UI_TYPE, BG_IMG_FILE, DESCRIPTION, ORDERED, USE_YN, VERSION, CREATED, UPDATED, CREATE_ID, UPDATE_ID)
+		VALUES(
+			'CP01'
+			, '07'
+			, '마이이벤트3'
+			, '02'
+			, '1'
+			, 'SCHEDULE'
+			, ''
+			, 'UI_TYPE5'
+			, '5.jpg'
+			, 'desc5'
+			, 3
+			, 'Y'
+			, '1335901359234'
+			, TO_DATE('2012-05-07 09:49:23', 'YYYY-MM-DD HH24:MI:SS') 
+			, TO_DATE('2012-05-07 09:53:01', 'YYYY-MM-DD HH24:MI:SS') 
+			, 'create_id'
+			, 'create_id')
+	</insert>
+	
+	<insert id="insert_test_data_to_org_title_table8">	
+		INSERT INTO PT_UX_PANEL_TITLE(PANNEL_ID, TITLE_ID, TITLE_NM, P_TITLE_ID, CATEGORY_ID, CATEGORY_TYPE, ALBUM_CNT, UI_TYPE, BG_IMG_FILE, DESCRIPTION, ORDERED, USE_YN, VERSION, CREATED, UPDATED, CREATE_ID, UPDATE_ID)
+		VALUES(
+			'CP02'
+			, '01'
+			, '채널 지면'
+			, ''
+			, ''
+			, ''
+			, ''
+			, NULL
+			, NULL
+			, NULL
+			, 1
+			, 'Y'
+			, '1335901359234'
+			, TO_DATE('2012-05-07 09:49:23', 'YYYY-MM-DD HH24:MI:SS') 
+			, TO_DATE('2012-05-07 09:53:01', 'YYYY-MM-DD HH24:MI:SS') 
+			, 'create_id'
+			, 'create_id')
+	</insert>
+	
+	<insert id="insert_test_data_to_org_title_table9">	
+		INSERT INTO PT_UX_PANEL_TITLE(PANNEL_ID, TITLE_ID, TITLE_NM, P_TITLE_ID, CATEGORY_ID, CATEGORY_TYPE, ALBUM_CNT, UI_TYPE, BG_IMG_FILE, DESCRIPTION, ORDERED, USE_YN, VERSION, CREATED, UPDATED, CREATE_ID, UPDATE_ID)
+		VALUES(
+			'CP02'
+			, '02'
+			, '가이드 지면'
+			, ''
+			, ''
+			, ''
+			, ''
+			, NULL
+			, NULL
+			, NULL
+			, 2
+			, 'Y'
+			, '1335901359234'
+			, TO_DATE('2012-05-07 09:49:23', 'YYYY-MM-DD HH24:MI:SS') 
+			, TO_DATE('2012-05-07 09:53:01', 'YYYY-MM-DD HH24:MI:SS') 
+			, 'create_id'
+			, 'create_id')
+	</insert>
+	
+	<insert id="insert_test_data_to_org_title_table10">	
+		INSERT INTO PT_UX_PANEL_TITLE(PANNEL_ID, TITLE_ID, TITLE_NM, P_TITLE_ID, CATEGORY_ID, CATEGORY_TYPE, ALBUM_CNT, UI_TYPE, BG_IMG_FILE, DESCRIPTION, ORDERED, USE_YN, VERSION, CREATED, UPDATED, CREATE_ID, UPDATE_ID)
+		VALUES(
+			'CP02'
+			, '03'
+			, '마이 채널1'
+			, '01'
+			, 'T000||T100||U000'
+			, 'CAT_MAP'
+			, '3||2||5'
+			, 'UI_TYPE6'
+			, '6.jpg'
+			, 'desc6'
+			, 1
+			, 'Y'
+			, '1335901359234'
+			, TO_DATE('2012-05-07 09:49:23', 'YYYY-MM-DD HH24:MI:SS') 
+			, TO_DATE('2012-05-07 09:53:01', 'YYYY-MM-DD HH24:MI:SS') 
+			, 'create_id'
+			, 'create_id')
+	</insert>
+	
+	<insert id="insert_test_data_to_org_title_table11">	
+		INSERT INTO PT_UX_PANEL_TITLE(PANNEL_ID, TITLE_ID, TITLE_NM, P_TITLE_ID, CATEGORY_ID, CATEGORY_TYPE, ALBUM_CNT, UI_TYPE, BG_IMG_FILE, DESCRIPTION, ORDERED, USE_YN, VERSION, CREATED, UPDATED, CREATE_ID, UPDATE_ID)
+		VALUES(
+			'CP02'
+			, '04'
+			, '마이 채널2'
+			, '01'
+			, 'T500||U000'
+			, 'CAT_MAP'
+			, '2||4'
+			, 'UI_TYPE7'
+			, '7.jpg'
+			, 'desc7'
+			, 2
+			, 'Y'
+			, '1335901359234'
+			, TO_DATE('2012-05-07 09:49:23', 'YYYY-MM-DD HH24:MI:SS') 
+			, TO_DATE('2012-05-07 09:53:01', 'YYYY-MM-DD HH24:MI:SS') 
+			, 'create_id'
+			, 'create_id')
+	</insert>
+	
+	<insert id="insert_test_data_to_org_title_table12">	
+		INSERT INTO PT_UX_PANEL_TITLE(PANNEL_ID, TITLE_ID, TITLE_NM, P_TITLE_ID, CATEGORY_ID, CATEGORY_TYPE, ALBUM_CNT, UI_TYPE, BG_IMG_FILE, DESCRIPTION, ORDERED, USE_YN, VERSION, CREATED, UPDATED, CREATE_ID, UPDATE_ID)
+		VALUES(
+			'CP02'
+			, '05'
+			, '마이 가이드1'
+			, '02'
+			, ''
+			, 'WISH'
+			, ''
+			, 'UI_TYPE8'
+			, '8.jpg'
+			, 'desc8'
+			, 1
+			, 'Y'
+			, '1335901359234'
+			, TO_DATE('2012-05-07 09:49:23', 'YYYY-MM-DD HH24:MI:SS') 
+			, TO_DATE('2012-05-07 09:53:01', 'YYYY-MM-DD HH24:MI:SS') 
+			, 'create_id'
+			, 'create_id')
+	</insert>
+	
+	<insert id="insert_test_data_to_org_title_table13">	
+		INSERT INTO PT_UX_PANEL_TITLE(PANNEL_ID, TITLE_ID, TITLE_NM, P_TITLE_ID, CATEGORY_ID, CATEGORY_TYPE, ALBUM_CNT, UI_TYPE, BG_IMG_FILE, DESCRIPTION, ORDERED, USE_YN, VERSION, CREATED, UPDATED, CREATE_ID, UPDATE_ID)
+		VALUES(
+			'CP02'
+			, '06'
+			, '마이 가이드2'
+			, '02'
+			, '3'
+			, 'SCHEDULE'
+			, ''
+			, 'UI_TYPE9'
+			, '9.jpg'
+			, 'desc9'
+			, 2
+			, 'Y'
+			, '1335901359234'
+			, TO_DATE('2012-05-07 09:49:23', 'YYYY-MM-DD HH24:MI:SS') 
+			, TO_DATE('2012-05-07 09:53:01', 'YYYY-MM-DD HH24:MI:SS') 
+			, 'create_id'
+			, 'create_id')
+	</insert>
+	
+	<insert id="insert_test_data_to_org_title_table14">	
+		INSERT INTO PT_UX_PANEL_TITLE(PANNEL_ID, TITLE_ID, TITLE_NM, P_TITLE_ID, CATEGORY_ID, CATEGORY_TYPE, ALBUM_CNT, UI_TYPE, BG_IMG_FILE, DESCRIPTION, ORDERED, USE_YN, VERSION, CREATED, UPDATED, CREATE_ID, UPDATE_ID)
+		VALUES(
+			'CP01'
+			, '08'
+			, '추천 컨텐츠'
+			, ''
+			, 'TEXT_C1'
+			, 'RCM'
+			, ''
+			, ''
+			, '9.jpg'
+			, '추천서버인터페이스'
+			, 3
+			, 'Y'
+			, '1335901359234'
+			, TO_DATE('2012-05-07 09:49:23', 'YYYY-MM-DD HH24:MI:SS') 
+			, TO_DATE('2012-05-07 09:53:01', 'YYYY-MM-DD HH24:MI:SS') 
+			, 'create_id'
+			, 'create_id')
+	</insert>
+	
+	<insert id="insert_test_data_to_org_title_table15">	
+		INSERT INTO PT_UX_PANEL_TITLE(PANNEL_ID, TITLE_ID, TITLE_NM, P_TITLE_ID, CATEGORY_ID, CATEGORY_TYPE, ALBUM_CNT, UI_TYPE, BG_IMG_FILE, DESCRIPTION, ORDERED, USE_YN, VERSION, CREATED, UPDATED, CREATE_ID, UPDATE_ID)
+		VALUES(
+			'CP02'
+			, '07'
+			, '추천 컨텐츠2'
+			, ''
+			, 'TEXT_C2'
+			, 'RCM'
+			, ''
+			, ''
+			, '9.jpg'
+			, '추천서버인터페이스'
+			, 3
+			, 'Y'
+			, '1335901359234'
+			, TO_DATE('2012-05-07 09:49:23', 'YYYY-MM-DD HH24:MI:SS') 
+			, TO_DATE('2012-05-07 09:53:01', 'YYYY-MM-DD HH24:MI:SS') 
+			, 'create_id'
+			, 'create_id')
+	</insert>
+
+	
+	<insert id="insert_test_data_to_org_title_table_geti20albumlist">	
+		INSERT INTO PT_UX_PANEL_TITLE(PANNEL_ID, TITLE_ID, TITLE_NM, P_TITLE_ID, CATEGORY_ID, CATEGORY_TYPE, ALBUM_CNT, UI_TYPE, BG_IMG_FILE, DESCRIPTION, ORDERED, USE_YN, VERSION, CREATED, UPDATED, CREATE_ID, UPDATE_ID)
+		VALUES(
+			'CP01'
+			, '02'
+			, '마이 카테고리'
+			, '01'
+			, 'M201||M601'
+			, 'CAT_MAP'
+			, '3||2'
+			, 'UI_TYPE10'
+			, '10.jpg'
+			, 'desc10'
+			, 1
+			, 'Y'
+			, '1335901359234'
+			, TO_DATE('2012-05-07 09:49:23', 'YYYY-MM-DD HH24:MI:SS') 
+			, TO_DATE('2012-05-07 09:53:01', 'YYYY-MM-DD HH24:MI:SS') 
+			, 'create_id'
+			, 'create_id')
+	</insert>
+	
+	
+	
+	
+	
+	<!-- 기존 테이블의 테스트 데이터 삭제 -->
+	<delete id="delete_test_title_data">
+		DELETE FROM PT_UX_PANEL_TITLE
+	</delete>
+	
+	<!-- 백업 테이블에 보관된 데이터를 기존 테이블에 insert -->
+	<insert id="insert_title_to_org_table">
+		INSERT INTO PT_UX_PANEL_TITLE
+		SELECT * FROM PT_UX_PANEL_TITLE_BACKUP
+	</insert>
+	
+	<!-- 백업 테이블 drop  -->
+	<statement id="drop_title_backup_table">
+		DROP TABLE PT_UX_PANEL_TITLE_BACKUP
+	</statement>
+	
+	
+	
+</sqlMap>

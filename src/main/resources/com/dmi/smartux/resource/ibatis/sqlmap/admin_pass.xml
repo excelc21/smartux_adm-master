@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<!-- passwordlog -->
+<sqlMap namespace="admin_pass">
+	<resultMap id="passVoMap" class="com.dmi.smartux.admin.login.vo.PassLogVO"> 
+		<result property="p_id" column="P_ID" />
+		<result property="user_id" column="USER_ID" />
+		<result property="password" column="PASSWORD" />
+		<result property="reg_date" column="REG_DATE" />	
+	</resultMap>
+	
+	<select id="getPassList" parameterClass="com.dmi.smartux.admin.login.vo.PassLogVO" resultMap="passVoMap">
+			SELECT 
+				 P_ID, 
+				 USER_ID, 
+				 PASSWORD, 
+				 REG_DATE
+			FROM PT_UX_ADMIN_PASS
+			WHERE 
+				 USER_ID = #user_id#
+			<isNotEmpty property="password">
+			 AND PASSWORD = #password#
+			</isNotEmpty>
+			ORDER BY REG_DATE ASC
+	</select>
+	
+	<insert id="insertPass" parameterClass="com.dmi.smartux.admin.login.vo.PassLogVO">
+		INSERT INTO 
+			PT_UX_ADMIN_PASS 
+			(
+			 P_ID, 
+			 USER_ID, 
+			 PASSWORD, 
+			 REG_DATE
+			 )
+		VALUES
+			(
+			 (SELECT NVL(MAX(TO_NUMBER(P_ID)),0)+1 FROM PT_UX_ADMIN_PASS), 
+			 #user_id#, 
+			 #password#, 
+			 TO_CHAR (SYSDATE, 'yyyymmddHH24MI')
+			)
+		
+	</insert>
+	
+	<delete id="deletePass" parameterClass="int">
+		DELETE FROM PT_UX_ADMIN_PASS
+		WHERE P_ID = #pid#
+	</delete>
+</sqlMap>

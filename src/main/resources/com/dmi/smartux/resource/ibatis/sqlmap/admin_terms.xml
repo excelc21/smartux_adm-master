@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="admin_terms">
+	<typeAlias alias="termsVo" type="com.dmi.smartux.admin.terms.vo.TermsVo"/>
+	<typeAlias alias="termslistVo" type="com.dmi.smartux.admin.terms.vo.TermsListVo"/>
+	<!-- 
+	<typeAlias alias="termslistreturnVo" type="com.dmi.smartux.admin.terms.vo.TermsListReturnVo"/>
+	<typeAlias alias="updatetermsVo" type="com.dmi.smartux.admin.terms.vo.UpdateTermsVo"/>
+	 -->
+	<select id="getTermsListCnt" parameterClass="termslistVo" resultClass="int">
+		SELECT 
+		      COUNT(*)		
+		FROM
+			PT_UX_TERMS
+		WHERE
+			1=1
+		<isNotEmpty prepend="AND" property="findValue">
+		 	<isNotNull property="findName">
+	  			$findName$ LIKE '%$findValue$%'
+	  		</isNotNull>
+		</isNotEmpty>
+		<isNotEmpty prepend="AND" property="s_service_type">
+			SERVICE_TYPE=#s_service_type#
+		</isNotEmpty>
+		<isNotEmpty prepend="AND" property="s_service_gbn">
+			SERVICE_GBN=#s_service_gbn#
+		</isNotEmpty>
+		<isNotEmpty prepend="AND" property="s_terms_gbn">
+			TERMS_GBN=#s_terms_gbn#
+		</isNotEmpty>
+		<isNotEmpty prepend="AND" property="s_display_yn">
+			DISPLAY_YN=#s_display_yn#
+		</isNotEmpty>
+	</select>
+	
+	<select id="getTermsList" parameterClass="termslistVo" resultClass="termsVo">
+		SELECT
+			A.*
+		FROM
+			(SELECT ROW_NUMBER() OVER(ORDER BY REG_DT DESC) AS ROWNO 
+				,SERVICE_TYPE
+				,SERVICE_GBN
+				,TERMS_GBN
+				,TITLE
+				,TERMS_TEXT
+				,TERMS_IMG_URL
+				,TERMS_IMG_NAME
+				,DISPLAY_YN
+				,REG_DT
+				,MOD_DT
+				,REG_ID
+				,MOD_ID
+				,CREATE_IP
+				,UPDATE_IP
+			  FROM PT_UX_TERMS 
+			 WHERE 1=1 
+			<isNotEmpty prepend="AND" property="findValue">
+			 	<isNotNull property="findName">
+		  			$findName$ LIKE '%$findValue$%'
+		  		</isNotNull>
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="s_service_type">
+				SERVICE_TYPE=#s_service_type#
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="s_service_gbn">
+				SERVICE_GBN=#s_service_gbn#
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="s_terms_gbn">
+				TERMS_GBN=#s_terms_gbn#
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="s_display_yn">
+				DISPLAY_YN=#s_display_yn#
+			</isNotEmpty>
+			) A
+		 WHERE ROWNO BETWEEN '$start_rnum$' AND '$end_rnum$'
+	</select>	
+	
+	<insert id="insertTermsProc" parameterClass="termsVo" >
+	   INSERT INTO PT_UX_TERMS
+       ( 
+			 SERVICE_TYPE
+			,SERVICE_GBN
+			,TERMS_GBN
+			,TITLE
+			,TERMS_TEXT
+			,TERMS_IMG_URL
+			,TERMS_IMG_NAME
+			,DISPLAY_YN
+			,REG_ID
+			,MOD_ID
+			,CREATE_IP
+			,UPDATE_IP
+       )
+       VALUES
+       ( 
+        	 #service_type#
+			,#service_gbn#
+			,#terms_gbn#
+			,#title#
+			,#terms_text:CLOB#
+			,#terms_img_url#
+			,#terms_img_name#
+			,#display_yn#
+			,#reg_id#
+			,#mod_id#
+			,#act_ip#
+			,#act_ip#
+       )
+	</insert>
+	
+	<insert id="insertTermsProcLog" parameterClass="termsVo" >
+	   INSERT INTO PT_UX_TERMS_LOG
+       (
+			 SERVICE_TYPE
+			,SERVICE_GBN
+			,TERMS_GBN
+			,TITLE
+			,TERMS_TEXT
+			,TERMS_IMG_URL
+			,TERMS_IMG_NAME
+			,DISPLAY_YN
+			,REG_ID
+			,MOD_ID
+			,CREATE_IP
+			,UPDATE_IP	
+			,ACT_DT	    	
+			,ACT_ID		    	
+			,ACT_IP
+			,ACT_GBN
+       )
+       VALUES
+       ( 
+			 #service_type#
+			,#service_gbn#
+			,#terms_gbn#
+			,#title#
+			,#terms_text:CLOB#
+			,#terms_img_url#
+			,#terms_img_name#
+			,#display_yn#
+	        ,#reg_id# 
+	        ,#mod_id# 
+			,#act_ip# 
+			,#act_ip# 
+	        ,SYSDATE 
+	        ,#act_id# 
+	        ,#act_ip# 
+	        ,#act_gbn#
+       )
+	</insert>	
+	
+	<delete id="deleteTermsProc" parameterClass="termsVo">
+		DELETE FROM PT_UX_TERMS
+		WHERE SERVICE_TYPE=#service_type#
+		AND SERVICE_GBN=#service_gbn#
+		AND TERMS_GBN=#terms_gbn#
+	</delete>
+	
+	<select id="getTermsView" parameterClass="termsVo" resultClass="termsVo">
+		SELECT  
+				SERVICE_TYPE
+				,SERVICE_GBN
+				,TERMS_GBN
+				,TITLE
+				,TERMS_TEXT
+				,(SELECT 
+					'http://' || PAR_SERVER_IP || '/smartux/'
+				 FROM 
+				 	PT_VO_IMGSRV_LIST
+                 WHERE 
+                 	SERVER_NM = 'img_resize_server') ||'terms/img/'||TERMS_IMG_NAME AS TERMS_IMG_URL
+				,TERMS_IMG_NAME
+				,DISPLAY_YN
+				,REG_DT
+				,MOD_DT
+				,REG_ID
+				,MOD_ID
+				,CREATE_IP
+				,UPDATE_IP
+		FROM PT_UX_TERMS 
+		WHERE SERVICE_TYPE=#service_type#
+		AND SERVICE_GBN=#service_gbn#
+		AND TERMS_GBN=#terms_gbn#
+	</select>
+	
+	<insert id="termsUpdateLog" parameterClass="termsVo">
+		INSERT INTO   
+	    	PT_UX_TERMS_LOG (
+		    	 SERVICE_TYPE
+				,SERVICE_GBN
+				,TERMS_GBN
+				,TITLE
+				,TERMS_TEXT
+				,TERMS_IMG_URL
+				,TERMS_IMG_NAME
+				,REG_ID
+				,MOD_ID
+				,CREATE_IP
+				,UPDATE_IP
+				,DISPLAY_YN
+				,REG_DT
+				,MOD_DT    	
+		    	,ACT_DT		    	
+		    	,ACT_ID		    	
+		    	,ACT_IP
+		    	,ACT_GBN)
+		SELECT
+	    	 SERVICE_TYPE
+			,SERVICE_GBN
+			,TERMS_GBN
+			,TITLE
+			,TERMS_TEXT
+			,TERMS_IMG_URL
+			,TERMS_IMG_NAME
+			,REG_ID
+			,MOD_ID
+			,CREATE_IP
+			,UPDATE_IP
+			,DISPLAY_YN
+			,REG_DT
+			,MOD_DT
+	    	,SYSDATE
+	    	,#act_id#
+	    	,#act_ip#
+	    	,#act_gbn#
+		FROM PT_UX_TERMS 
+		WHERE SERVICE_TYPE=#service_type#
+		AND SERVICE_GBN=#service_gbn#
+		AND TERMS_GBN=#terms_gbn#
+	</insert>
+	
+	<update id="updateTermsProc" parameterClass="termsVo">
+		 UPDATE
+		  		PT_UX_TERMS	 
+		 SET   
+		 		 SERVICE_TYPE=#service_type#
+				,SERVICE_GBN=#service_gbn#
+				,TERMS_GBN=#terms_gbn#
+				,TITLE=#title#
+				,TERMS_TEXT=#terms_text#
+				,TERMS_IMG_URL=#terms_img_url#
+				<isNotNull property="terms_img_name"> 
+				,TERMS_IMG_NAME=#terms_img_name#
+				</isNotNull>
+			    ,DISPLAY_YN=#display_yn#
+		    	,UPDATE_IP=#act_ip#
+		    	,MOD_ID=#mod_id#
+		    	,MOD_DT=SYSDATE
+	    WHERE SERVICE_TYPE=#service_type#
+		AND SERVICE_GBN=#service_gbn#
+		AND TERMS_GBN=#terms_gbn#
+	</update>	
+	
+</sqlMap>

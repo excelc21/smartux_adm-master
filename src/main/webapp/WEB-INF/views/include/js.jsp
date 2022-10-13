@@ -1,0 +1,9 @@
+<script src="/smartux_adm/js/basic_script.js" type="text/javascript"></script>
+<script src="/smartux_adm/js/jquery-1.7.2.min.js" type="text/javascript"></script>
+<script src="/smartux_adm/js/jquery.blockUI.js" type="text/javascript"></script>
+<script src="/smartux_adm/js/dtree.js" type="text/javascript"></script>
+<script src="/smartux_adm/js/jquery.cookie.js" type="text/javascript"></script>
+<script src="/smartux_adm/js/jquery.treeview.js" type="text/javascript"></script>
+<script src="/smartux_adm/js/jquery.form.js" type="text/javascript"></script>
+<script src="/smartux_adm/js/jquery-ui-1.8.8.custom.min.js" type="text/javascript"></script>
+<script src="/smartux_adm/js/imgCheck.js" type="text/javascript"></script>

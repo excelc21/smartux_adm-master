@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="test_latest">
+    <!-- 백업 테이블 create  -->
+    <statement id="create_latest_backup_table">
+        CREATE TABLE PT_UX_LATEST_BACKUP (
+            SA_ID       VARCHAR2(12)      NOT NULL,
+            MAC         VARCHAR2(15)      NOT NULL,
+            CTN         VARCHAR2(11)      NOT NULL,
+            REG_ID      VARCHAR2(64)      NOT NULL,
+            CAT_ID      VARCHAR2(5)       NOT NULL,
+            CAT_NAME    VARCHAR2(200)     NOT NULL,
+            R_DATE      DATE             DEFAULT SYSDATE              NOT NULL
+        )
+    </statement>
+
+    <!-- 테이블의 실 데이터를 백업 테이블에 insert -->
+    <insert id="insert_latest_backup_table" >
+        INSERT INTO PT_UX_LATEST_BACKUP
+        SELECT * FROM PT_UX_LATEST
+    </insert>
+
+    <!-- 테이블의 실 데이터 삭제 -->
+    <delete id="delete_latest_table" >
+        DELETE FROM PT_UX_LATEST
+    </delete>
+
+    <!-- 백업 테이블에 보관된 데이터를 기존 테이블에 insert -->
+    <insert id="restore_latest_table" >
+        INSERT INTO PT_UX_LATEST
+        SELECT * FROM PT_UX_LATEST_BACKUP
+    </insert>
+
+    <!-- 백업 테이블 drop  -->
+    <statement id="drop_latest_backup_table">
+        DROP TABLE PT_UX_LATEST_BACKUP
+    </statement>
+</sqlMap>

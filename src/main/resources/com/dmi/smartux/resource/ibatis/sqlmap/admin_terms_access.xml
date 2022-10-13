@@ -1,0 +1,495 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="admin_terms_access">
+	<typeAlias alias="termsAccessVo" type="com.dmi.smartux.admin.terms.vo.TermsAccessVo"/>
+	<typeAlias alias="termsAccessSearchVo" type="com.dmi.smartux.admin.terms.vo.TermsAccessSearchVo"/>
+	<typeAlias alias="termsAgVo" type="com.dmi.smartux.admin.terms.vo.TermsAccessGroupVo"/>
+	<typeAlias alias="termsAgSerachVo" type="com.dmi.smartux.admin.terms.vo.TermsAccessGroupSearchVo"/>
+	<typeAlias alias="termsAcIfVo" type="com.dmi.smartux.admin.terms.vo.TermsAccessInfoVo"/>
+	<typeAlias alias="termsAcIfSearchVo" type="com.dmi.smartux.admin.terms.vo.TermsAccessInfoSearchVo"/>
+	<typeAlias alias="termsAdVo" type="com.dmi.smartux.admin.terms.vo.TermsAccessDetailVo"/>
+	<typeAlias alias="termsAdSearchVo" type="com.dmi.smartux.admin.terms.vo.TermsAccessDetailSearchVo"/>	
+	
+	<!-- 약관 마스터 목록 조회 -->
+	<select id="getAccessList" parameterClass="termsAccessSearchVo" resultClass="termsAccessVo">
+		SELECT A.* 
+		  FROM (SELECT ROW_NUMBER() OVER(ORDER BY SERVICE_TYPE DESC, DISPLAY_YN DESC, MOD_DT DESC) AS ROWNO
+					 , ACCESS_MST_ID
+					 , SERVICE_TYPE
+					 , DISPLAY
+					 , ACCESS_MST_TITLE
+					 , HEADER_TEXT
+					 , FOOTER_TEXT
+					 , DISPLAY_YN
+					 , IS_ADT
+					 , DELETE_YN
+					 , TO_CHAR(TO_DATE(REG_DT, 'YYYYMMDD HH24:MI:SS'), 'YYYY-MM-DD HH24:MI:SS') AS REG_DT
+					 , REG_ID
+					 , TO_CHAR(TO_DATE(MOD_DT, 'YYYYMMDD HH24:MI:SS'), 'YYYY-MM-DD HH24:MI:SS') AS MOD_DT
+					 , MOD_ID
+				  FROM PT_CM_ACCESS_MST
+				 WHERE DELETE_YN = 'N'
+				   AND SERVICE_TYPE IN <iterate property="service_type" open="(" close=")" conjunction=",">#service_type[]#</iterate>
+				   <isNotEmpty prepend="AND" property="display">
+					 DISPLAY = #display#
+				   </isNotEmpty>
+				   <isNotEmpty prepend="AND" property="findValue">
+				      <isEqual property="findName" compareValue="ACCESS_MST_TITLE">
+					 	   $findName$ LIKE '%$findValue$%'
+					  </isEqual>
+				   </isNotEmpty>
+				) A
+		  WHERE ROWNO BETWEEN '$start_rnum$' AND '$end_rnum$'
+	</select>
+	
+	<!-- 약관 마스터 목록 개수 조회 -->
+	<select id="getAccessListCnt" parameterClass="termsAccessSearchVo" resultClass="int">
+		SELECT COUNT(ACCESS_MST_ID)
+		  FROM PT_CM_ACCESS_MST
+		 WHERE DELETE_YN = 'N'
+		   AND SERVICE_TYPE IN <iterate property="service_type" open="(" close=")" conjunction=",">#service_type[]#</iterate>
+		 <isNotEmpty prepend="AND" property="display">
+		 	DISPLAY = #display#
+		 </isNotEmpty>
+	   	 <isNotEmpty prepend="AND" property="findValue">
+	     	<isEqual property="findName" compareValue="ACCESS_MST_TITLE">
+		 	   $findName$ LIKE '%$findValue$%'
+		  	</isEqual>
+	   	</isNotEmpty>
+	</select>
+	
+		<!-- 약관 마스터 상세조회 -->
+	<select id="getAccessMst" parameterClass="termsAccessSearchVo" resultClass="termsAccessVo">
+		SELECT ACCESS_MST_ID
+			 , SERVICE_TYPE
+			 , DISPLAY
+			 , ACCESS_MST_TITLE
+			 , HEADER_TEXT
+			 , FOOTER_TEXT
+			 , DISPLAY_YN
+			 , IS_ADT
+			 , DELETE_YN
+			 , TO_CHAR(TO_DATE(REG_DT, 'YYYYMMDD HH24:MI:SS'), 'YYYY-MM-DD HH24:MI:SS') AS REG_DT
+			 , REG_ID
+			 , TO_CHAR(TO_DATE(MOD_DT, 'YYYYMMDD HH24:MI:SS'), 'YYYY-MM-DD HH24:MI:SS') AS MOD_DT
+			 , MOD_ID
+		  FROM PT_CM_ACCESS_MST
+		 WHERE ACCESS_MST_ID = #access_mst_id#
+		   AND DELETE_YN = 'N'
+	</select>
+	
+	<!-- 약관 마스터에 연결되어있는 그룹 목록 조회 -->
+	<select id="getRegGroupList" parameterClass="termsAgSerachVo" resultClass="termsAgVo"> 
+	  SELECT ROW_NUMBER() OVER(ORDER BY COL ASC) AS ROWNO
+   		   , INFO.ACCESS_INFO_ID AS ACCESS_INFO_ID 
+		   , INFO.ACCESS_TITLE AS ACCESS_TITLE
+		   , GR.ACCESS_MST_ID AS ACCESS_MST_ID
+		   , GR.COL AS COL
+	   FROM PT_CM_ACCESS_INFO INFO
+	      , PT_CM_ACCESS_GR GR
+	  WHERE INFO.ACCESS_INFO_ID = GR.ACCESS_INFO_ID
+	    AND GR.ACCESS_MST_ID = #access_mst_id#
+	    AND INFO.DELETE_YN = 'N'
+	    AND INFO.SERVICE_GB = 'I'
+    </select>
+
+	<!-- 약관 마스터 검수 Y 개수 조회 -->
+	<select id="getAdtYCnt" parameterClass="termsAccessVo" resultClass="int">
+		SELECT COUNT(ACCESS_MST_ID)
+		  FROM PT_CM_ACCESS_MST
+		 WHERE 1= 1
+		   AND SERVICE_TYPE = #service_type#
+		   AND DISPLAY = #display#
+		   AND IS_ADT = 'Y'
+		   AND DELETE_YN = 'N'
+		   <isNotEmpty prepend="AND" property="access_mst_id">
+		   	ACCESS_MST_ID != #access_mst_id#
+		   </isNotEmpty>
+	</select>
+	
+	<!-- 약관 마스터 검수 N 개수 조회 -->
+	<select id="getAdtNCnt" parameterClass="termsAccessVo" resultClass="int">
+		SELECT COUNT(ACCESS_MST_ID)
+		  FROM PT_CM_ACCESS_MST
+		 WHERE 1= 1
+		   AND SERVICE_TYPE = #service_type#
+		   AND DISPLAY = #display#
+		   AND IS_ADT = 'N'
+		   AND DELETE_YN = 'N'
+		   <isNotEmpty prepend="AND" property="access_mst_id">
+		  	 ACCESS_MST_ID != #access_mst_id#
+		   </isNotEmpty>
+	</select>
+	
+	<!-- 약관 마스터 등록 -->
+	<insert id="insertProc" parameterClass="termsAccessVo">
+		<selectKey keyProperty="access_mst_id" resultClass="string">
+			SELECT NVL(MAX(ACCESS_MST_ID),0)+1 FROM PT_CM_ACCESS_MST
+		</selectKey>
+		INSERT INTO PT_CM_ACCESS_MST(
+			ACCESS_MST_ID
+		  , SERVICE_TYPE
+		  , DISPLAY
+		  , ACCESS_MST_TITLE
+		  , HEADER_TEXT
+		  , FOOTER_TEXT
+		  , DISPLAY_YN
+		  , DELETE_YN
+		  , IS_ADT
+		  , REG_ID
+		  , REG_DT
+		  , MOD_ID
+		  , MOD_DT
+		) VALUES (
+		    #access_mst_id#
+		  , #service_type#
+		  , #display#
+		  , #access_mst_title#
+		  , #header_text#
+		  , #footer_text#
+		  , #display_yn#
+		  , #delete_yn#
+		  , #is_adt#
+		  , #reg_id#
+		  , TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+		  , #mod_id#
+		  , TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+		)
+	</insert>
+	
+	<!-- 약관 그룹 등록 -->
+	<insert id="insertProcGroup" parameterClass="termsAgVo">
+		INSERT INTO PT_CM_ACCESS_GR(
+			ACCESS_MST_ID
+		  , ACCESS_INFO_ID
+		  , COL
+		) VALUES (
+			#access_mst_id#
+		  , #access_info_id#
+		  , #col#
+		)
+	</insert>
+	
+	<!-- 약관 마스터 수정 -->
+	<update id="updateProc" parameterClass="termsAccessVo">
+		UPDATE PT_CM_ACCESS_MST
+		   SET SERVICE_TYPE = #service_type#
+		   	 , DISPLAY = #display#
+		   	 , ACCESS_MST_TITLE = #access_mst_title#
+		   	 , HEADER_TEXT = #header_text#
+		     , FOOTER_TEXT = #footer_text#
+		     , DISPLAY_YN = #display_yn#
+		     , IS_ADT = #is_adt#
+		     , MOD_ID   = #mod_id#
+		     , MOD_DT = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+		 WHERE ACCESS_MST_ID = #access_mst_id#
+	</update>
+	
+	<!-- 약관 그룹 삭제 -->
+	<delete id="deleteProcGroup" parameterClass="termsAgVo">
+		DELETE
+		  FROM PT_CM_ACCESS_GR
+		 WHERE 1=1
+		 <isNotEmpty prepend="AND" property="access_mst_id">
+		 	ACCESS_MST_ID = #access_mst_id#
+		 </isNotEmpty>
+		 <isNotEmpty prepend="AND" property="access_info_id">
+		 	ACCESS_INFO_ID = #access_info_id#
+		 </isNotEmpty>
+	</delete>
+	
+	<!-- 약관 마스터 삭제 처리 -->
+	<update id="deleteProc" parameterClass="termsAccessVo">
+		UPDATE PT_CM_ACCESS_MST
+		   SET DELETE_YN = #delete_yn#
+		     , MOD_ID   = #mod_id#
+		     , MOD_DT = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+		 WHERE ACCESS_MST_ID = #access_mst_id#
+	</update>
+	
+		<!-- 약관 속성 목록 조회 -->
+	<select id="getAccessInfoList" parameterClass="termsAcIfSearchVo" resultClass="termsAcIfVo">
+		SELECT A.*,
+			  (SELECT ACCESS_DETAIL_ID 
+              	FROM PT_CM_ACCESS_DETAIL
+               WHERE ACCESS_INFO_ID = A.ACCESS_INFO_ID
+               	 AND ACCESS_VERSION = A.ACCESS_VERSION
+               	 AND ROWNUM = 1) AS ACCESS_DETAIL_ID
+		  FROM (SELECT ROW_NUMBER() OVER(ORDER BY REQUIRED_YN DESC, DISPLAY_YN DESC, MOD_DT DESC) AS ROWNO
+					 , ACCESS_INFO_ID
+					 , ACCESS_TITLE
+					 , REQUIRED_YN
+					 , ACCESS_VERSION
+					 , DISPLAY_YN
+					 , DELETE_YN
+					 , TO_CHAR(TO_DATE(REG_DT, 'YYYYMMDD HH24:MI:SS'), 'YYYY-MM-DD HH24:MI:SS') AS REG_DT
+					 , REG_ID
+					 , TO_CHAR(TO_DATE(MOD_DT, 'YYYYMMDD HH24:MI:SS'), 'YYYY-MM-DD HH24:MI:SS') AS MOD_DT
+					 , MOD_ID
+					 , ETC
+				  FROM PT_CM_ACCESS_INFO
+				 WHERE DELETE_YN = 'N'
+				   <isNotEmpty prepend="AND" property="findValue">
+				      <isEqual property="findName" compareValue="ACCESS_TITLE">
+					 	   $findName$ LIKE '%$findValue$%'
+					  </isEqual>
+				   </isNotEmpty>
+				   AND SERVICE_GB = 'I'
+				) A
+		  WHERE ROWNO BETWEEN '$start_rnum$' AND '$end_rnum$'
+	</select>
+	
+	<!-- 약관 속성 목록 개수 조회 -->
+	<select id="getAccessInfoListCnt" parameterClass="termsAcIfSearchVo" resultClass="int">
+		SELECT COUNT(ACCESS_INFO_ID)
+		  FROM PT_CM_ACCESS_INFO
+		 WHERE DELETE_YN = 'N'
+		   AND SERVICE_GB = 'I'
+	   	 <isNotEmpty prepend="AND" property="findValue">
+	     	<isEqual property="findName" compareValue="ACCESS_TITLE">
+		 	   $findName$ LIKE '%$findValue$%'
+		  	</isEqual>
+	   	</isNotEmpty>
+	</select>
+	
+	<!-- 약관 속성 상세조회 -->
+	<select id="getAccessInfoDetail" parameterClass="termsAcIfSearchVo" resultClass="termsAcIfVo">
+		SELECT A.*
+			 , (SELECT ACCESS_DETAIL_ID 
+              	  FROM PT_CM_ACCESS_DETAIL
+               	 WHERE ACCESS_INFO_ID = A.ACCESS_INFO_ID
+               	   AND ACCESS_VERSION = A.ACCESS_VERSION
+               	   AND ROWNUM = 1) AS ACCESS_DETAIL_ID
+		  FROM (SELECT ACCESS_INFO_ID
+					 , ACCESS_TITLE
+					 , REQUIRED_YN
+					 , ACCESS_VERSION
+					 , DISPLAY_YN
+					 , DELETE_YN
+					 , TO_CHAR(TO_DATE(REG_DT, 'YYYYMMDD HH24:MI:SS'), 'YYYY-MM-DD HH24:MI:SS') AS REG_DT
+					 , REG_ID
+					 , TO_CHAR(TO_DATE(MOD_DT, 'YYYYMMDD HH24:MI:SS'), 'YYYY-MM-DD HH24:MI:SS') AS MOD_DT
+					 , MOD_ID
+					 , ETC
+				  FROM PT_CM_ACCESS_INFO
+				 WHERE ACCESS_INFO_ID = #access_info_id#
+				   AND DELETE_YN = 'N'
+				   AND SERVICE_GB = 'I'
+				   ) A
+	</select>
+	
+	<!-- 약관 속성 존재 개수 확인 -->
+	<select id="getAccessInfoCnt" parameterClass="termsAcIfSearchVo" resultClass="int">
+		SELECT COUNT(ACCESS_INFO_ID)
+		  FROM PT_CM_ACCESS_INFO
+		 WHERE ACCESS_INFO_ID = #access_info_id#
+	</select>
+	
+	<!-- 약관 버전 채번 -->
+	<select id="getAccessVersion" parameterClass="String" resultClass="String">
+         SELECT SUBSTR(TO_NUMBER(NVL(REPlACE(MAX(ACCESS_VERSION),'-',''),TO_CHAR(SYSDATE, 'YYYYMMDD')||'000'))+1,0,8)||'-'||SUBSTR(TO_NUMBER(NVL(REPlACE(MAX(ACCESS_VERSION),'-',''),TO_CHAR(SYSDATE, 'YYYYMMDD')||'000'))+1,-3,3)
+		   FROM PT_CM_ACCESS_INFO 
+          WHERE ACCESS_VERSION LIKE TO_CHAR(SYSDATE, 'YYYYMMDD')||'%'
+            AND ACCESS_INFO_ID = #access_info_id#
+	</select>
+	
+	<!-- 약관 속성 추가 -->
+	<insert id="insertProcInfo" parameterClass="termsAcIfVo">
+		INSERT INTO PT_CM_ACCESS_INFO(
+			ACCESS_INFO_ID
+		  , ACCESS_TITLE
+		  , REQUIRED_YN
+		  , ACCESS_VERSION
+		  , DISPLAY_YN
+		  , DELETE_YN
+		  , REG_ID
+		  , REG_DT
+		  , MOD_ID
+		  , MOD_DT
+		  <isNotEmpty property="etc">
+		  , ETC
+		  </isNotEmpty>
+		  , SERVICE_GB
+		) VALUES (
+			#access_info_id#
+		  , #access_title#
+		  , #required_yn#
+		  , #access_version#
+		  , #display_yn#
+		  , #delete_yn#
+		  , #reg_id#
+		  , TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+		  , #mod_id#
+		  , TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+		  <isNotEmpty property="etc">
+		  , #etc#
+		  </isNotEmpty>
+		  , 'I'
+		)
+	</insert>
+	
+	<!-- 약관 상세 등록 -->
+	<insert id="insertProcDetail" parameterClass="termsAdVo">
+		<selectKey keyProperty="access_detail_id" resultClass="string">
+			SELECT NVL(MAX(access_detail_id),0)+1 FROM PT_CM_ACCESS_DETAIL
+		</selectKey>
+		INSERT INTO PT_CM_ACCESS_DETAIL(
+			ACCESS_DETAIL_ID
+		  , ACCESS_INFO_ID
+		  , ACCESS_URL
+		  , ACCESS_VERSION
+		  , DISPLAY_YN
+		  , DELETE_YN
+		  , REG_ID
+		  , REG_DT
+		  , MOD_ID
+		  , MOD_DT
+		  , ETC
+		  , SAVE_FILE_NM
+		  , ORG_FILE_NM
+		) VALUES (
+		    #access_detail_id#
+		  , #access_info_id#
+		  , #access_url#
+		  , #access_version#
+		  , #display_yn#
+		  , #delete_yn#
+		  , #reg_id#
+		  , TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+		  , #mod_id#
+		  , TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+		  , #etc#
+		  , #save_file_nm#
+		  , #org_file_nm#
+		)
+	</insert>
+	
+	<!-- 약관 속성 수정 -->
+	<update id="updateProcInfo" parameterClass="termsAcIfVo">
+		UPDATE PT_CM_ACCESS_INFO
+		   SET ACCESS_TITLE = #access_title#
+		   	 , REQUIRED_YN = #required_yn#
+		   	 <isNotEmpty property="access_version">
+		   	 , ACCESS_VERSION = #access_version#
+		   	 </isNotEmpty>
+		   	 , DISPLAY_YN = #display_yn#
+		     , MOD_ID   = #mod_id#
+		     , MOD_DT = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+		     , ETC = #etc#
+		 WHERE ACCESS_INFO_ID = #access_info_id#
+	</update>
+	
+	<!-- 약관 그룹 등록 개수 조회 -->
+	<select id="getAccessGroupCnt" parameterClass="termsAgVo" resultClass="int">
+		SELECT COUNT(ACCESS_MST_ID)
+		  FROM PT_CM_ACCESS_GR
+		 WHERE ACCESS_INFO_ID = #access_info_id# 
+	</select>
+	
+	<!-- 약관 속성 삭제 처리-->
+	<update id="deleteProcInfo" parameterClass="termsAcIfVo">
+		UPDATE PT_CM_ACCESS_INFO
+		   SET DELETE_YN = #delete_yn#
+		     , MOD_ID   = #mod_id#
+		     , MOD_DT = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+		 WHERE ACCESS_INFO_ID = #access_info_id#
+	</update>
+	
+	<!-- 약관 속성 팝업 목록 조회 -->
+	<select id="getAccessInfoPopList" parameterClass="termsAgSerachVo" resultClass="termsAgVo"> 
+	  SELECT ROW_NUMBER() OVER(ORDER BY COL ASC, REQUIRED_YN DESC, DISPLAY_YN DESC, MOD_DT DESC) AS ROWNO
+   		  , INFO.ACCESS_INFO_ID AS ACCESS_INFO_ID 
+		  , INFO.ACCESS_TITLE AS ACCESS_TITLE
+		  , GR.ACCESS_MST_ID AS ACCESS_MST_ID
+		  , GR.COL AS COL
+		  , INFO.REQUIRED_YN AS REQUIRED_YN 
+		  , INFO.DISPLAY_YN AS DISPLAY_YN
+		  , INFO.MOD_DT AS MOD_DT
+		  , INFO.ETC AS ETC
+ 	   FROM PT_CM_ACCESS_INFO INFO
+	     , (SELECT * 
+	          FROM PT_CM_ACCESS_GR
+	         WHERE ACCESS_MST_ID = #access_mst_id#) GR
+        WHERE INFO.ACCESS_INFO_ID = GR.ACCESS_INFO_ID(+)
+	    AND INFO.DELETE_YN = 'N'
+		AND INFO.SERVICE_GB = 'I'
+    </select>
+    
+    <!-- 약관 상세 목록 조회 -->
+	<select id="getAccessDetailList" parameterClass="termsAdSearchVo" resultClass="termsAdVo">
+		SELECT A.* 
+		  FROM (SELECT ROW_NUMBER() OVER(ORDER BY ACCESS_DETAIL_ID DESC, ACCESS_VERSION DESC) AS ROWNO
+					 , ACCESS_DETAIL_ID
+					 , ACCESS_INFO_ID
+					 , ACCESS_URL
+					 , ACCESS_VERSION
+					 , DISPLAY_YN
+					 , DELETE_YN
+					 , TO_CHAR(TO_DATE(REG_DT, 'YYYYMMDD HH24:MI:SS'), 'YYYY-MM-DD HH24:MI:SS') AS REG_DT
+					 , REG_ID
+					 , TO_CHAR(TO_DATE(MOD_DT, 'YYYYMMDD HH24:MI:SS'), 'YYYY-MM-DD HH24:MI:SS') AS MOD_DT
+					 , MOD_ID
+					 , ETC
+					 , SAVE_FILE_NM
+					 , ORG_FILE_NM
+				  FROM PT_CM_ACCESS_DETAIL
+				 WHERE DELETE_YN = 'N'
+				   AND ACCESS_INFO_ID = #access_info_id#
+				) A
+		  WHERE ROWNO BETWEEN '$start_rnum$' AND '$end_rnum$'
+	</select>
+	
+	<!-- 약관 상세 목록 개수 조회 -->
+	<select id="getAccessDetailListCnt" parameterClass="termsAdSearchVo" resultClass="int">
+		SELECT COUNT(ACCESS_DETAIL_ID)
+		  FROM PT_CM_ACCESS_DETAIL
+		 WHERE DELETE_YN = 'N'
+		   AND ACCESS_INFO_ID = #access_info_id#
+	</select>
+    
+    <!-- 약관 상세 조회 -->
+	<select id="getAccessDetail" parameterClass="termsAdSearchVo" resultClass="termsAdVo">
+		SELECT ACCESS_DETAIL_ID
+			 , ACCESS_INFO_ID
+			 , ACCESS_URL
+			 , ACCESS_VERSION
+			 , DISPLAY_YN
+			 , DELETE_YN
+			 , TO_CHAR(TO_DATE(REG_DT, 'YYYYMMDD HH24:MI:SS'), 'YYYY-MM-DD HH24:MI:SS') AS REG_DT
+			 , REG_ID
+			 , TO_CHAR(TO_DATE(MOD_DT, 'YYYYMMDD HH24:MI:SS'), 'YYYY-MM-DD HH24:MI:SS') AS MOD_DT
+			 , MOD_ID
+			 , ETC
+			 , SAVE_FILE_NM
+			 , ORG_FILE_NM
+		  FROM PT_CM_ACCESS_DETAIL
+		 WHERE ACCESS_DETAIL_ID = #access_detail_id#
+		   AND DELETE_YN = 'N'
+	</select>
+	
+	<!-- 약관 상세 삭제 처리 -->
+	<update id="deleteProcDetail" parameterClass="termsAdVo">
+		UPDATE PT_CM_ACCESS_DETAIL
+		   SET DELETE_YN = #delete_yn#
+		     , MOD_ID   = #mod_id#
+		     , MOD_DT = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+		 WHERE ACCESS_DETAIL_ID = #access_detail_id#
+	</update>
+	
+	<!-- 약관 상세 수정 -->
+	<update id="updateProcDetail" parameterClass="termsAdVo">
+		UPDATE PT_CM_ACCESS_DETAIL
+		   SET ACCESS_URL = #access_url#
+		     , DISPLAY_YN = #display_yn#
+		     , MOD_ID   = #mod_id#
+		     , MOD_DT = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+		     <isNotEmpty property="etc">
+		  	 , ETC = #etc#
+		  	 </isNotEmpty>
+		  	 , SAVE_FILE_NM = #save_file_nm#
+		  	 , ORG_FILE_NM = #org_file_nm#
+		 WHERE ACCESS_DETAIL_ID = #access_detail_id#
+	</update>	
+	
+</sqlMap>

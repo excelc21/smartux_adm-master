@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="admin_notipop">
+	<typeAlias alias="notipopCommVo" type="com.dmi.smartux.admin.notipop.vo.notiPopVo"/>
+	<typeAlias alias="getnotipopcontVo" type="com.dmi.smartux.admin.notipop.vo.getNotiPopContVo"/>
+	<typeAlias alias="deletenotipopVo" type="com.dmi.smartux.admin.notipop.vo.deleteNotiPopVo"/>
+	<typeAlias alias="getemergencyVo" type="com.dmi.smartux.admin.notipop.vo.getEmergencyVo"/>
+	<typeAlias alias="getemergencyviewVo" type="com.dmi.smartux.admin.notipop.vo.getEmergencyViewVo"/>
+	
+	<insert id="insertNotiPopProc" parameterClass="notipopCommVo">
+		INSERT INTO PT_HDTV_CHOICE_NOTI
+		  (SCR_TP
+			,DISPLAY_TYPE
+			,STATUS
+			,MESSAGE_YN
+			,MESSAGE
+			,NET_TYPE
+			,BBS_ID
+			,REG_NO
+			,REG_ID
+			,REG_DT
+		  )VALUES(
+		  	#scr_tp#
+		  	,#display_type#
+		  	,#status#
+		  	,#message_yn#
+		  	,#message#
+		  	,#net_type#
+		  	,#bbs_id#
+		  	,#reg_no#
+		  	,#act_id#
+			,SYSDATE)
+	</insert>
+	
+	<insert id="insertNotiPopNotiProc" parameterClass="notipopCommVo">
+		INSERT INTO PT_HDTV_CHOICE_NOTI
+		  (SCR_TP
+			,DISPLAY_TYPE
+			,BBS_ID
+			,REG_NO
+			,REG_ID
+			,REG_DT
+			,NOTI_NO
+		  )VALUES(
+		  	#scr_tp#
+		  	,#display_type#
+		  	,#bbs_id#
+		  	,#reg_no#
+		  	,#act_id#
+			,SYSDATE
+			,#noti_no#)
+	</insert>
+	
+	<!-- 	긴급비상공지 일련번호 조회  -->
+	<select id="getMaxNotiNo" resultClass="int">
+		SELECT MAX(NOTI_NO)+1 FROM PT_HDTV_CHOICE_NOTI
+	</select>
+	
+	<insert id="insertNotiPopEmergencyProc" parameterClass="notipopCommVo">
+		INSERT INTO PT_HDTV_CHOICE_NOTI
+		  (SCR_TP
+			,DISPLAY_TYPE
+			,STATUS
+			,MESSAGE_YN
+			,MESSAGE
+			,NET_TYPE
+			,REG_ID
+			,REG_DT
+			,NOTI_NO
+		  )VALUES(
+		  	#scr_tp#
+		  	,#display_type#
+		  	,#status#
+		  	,#message_yn#
+		  	,#message#
+		  	,#net_type#
+		  	,#act_id#
+			,SYSDATE
+			,#noti_no#)
+	</insert>
+	
+	<insert id="insertNotiPopProcLog" parameterClass="notipopCommVo">
+		INSERT INTO PT_HDTV_CHOICE_NOTI_LOG(
+			NOTI_NO
+			,SCR_TP
+			,DISPLAY_TYPE
+			,STATUS
+			,MESSAGE_YN
+			,MESSAGE
+			,NET_TYPE
+			,BBS_ID
+			,REG_NO
+			,REG_ID
+			,REG_DT
+			,ACT_DT
+			,ACT_ID
+			,ACT_IP 
+			,ACT_GBN
+		)VALUES(
+			#noti_no#
+		  	,#scr_tp#
+		  	,#display_type#
+		  	,#status#
+		  	,#message_yn#
+		  	,#message#
+		  	,#net_type#
+		  	,#bbs_id#
+		  	,#reg_no#
+		  	,#act_id#
+		  	,SYSDATE
+			,SYSDATE
+			,#act_id#
+			,#act_ip#
+			,#act_gbn#
+		)
+	</insert>
+	
+	<update id="updateNotiPopProc" parameterClass="notipopCommVo">
+		 UPDATE PT_HDTV_CHOICE_NOTI SET
+			STATUS = #status#
+			,MESSAGE_YN = #message_yn#
+			,MESSAGE = #message#
+			,NET_TYPE = #net_type#
+			,BBS_ID = #bbs_id#
+			,REG_NO = #reg_no#
+			,REG_ID = #act_id#
+			,REG_DT = SYSDATE
+		WHERE SCR_TP=#scr_tp# AND DISPLAY_TYPE = #display_type#
+	</update>
+	
+	<!-- 	팝업공지 수정 -->
+	<update id="updateNotiPopNotiProc" parameterClass="notipopCommVo">
+		 UPDATE PT_HDTV_CHOICE_NOTI SET
+			BBS_ID = #bbs_id#
+			,REG_NO = #reg_no#
+			,REG_ID = #act_id#
+			,REG_DT = SYSDATE
+		WHERE SCR_TP=#scr_tp# AND DISPLAY_TYPE = #display_type#
+	</update>
+	
+	<!-- 	긴급공지 수정 -->
+	<update id="updateNotiPopEmergencyProc" parameterClass="notipopCommVo">
+		 UPDATE PT_HDTV_CHOICE_NOTI SET
+			STATUS = #status#
+			,MESSAGE_YN = #message_yn#
+			,MESSAGE = #message#
+			,NET_TYPE = #net_type#
+			,REG_ID = #act_id#
+			,REG_DT = SYSDATE
+			<isNotEmpty property="noti_no">
+				,NOTI_NO = #noti_no#
+			</isNotEmpty>
+		WHERE SCR_TP=#scr_tp# AND DISPLAY_TYPE = #display_type#
+	</update>
+	
+	<!-- 	긴급공지/팝업공지 수정 시 로그 insert  2019.01.24 NOTI_NO 추가-->
+	<insert id="updateNotiPopProcLog" parameterClass="notipopCommVo">
+		INSERT INTO   
+	    	PT_HDTV_CHOICE_NOTI_LOG(
+				SCR_TP
+				,DISPLAY_TYPE
+				,STATUS
+				,MESSAGE_YN
+				,MESSAGE
+				,NET_TYPE
+				,BBS_ID
+				,REG_NO
+				,REG_ID
+				,REG_DT
+				,ACT_DT
+				,ACT_ID
+				,ACT_IP 
+				,ACT_GBN
+				,NOTI_NO
+			)
+		SELECT
+			SCR_TP
+			,DISPLAY_TYPE
+			,STATUS
+			,MESSAGE_YN
+			,MESSAGE
+			,NET_TYPE
+			,BBS_ID
+			,REG_NO
+			,REG_ID
+			,REG_DT
+	    	,SYSDATE
+	    	,#act_id#
+	    	,#act_ip#
+	    	,#act_gbn#
+	    	,NOTI_NO
+		FROM PT_HDTV_CHOICE_NOTI
+			WHERE SCR_TP=#scr_tp# AND DISPLAY_TYPE = #display_type#
+	</insert>
+	
+	<select id="getNotiPopFind" parameterClass="notipopCommVo" resultClass="int">
+		SELECT 
+			COUNT(*)
+		FROM PT_HDTV_CHOICE_NOTI 
+		WHERE SCR_TP=#scr_tp# AND DISPLAY_TYPE = #display_type#
+	</select>
+	
+	<select id="getNotiPopDeleteFind" resultClass="int">
+		SELECT 
+			COUNT(*)
+		FROM PT_HDTV_CHOICE_NOTI 
+		WHERE STATUS IS NULL AND REG_NO IS NULL
+	</select>
+
+	<delete id="deleteNotiPopProc" parameterClass="deletenotipopVo">
+		DELETE FROM PT_HDTV_CHOICE_NOTI
+		WHERE STATUS IS NULL AND REG_NO IS NULL
+	</delete>
+	
+	<insert id="deleteNotiPopProcLog" parameterClass="notipopCommVo">
+		INSERT INTO   
+	    	PT_HDTV_CHOICE_NOTI_LOG(
+				SCR_TP
+				,DISPLAY_TYPE
+				,STATUS
+				,MESSAGE_YN
+				,MESSAGE
+				,NET_TYPE
+				,BBS_ID
+				,REG_NO
+				,REG_ID
+				,REG_DT
+				,ACT_DT
+				,ACT_ID
+				,ACT_IP 
+				,ACT_GBN
+			)
+		SELECT
+			SCR_TP
+			,DISPLAY_TYPE
+			,STATUS
+			,MESSAGE_YN
+			,MESSAGE
+			,NET_TYPE
+			,BBS_ID
+			,REG_NO
+			,REG_ID
+			,REG_DT
+	    	,SYSDATE
+	    	,#act_id#
+	    	,#act_ip#
+	    	,#act_gbn#
+		FROM PT_HDTV_CHOICE_NOTI WHERE STATUS IS NULL AND REG_NO IS NULL
+	</insert>
+	
+	<!-- 	긴급비상공지 조회  2019.01.24 noti_no 조회 추가-->
+	<select id="getEmergencyView" parameterClass="getemergencyVo" resultClass="getemergencyviewVo">
+		SELECT SCR_TP ,
+		       DISPLAY_TYPE ,
+		       STATUS ,
+		       MESSAGE_YN ,
+		       MESSAGE ,
+		       NET_TYPE,
+		       NOTI_NO 
+		  FROM PT_HDTV_CHOICE_NOTI 
+		 WHERE SCR_TP=#scr_tp# 
+		       AND DISPLAY_TYPE=#display_type#
+	</select>
+	
+</sqlMap>

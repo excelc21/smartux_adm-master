@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="youtube">
+
+
+<resultMap id="youtubeVOMap" class="com.dmi.smartux.admin.youtube.vo.YoutubeVO"> 
+		<result property="code" column="CODE" />
+		<result property="category" column="CATEGORY" />
+		<result property="recommend_text" column="RECOMMEND_TEXT" />
+		<result property="use_yn" column="USE_YN" />
+		<result property="write_id" column="WRITE_ID" />
+		<result property="created" column="CREATED" />
+		<result property="updated" column="UPDATED" />
+</resultMap>
+
+<select id="getYoutubeList" resultMap="youtubeVOMap" resultClass="com.dmi.smartux.admin.youtube.vo.YoutubeVO">
+		SELECT 
+			CODE
+			,CATEGORY
+			,RECOMMEND_TEXT
+			,USE_YN
+			,WRITE_ID
+			,CREATED
+			,UPDATED
+		FROM
+			PT_UX_YOUTUBE
+		ORDER BY CREATED DESC
+</select>
+	
+
+<insert id="setYoutubeInsert" parameterClass="map">
+		INSERT INTO PT_UX_YOUTUBE(
+			 CODE
+			,CATEGORY
+			,RECOMMEND_TEXT
+			,USE_YN
+			,WRITE_ID
+			,CREATED
+			,UPDATED
+		) VALUES(
+			(SELECT NVL(MAX(CODE),0)+1 FROM PT_UX_YOUTUBE)
+			,#category#
+			,#recommend_text#
+			,'N'
+			,#write_id#
+			,SYSDATE
+			,SYSDATE
+		)
+</insert>
+
+<delete id="setYoutubeDelete" parameterClass="map">
+		DELETE FROM 
+			PT_UX_YOUTUBE
+		WHERE
+			CODE = #code#
+</delete>
+
+<update id="setAllUseUpdate" parameterClass="map">
+		UPDATE 
+			PT_UX_YOUTUBE
+		SET
+			USE_YN = #useYN#
+</update>
+
+<update id="setUseUpdate" parameterClass="map">
+		UPDATE
+			PT_UX_YOUTUBE
+		SET
+			USE_YN = 'Y'
+		WHERE
+			CODE = #code#	
+</update>
+
+
+<select id="getYoutubeData" parameterClass="map" resultMap="youtubeVOMap">
+		SELECT 
+			CODE
+			,CATEGORY
+			,RECOMMEND_TEXT
+			,USE_YN
+			,WRITE_ID
+			,CREATED
+			,UPDATED
+		FROM
+			PT_UX_YOUTUBE
+		WHERE
+			CODE = #code#
+</select>
+
+<update id="setYoutubeUpdate" parameterClass="map">
+		UPDATE 
+			PT_UX_YOUTUBE
+		SET
+			CATEGORY = #category#
+			,RECOMMEND_TEXT = #recommend_text#
+			,WRITE_ID = #write_id#
+			,UPDATED = SYSDATE
+		WHERE
+			CODE = #code#
+</update>
+
+
+<resultMap id="YoutubeAPIVOMap" class="com.dmi.smartux.configuration.vo.YoutubeAPIVO"> 
+		<result property="code" column="CODE" />
+		<result property="category" column="CATEGORY" />
+		<result property="recommend_text" column="RECOMMEND_TEXT" />
+		<result property="use_yn" column="USE_YN" />
+		<result property="write_id" column="WRITE_ID" />
+		<result property="created" column="CREATED" />
+		<result property="updated" column="UPDATED" />
+</resultMap>
+
+<select id="getYoutubeSearchKey" resultMap="YoutubeAPIVOMap">
+		SELECT 
+			CODE
+			,CATEGORY
+			,RECOMMEND_TEXT
+			,USE_YN
+			,WRITE_ID
+			,CREATED
+			,UPDATED
+		FROM
+			PT_UX_YOUTUBE
+		WHERE
+			USE_YN = 'Y'
+</select>
+
+</sqlMap>
+

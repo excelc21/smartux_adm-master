@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:ehcache="http://ehcache-spring-annotations.googlecode.com/svn/schema/ehcache-spring"
+	xmlns:jee="http://www.springframework.org/schema/jee"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:task="http://www.springframework.org/schema/task"
+	xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xsi:schemaLocation="http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee-3.0.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+		http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task.xsd
+		http://www.springframework.org/schema/jdbc http://www.springframework.org/schema/jdbc/spring-jdbc-3.0.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+		http://ehcache-spring-annotations.googlecode.com/svn/schema/ehcache-spring
+        http://ehcache-spring-annotations.googlecode.com/svn/schema/ehcache-spring/ehcache-spring-1.1.xsd">
+    <task:annotation-driven/>
+
+	<!-- Root Context: defines shared resources visible to all other web components -->
+	<!-- <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close"> -->
+		<!-- TTD TEST DB -->
+		<!-- <property name="driverClassName" value="oracle.jdbc.driver.OracleDriver" />
+		<property name="url" value="jdbc:oracle:thin:@112.148.184.43:1521:orcl" />
+  		<property name="username" value="SMARTUX" />
+  		<property name="password" value="DEMO00" />
+		<property name="defaultAutoCommit" value="false" />
+		-->		
+		<!-- SmartUX TEST DB -->
+		<!-- <property name="url" value="jdbc:oracle:thin:@123.140.17.231:1521:mylgtb" />-->
+		
+		<!--<property name="driverClassName" value="oracle.jdbc.driver.OracleDriver" />
+		<property name="url" value="jdbc:oracle:thin:@(DESCRIPTION =(ADDRESS_LIST =(LOAD_BALANCE=ON)(FAILOVER=ON)(ADDRESS = (PROTOCOL = TCP)(HOST = 123.140.17.231)(PORT = 1521))(ADDRESS = (PROTOCOL = TCP)(HOST = 123.140.17.231)(PORT = 1521)))(CONNECT_DATA =(SERVER = DEDICATED)(SERVICE_NAME = mylgtb)(FAILOVER_MODE=(TYPE=select)(METHOD=basic))))" />
+  		<property name="username" value="smartux" />
+  		<property name="password" value="smartux" />
+		<property name="defaultAutoCommit" value="false" />
+		
+		<property name="initialSize" value="10" />
+		<property name="maxActive" value="20" />
+		<property name="maxIdle" value="10" />-->
+		
+		<!-- <property name="initialSize" value="3" />
+		<property name="maxActive" value="10" />
+		<property name="maxIdle" value="3" /> -->
+		
+		<!-- 
+		<property name="initialSize" value="100" />
+		<property name="maxActive" value="100" />
+		<property name="maxIdle" value="100" />
+		-->
+	<!-- </bean> -->
+
+	<bean id="propertyConfigurer" class="com.dmi.smartux.common.property.SmartUXProperties"/>
+
+	<bean id="dataSource"  class="org.springframework.jndi.JndiObjectFactoryBean">
+      <property name="jndiName" value="java:comp/env/jdbc/suxm"/>    
+      <!-- <property name="jndiName" value="jdbc/suxm"/>  -->
+      <property name="resourceRef" value="true" /> 
+	</bean>
+
+    <bean id="dataSource_pvs"  class="org.springframework.jndi.JndiObjectFactoryBean">
+        <property name="jndiName" value="java:comp/env/jdbc/pvs"/>
+        <property name="resourceRef" value="true" />
+    </bean>
+
+    
+    <bean id="dataSource_hmims"  class="org.springframework.jndi.JndiObjectFactoryBean">
+      <property name="jndiName" value="java:comp/env/jdbc/hmims"/>    
+      <property name="resourceRef" value="true" /> 
+	</bean>
+	
+    <bean id="dataSource_mims"  class="org.springframework.jndi.JndiObjectFactoryBean">
+      <property name="jndiName" value="java:comp/env/jdbc/mims"/> 
+      <property name="resourceRef" value="true" /> 
+	</bean>
+	
+	<bean id="dataSource_iptv"  class="org.springframework.jndi.JndiObjectFactoryBean">
+      <property name="jndiName" value="java:comp/env/jdbc/iptv"/> 
+      <property name="resourceRef" value="true" /> 
+	</bean>
+	
+	<bean id="sqlMapClient"
+		class="org.springframework.orm.ibatis.SqlMapClientFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<property name="configLocation" value="classpath:com/dmi/smartux/resource/ibatis/config/SqlMapConfig.xml" />
+		<property name="sqlMapClientProperties">
+			<bean class="com.dmi.smartux.common.property.DBProperties"/>
+		</property>
+	</bean>
+
+    <bean id="sqlMapClient_pvs"
+          class="org.springframework.orm.ibatis.SqlMapClientFactoryBean">
+        <property name="dataSource" ref="dataSource_pvs" />
+        <property name="configLocation" value="classpath:com/dmi/smartux/resource/ibatis/config/SqlMapConfig_pvs.xml" />
+    </bean>
+    
+    <bean id="sqlMapClient_hmims"
+		class="org.springframework.orm.ibatis.SqlMapClientFactoryBean">
+		<property name="dataSource" ref="dataSource_hmims" />
+		<property name="configLocation" value="classpath:com/dmi/smartux/resource/ibatis/config/SqlMapConfig_hmims.xml" />
+		<property name="sqlMapClientProperties">
+			<bean class="com.dmi.smartux.common.property.DBProperties"/>
+		</property>
+	</bean>
+	
+    <bean id="sqlMapClient_mims"
+		class="org.springframework.orm.ibatis.SqlMapClientFactoryBean">
+		<property name="dataSource" ref="dataSource_mims" />
+		<property name="configLocation" value="classpath:com/dmi/smartux/resource/ibatis/config/SqlMapConfig_mims.xml" />
+		<property name="sqlMapClientProperties">
+			<bean class="com.dmi.smartux.common.property.DBProperties"/>
+		</property>
+	</bean>
+
+	<bean id="sqlMapClient_iptv"
+		class="org.springframework.orm.ibatis.SqlMapClientFactoryBean">
+		<property name="dataSource" ref="dataSource_iptv" />
+		<property name="configLocation" value="classpath:com/dmi/smartux/resource/ibatis/config/SqlMapConfig_iptv.xml" />
+		<property name="sqlMapClientProperties">
+			<bean class="com.dmi.smartux.common.property.DBProperties"/>
+		</property>
+	</bean>
+    
+	<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager" p:dataSource-ref="dataSource" />
+	
+	<context:component-scan base-package="com.dmi.smartux">
+		<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+	</context:component-scan>
+	
+	<bean id="transactionManagerMims" class="org.springframework.jdbc.datasource.DataSourceTransactionManager" p:dataSource-ref="dataSource_mims" />
+	<bean id="transactionManagerIptv" class="org.springframework.jdbc.datasource.DataSourceTransactionManager" p:dataSource-ref="dataSource_iptv" />
+	
+	<tx:annotation-driven transaction-manager="transactionManager"/>
+	<tx:annotation-driven transaction-manager="transactionManagerMims"/>
+	<tx:annotation-driven transaction-manager="transactionManagerIptv"/>
+		
+	<tx:annotation-driven />
+	
+		
+	<!-- declare ehCache --> 
+	<ehcache:annotation-driven cache-manager="cacheManager" proxy-target-class="true"/> 
+	
+	<ehcache:config cache-manager="cacheManager"> 
+		<ehcache:evict-expired-elements interval="60" /> 
+	</ehcache:config>
+  
+	<!-- ehCache bean --> 
+ 	<bean id="cacheManager" class="org.springframework.cache.ehcache.EhCacheManagerFactoryBean" > 
+		<property name="configLocation"  value="classpath:com/dmi/smartux/resource/ehcache/ehcache.xml" />
+  	</bean>	
+ 
+	<!-- Scheduler -->
+	<!-- task:scheduler id="myScheduler" pool-size="10" / -->
+	<!-- task:scheduled-tasks scheduler="myScheduler" -->
+		<!-- task:scheduled ref="MyScheduleService" method="fixedrateTest" fixed-rate="60000" /--> <!-- 작업 시작 시간을 기준으로 반복시간 설정(밀리세컨드 단위) -->
+		<!-- task:scheduled ref="MyScheduleService" method="fixeddelayTest" fixed-delay="120000" /--><!-- 작업 종료 시간을 기준으로 반복시간 설정(밀리세컨드 단위) -->
+		<!-- task:scheduled ref="MyScheduleService" method="cronTest" cron="0 */3 * * * *" /--><!-- cron style로 반복주기를 설정할 때 -->
+		<!-- task:scheduled ref="EPGReading" method="list" fixed-delay="60000" / -->
+	<!-- /task:scheduled-tasks -->
+	<task:scheduler id="myScheduler" pool-size="10" />
+	<task:scheduled-tasks scheduler="myScheduler">
+
+		<!-- 	최신회 알림 푸쉬 1분-->
+		<task:scheduled ref="pushScheduleServiceImpl" method="requestLatestPush" fixed-delay="60000" />
+		<!-- 	새소식 푸쉬연동 1분  -->
+		<task:scheduled ref="pushScheduleServiceImpl" method="requestNewsPush" fixed-delay="60000" />
+		<!-- NextUi 예약구매 push 1분 -> AMIMS서버에서 사용 중 -->
+		<task:scheduled ref="NewPushSchedule" method="requestNextuiPush" fixed-delay="60000" />
+		
+		<!-- 즉시적용 연타방지 적용  -->
+		<!-- 	자체편성 정보 스케줄 1시간-->
+		<task:scheduled ref="smartuxScheduleService" method="suxmAlbumListSchedule" cron="0 0 0/1 * * *" />
+		<!-- 	YOUTUBE 검색어관리 스케줄 1시간-->
+		<task:scheduled ref="smartuxScheduleService" method="youtubeSearchKeywordSchedule" cron="0 0 0/1 * * *" />
+		<!-- 	추천이용동의 약관관리 스케줄 1시간-->
+		<task:scheduled ref="smartuxScheduleService" method="ahomeTermsSchedule" cron="0 0 0/1 * * *" />
+		<!-- 	공지/이미지 정보관리 스케줄 1시간-->
+		<task:scheduled ref="smartuxScheduleService" method="noticeInfoSchedule" cron="0 0 0/1 * * *" />
+		<!-- 	참여통계 스케줄 1시간-->
+		<task:scheduled ref="smartuxScheduleService" method="statBbsSchedule" cron="0 0 0/1 * * *" />
+		<!-- 	메인패널 지면 스케줄 1분-->
+		<task:scheduled ref="smartuxScheduleService" method="mainPanelSchedule" cron="0 0/1 * * * *" />
+		<!-- 	GENRE VOD BEST 스케줄 1시간-->
+		<task:scheduled ref="smartuxScheduleService" method="genreVodBestSchedule" cron="0 0 0/1 * * *" />
+		<!-- 	설정정보 스케줄 1시간-->
+		<task:scheduled ref="smartuxScheduleService" method="settingSchedule" cron="0 0 0/1 * * *" />
+		<!-- 	긴급(비상)공지 스케줄 1시간-->
+		<task:scheduled ref="smartuxScheduleService" method="notiPopSchedule" cron="0 0 0/1 * * *" />
+		<!-- 	품질단말 스케줄 1시간-->
+		<task:scheduled ref="smartuxScheduleService" method="qualitySchedule" cron="0 0 0/1 * * *" />
+	</task:scheduled-tasks>
+	
+	<task:executor id="statExecutor" pool-size="20-60" queue-capacity="30" rejection-policy="ABORT"/>
+    
+	<bean id="taskStatThread" class="com.dmi.smartux.statbbs.task.StatbbsThread">
+	  <constructor-arg ref="statExecutor" />
+	</bean>
+	
+</beans>

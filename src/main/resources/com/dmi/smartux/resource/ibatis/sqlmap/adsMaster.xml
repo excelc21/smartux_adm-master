@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="adsMaster">
+	<resultMap id="adsMasterMap" class="com.dmi.smartux.admin.ads.vo.AdsMasterVO">
+		<result property="masterID" column="ADS_ID" />
+		<result property="masterName" column="ADS_NM" />
+		<result property="liveCount" column="LIVE_CNT" />
+		<result property="regDate" column="REG_DT" />
+		<result property="modDate" column="MOD_DT" />
+		<result property="regID" column="REG_ID" />
+	</resultMap>
+	
+	<select id="getAdsMasterId" resultClass="string">
+		SELECT CASE WHEN max(ADS_ID) IS NULL THEN 'IA_0000000001'
+				ELSE ('IA_' ||LPAD(SUBSTR(max(ADS_ID),4,14)+1,10,0)) END  AS ADS_ID  
+		FROM PT_HDTV_ADS_MASTER 
+		WHERE SUBSTR(ADS_ID,0,3) = 'IA_'
+	</select>
+	
+	<select id="getAdsMasterList" resultMap="adsMasterMap">
+		SELECT
+			   ADS_ID
+			 , ADS_NM
+			 , LIVE_CNT
+			 , REG_DT
+			 , MOD_DT
+			 , REG_ID
+		FROM
+		PT_HDTV_ADS_MASTER
+		WHERE SERVICE_TYPE = 'I'
+		ORDER BY MOD_DT DESC
+	</select>
+
+	<select id="getAdsMaster" parameterClass="com.dmi.smartux.admin.ads.vo.AdsMasterVO" resultMap="adsMasterMap">
+		SELECT
+			   ADS_ID
+			 , ADS_NM
+			 , LIVE_CNT
+			 , REG_DT
+			 , MOD_DT
+			 , REG_ID
+		FROM PT_HDTV_ADS_MASTER
+		WHERE
+		ADS_ID = #masterID#
+	</select>
+
+
+	<insert id="insertAdsMaster" parameterClass="com.dmi.smartux.admin.ads.vo.AdsMasterVO">
+		INSERT INTO
+		PT_HDTV_ADS_MASTER
+		(
+		ADS_ID,
+		ADS_NM,
+		LIVE_CNT,
+		REG_DT,
+		MOD_DT,
+		REG_ID,
+		SERVICE_TYPE
+		)
+		VALUES
+		(
+		#masterID#,
+		#masterName#,
+		#liveCount#,
+		SYSDATE,
+		SYSDATE,
+		#regID#,
+		'I'
+		)
+	</insert>
+
+	<update id="updateAdsMaster" parameterClass="com.dmi.smartux.admin.ads.vo.AdsMasterVO">
+		UPDATE PT_HDTV_ADS_MASTER
+		SET
+		ADS_NM=#masterName#,
+		MOD_DT=SYSDATE
+		WHERE
+		ADS_ID = #masterID#
+	</update>
+
+	<delete id="deleteAdsMaster" parameterClass="com.dmi.smartux.admin.ads.vo.AdsMasterVO">
+		DELETE FROM
+		PT_HDTV_ADS_MASTER
+		WHERE
+		ADS_ID = #masterID#
+	</delete>
+
+	<insert id="insertLog" parameterClass="com.dmi.smartux.admin.ads.vo.AdsMasterVO">
+		INSERT INTO
+		PT_HDTV_ADS_MASTER_LOG
+		(
+		ADS_ID,
+		ADS_NM,
+		LIVE_CNT,
+		REG_DT,
+		MOD_DT,
+		REG_ID,
+		SERVICE_TYPE,
+		ACT_ID,
+		ACT_IP,
+		ACT_GB
+		)
+		(
+		SELECT
+		A.ADS_ID,
+		A.ADS_NM,
+		A.LIVE_CNT,
+		A.REG_DT,
+		A.MOD_DT,
+		A.REG_ID,
+		A.SERVICE_TYPE,
+		#actID#,
+		#actIP#,
+		#actGB#
+		FROM
+		(
+		SELECT
+		ADS_ID,
+		ADS_NM,
+		LIVE_CNT,
+		REG_DT,
+		MOD_DT,
+		REG_ID,
+		SERVICE_TYPE
+		FROM
+		PT_HDTV_ADS_MASTER
+		WHERE
+		ADS_ID = #masterID#
+		) A
+		)
+	</insert>
+</sqlMap>

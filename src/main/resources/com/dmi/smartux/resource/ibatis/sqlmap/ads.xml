@@ -1,0 +1,524 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="ads">
+
+	<resultMap id="adsVOMap" class="com.dmi.smartux.admin.ads.vo.AdsVO">
+		<result property="number" column="ADS_NO" />
+		<result property="title" column="TITLE" />
+		<result property="rolTime" column="ROL_TIME" />
+		<result property="type" column="ADS_TYPE" />
+		<result property="fileName" column="FILE_NAME" />
+		<result property="saveFileName" column="SAVE_FILE_NAME" />
+		<result property="fileName2" column="FILE_NAME2" />
+		<result property="saveFileName2" column="SAVE_FILE_NAME2" />
+		<result property="linkUrl" column="LINK_URL" />
+		<result property="startTime" column="S_TIME" />
+		<result property="expiredTime" column="E_TIME"  />
+		<result property="regTime" column="R_TIME" />
+		<result property="regID" column="R_ID" />
+		<result property="liveType" column="LIVE_YN" />
+		<result property="grade" column="GRADE" />
+		<result property="eventID" column="EV_STAT_ID" />
+		<result property="masterID" column="ADS_ID" />
+		<result property="bgColor" column="BG_COLOR" />
+		<result property="verticalBgFileName" column="BG_FILE_NAME_V" />
+		<result property="verticalBgSaveFileName" column="BG_SAVE_FILE_NAME_V" />
+		<result property="horizontalBgFileName" column="BG_FILE_NAME_H" />
+		<result property="horizontalBgSaveFileName" column="BG_SAVE_FILE_NAME_H" />
+		<result property="order" column="ADS_ORDER" />
+		<result property="dateType" column="ADS_DATE_TYPE" />
+	</resultMap>
+
+	<resultMap id="vo" class="com.dmi.smartux.admin.ads.vo.AdsVO">
+		<result property="number" column="ADS_NO" />
+		<result property="title" column="TITLE" />
+		<result property="rolTime" column="ROL_TIME" />
+		<result property="type" column="ADS_TYPE" />
+		<result property="fileName" column="FILE_NAME" />
+		<result property="saveFileName" column="SAVE_FILE_NAME" />
+		<result property="fileName2" column="FILE_NAME2" />
+		<result property="saveFileName2" column="SAVE_FILE_NAME2" />
+		<result property="linkUrl" column="LINK_URL" />
+		<result property="startTime" column="S_TIME" />
+		<result property="expiredTime" column="E_TIME"  />
+		<result property="regTime" column="R_TIME" />
+		<result property="regID" column="R_ID" />
+		<result property="liveType" column="LIVE_YN" />
+		<result property="grade" column="GRADE" />
+		<result property="eventID" column="EV_STAT_ID" />
+		<result property="masterID" column="ADS_ID" />
+		<result property="bgColor" column="BG_COLOR" />
+		<result property="verticalBgFileName" column="BG_FILE_NAME_V" />
+		<result property="verticalBgSaveFileName" column="BG_SAVE_FILE_NAME_V" />
+		<result property="horizontalBgFileName" column="BG_FILE_NAME_H" />
+		<result property="horizontalBgSaveFileName" column="BG_SAVE_FILE_NAME_H" />
+		<result property="order" column="ADS_ORDER" />
+		<result property="dateType" column="ADS_DATE_TYPE" />
+		<result property="updateYn" column="UPDATE_YN" />
+		<result property="textEtc" column="ETC" />
+		<result property="textEtc2" column="ETC2" />
+	</resultMap>
+
+	<select id="getLiveCount" parameterClass="map" resultClass="int">
+		SELECT
+		COUNT(ADS_NO)
+		FROM
+		PT_HDTV_ADS_INFO
+		WHERE ADS_ID = #masterID#
+	</select>
+
+	<select id="getAdsList" parameterClass="com.dmi.smartux.admin.ads.vo.AdsVO" resultMap="adsVOMap">
+		SELECT B.RNUM
+			, B.ADS_NO
+			, B.TITLE
+			, B.ROL_TIME
+			, B.ADS_TYPE
+			, B.FILE_NAME
+			, B.SAVE_FILE_NAME
+			, B.LINK_URL
+			, B.S_TIME
+			, B.E_TIME
+			, B.R_TIME
+			, B.R_ID
+			, B.LIVE_YN
+			, B.GRADE
+			, B.EV_STAT_ID
+			, B.ADS_ID
+			, B.BG_COLOR
+			, B.BG_FILE_NAME_V
+			, B.BG_SAVE_FILE_NAME_V
+			, B.BG_FILE_NAME_H
+			, B.BG_SAVE_FILE_NAME_H
+			, B.ADS_ORDER
+			, B.ADS_DATE_TYPE
+			, B.FILE_NAME2
+			, B.SAVE_FILE_NAME2 
+		  FROM (SELECT ROWNUM RNUM
+			  		, A.ADS_NO
+					, A.TITLE
+					, A.ROL_TIME
+					, A.ADS_TYPE
+					, A.FILE_NAME
+					, A.SAVE_FILE_NAME
+					, A.LINK_URL
+					, A.S_TIME
+					, A.E_TIME
+					, A.R_TIME
+					, A.R_ID
+					, A.LIVE_YN
+					, A.GRADE
+					, A.EV_STAT_ID
+					, A.ADS_ID
+					, A.BG_COLOR
+					, A.BG_FILE_NAME_V
+					, A.BG_SAVE_FILE_NAME_V
+					, A.BG_FILE_NAME_H
+					, A.BG_SAVE_FILE_NAME_H
+					, A.ADS_ORDER
+					, A.ADS_DATE_TYPE
+					, A.FILE_NAME2
+					, A.SAVE_FILE_NAME2 
+				FROM (SELECT ADS_NO
+							, TITLE
+							, ROL_TIME
+							, ADS_TYPE
+							, FILE_NAME
+							, SAVE_FILE_NAME
+							, LINK_URL
+							, S_TIME
+							, E_TIME
+							, R_TIME
+							, R_ID
+							, LIVE_YN
+							, GRADE
+							, EV_STAT_ID
+							, ADS_ID
+							, BG_COLOR
+							, BG_FILE_NAME_V
+							, BG_SAVE_FILE_NAME_V
+							, BG_FILE_NAME_H
+							, BG_SAVE_FILE_NAME_H
+							, ADS_ORDER
+							, ADS_DATE_TYPE
+							, FILE_NAME2
+							, SAVE_FILE_NAME2
+						FROM PT_HDTV_ADS_INFO
+						WHERE 1=1
+		<isNotEmpty prepend="AND" property="findValue">
+			<isNotNull property="findName">
+				$findName$ LIKE '%$findValue$%'
+			</isNotNull>
+		</isNotEmpty>
+		<isNotEmpty prepend="AND" property="liveType">
+			LIVE_YN LIKE '%$liveType$%'
+		</isNotEmpty>
+		AND ADS_ID = #masterID#
+		ORDER BY LIVE_YN DESC, ADS_ORDER, R_TIME DESC
+		) A
+		) B
+		WHERE RNUM BETWEEN '$startNum$' AND '$endNum$'
+	</select>
+
+	<select id="getAllList" resultMap="adsVOMap">
+		SELECT ADS_NO
+			, TITLE
+			, ROL_TIME
+			, ADS_TYPE
+			, FILE_NAME
+			, SAVE_FILE_NAME
+			, LINK_URL
+			, S_TIME
+			, E_TIME
+			, R_TIME
+			, R_ID
+			, LIVE_YN
+			, GRADE
+			, EV_STAT_ID
+			, ADS_ID
+			, BG_COLOR
+			, BG_FILE_NAME_V
+			, BG_SAVE_FILE_NAME_V
+			, BG_FILE_NAME_H
+			, BG_SAVE_FILE_NAME_H
+			, ADS_ORDER
+			, ADS_DATE_TYPE
+			, FILE_NAME2
+			, SAVE_FILE_NAME2
+		FROM
+			PT_HDTV_ADS_INFO
+		WHERE ADS_ID = #masterID#
+		AND LIVE_YN = 'Y'
+		ORDER BY ADS_ORDER, R_TIME DESC
+	</select>
+
+	<select id="getAdsListCtn" resultClass="int">
+		SELECT
+		COUNT(ADS_NO)
+		FROM
+		PT_HDTV_ADS_INFO
+		WHERE 1=1
+		<isNotEmpty prepend="AND" property="findValue">
+			<isNotNull property="findName">
+				$findName$ LIKE '%$findValue$%'
+			</isNotNull>
+		</isNotEmpty>
+		<isNotEmpty prepend="AND" property="liveType">
+			LIVE_YN LIKE '%$liveType$%'
+		</isNotEmpty>
+		AND ADS_ID = #masterID#
+	</select>
+
+	<select id="getAds" parameterClass="int" resultMap="vo">
+		SELECT
+			ADS_NO,
+			TITLE,
+			ROL_TIME,
+			ADS_TYPE,
+			FILE_NAME,
+			CASE WHEN SAVE_FILE_NAME IS NOT NULL THEN F_SERVER_URL('I')||'ads/'||SAVE_FILE_NAME ELSE NULL END AS SAVE_FILE_NAME,
+			FILE_NAME2,
+			CASE WHEN SAVE_FILE_NAME2 IS NOT NULL THEN F_SERVER_URL('I')||'ads/'||SAVE_FILE_NAME2 ELSE NULL END AS SAVE_FILE_NAME2,
+			LINK_URL,
+			S_TIME,
+			E_TIME,
+			R_TIME,
+			R_ID,
+			LIVE_YN,
+			GRADE,
+			EV_STAT_ID,
+			ADS_ID,
+			BG_COLOR,
+			BG_FILE_NAME_V,
+			CASE WHEN BG_SAVE_FILE_NAME_V IS NOT NULL THEN F_SERVER_URL('I')||'ads/'||BG_SAVE_FILE_NAME_V ELSE NULL END AS BG_SAVE_FILE_NAME_V,
+			BG_FILE_NAME_H,
+			CASE WHEN BG_SAVE_FILE_NAME_H IS NOT NULL THEN F_SERVER_URL('I')||'ads/'||BG_SAVE_FILE_NAME_H ELSE NULL END AS BG_SAVE_FILE_NAME_H,
+			ADS_ORDER,
+			ADS_DATE_TYPE,
+			CASE WHEN S_TIME IS NOT NULL AND S_TIME <![CDATA[<]]> SYSDATE THEN 'N' ELSE 'Y' END AS UPDATE_YN,
+			ETC,
+			ETC2
+		FROM
+			PT_HDTV_ADS_INFO
+		WHERE ADS_NO=#number#
+	</select>
+
+	<insert id="insertAds" parameterClass="com.dmi.smartux.admin.ads.vo.AdsVO">
+		<selectKey keyProperty="number" resultClass="int">
+			SELECT NVL(MAX(ADS_NO),0)+1 FROM PT_HDTV_ADS_INFO
+		</selectKey>
+
+		INSERT INTO
+			PT_HDTV_ADS_INFO
+			(
+				ADS_NO,
+				TITLE,
+				ROL_TIME,
+				ADS_TYPE,
+				FILE_NAME,
+				SAVE_FILE_NAME,
+				FILE_NAME2,
+				SAVE_FILE_NAME2,
+				LINK_URL,
+				S_TIME,
+				E_TIME,
+				R_TIME,
+				R_ID,
+				LIVE_YN,
+				GRADE,
+				EV_STAT_ID,
+				ADS_ID,
+				BG_COLOR,
+				BG_FILE_NAME_V,
+				BG_SAVE_FILE_NAME_V,
+				BG_FILE_NAME_H,
+				BG_SAVE_FILE_NAME_H,
+				ADS_ORDER,
+				ADS_DATE_TYPE,
+				ETC,
+				ETC2
+			)
+		VALUES
+			(
+				#number#,
+				#title#,
+				#rolTime#,
+				#type#,
+				#fileName#,
+				#saveFileName#,
+				#fileName2#,
+				#saveFileName2#,
+				#linkUrl#,
+				#startTime#,
+				#expiredTime#,
+				sysdate,
+				#regID#,
+				#liveType#,
+				#grade#,
+				#eventID#,
+				#masterID#,
+				#bgColor#,
+				#verticalBgFileName#,
+				#verticalBgSaveFileName#,
+				#horizontalBgFileName#,
+				#horizontalBgSaveFileName#,
+				1,
+				#dateType#,
+				#textEtc#,
+				#textEtc2#
+			)
+	</insert>
+
+	<insert id="insertAdsLog" parameterClass="com.dmi.smartux.admin.ads.vo.AdsVO">
+		INSERT INTO
+			PT_HDTV_ADS_INFO_LOG
+			(
+				ADS_NO,
+				TITLE,
+				ROL_TIME,
+				ADS_TYPE,
+				FILE_NAME,
+				SAVE_FILE_NAME,
+				LINK_URL,
+				S_TIME,
+				E_TIME,
+				R_TIME,
+				R_ID,
+				LIVE_YN,
+				GRADE,
+				EV_STAT_ID,
+				ADS_ID,
+				BG_COLOR,
+				BG_FILE_NAME_V,
+				BG_SAVE_FILE_NAME_V,
+				BG_FILE_NAME_H,
+				BG_SAVE_FILE_NAME_H,
+				ADS_ORDER,
+				ADS_DATE_TYPE,
+				FILE_NAME2,
+				SAVE_FILE_NAME2,
+				ACT_DT,
+				ACT_ID,
+				ACT_IP,
+				ACT_GBN,
+				ETC,
+				ETC2
+			)
+			(
+			SELECT A.ADS_NO
+				, A.TITLE
+				, A.ROL_TIME
+				, A.ADS_TYPE
+				, A.FILE_NAME
+				, A.SAVE_FILE_NAME
+				, A.LINK_URL
+				, A.S_TIME
+				, A.E_TIME
+				, A.R_TIME
+				, A.R_ID
+				, A.LIVE_YN
+				, A.GRADE
+				, A.EV_STAT_ID
+				, A.ADS_ID
+				, A.BG_COLOR
+				, A.BG_FILE_NAME_V
+				, A.BG_SAVE_FILE_NAME_V
+				, A.BG_FILE_NAME_H
+				, A.BG_SAVE_FILE_NAME_H
+				, A.ADS_ORDER
+				, A.ADS_DATE_TYPE
+				, A.FILE_NAME2
+				, A.SAVE_FILE_NAME2
+				, sysdate
+				, #actID#
+				, #actIP#
+				, #actGbn#
+				, A.ETC
+				, A.ETC2
+			FROM
+				(
+				SELECT ADS_NO
+					, TITLE
+					, ROL_TIME
+					, ADS_TYPE
+					, FILE_NAME
+					, SAVE_FILE_NAME
+					, LINK_URL
+					, S_TIME
+					, E_TIME
+					, R_TIME
+					, R_ID
+					, LIVE_YN
+					, GRADE
+					, EV_STAT_ID
+					, ADS_ID
+					, BG_COLOR
+					, BG_FILE_NAME_V
+					, BG_SAVE_FILE_NAME_V
+					, BG_FILE_NAME_H
+					, BG_SAVE_FILE_NAME_H
+					, ADS_ORDER
+					, ADS_DATE_TYPE
+					, FILE_NAME2
+					, SAVE_FILE_NAME2
+					, ETC
+					, ETC2
+				FROM
+					PT_HDTV_ADS_INFO
+				WHERE ADS_NO=#number#
+				) A
+			)
+	</insert>
+
+	<delete id="deleteAds" parameterClass="string">
+		DELETE FROM
+			PT_HDTV_ADS_INFO
+		WHERE ADS_NO=#adsNumber#
+	</delete>
+
+	<update id="updateAds" parameterClass="com.dmi.smartux.admin.ads.vo.AdsVO">
+		UPDATE
+			PT_HDTV_ADS_INFO
+		SET
+			TITLE=#title#,
+			ROL_TIME=#rolTime#,
+			ADS_TYPE=#type#,
+			FILE_NAME=#fileName#,
+			SAVE_FILE_NAME=#saveFileName#,
+			FILE_NAME2=#fileName2#,
+			SAVE_FILE_NAME2=#saveFileName2#,
+			LINK_URL=#linkUrl#,
+			S_TIME=#startTime#,
+			E_TIME=#expiredTime#,
+			R_TIME=sysdate,
+			LIVE_YN=#liveType#,
+			GRADE=#grade#,
+			EV_STAT_ID=#eventID#,
+			BG_COLOR=#bgColor#,
+			BG_FILE_NAME_V=#verticalBgFileName#,
+			BG_SAVE_FILE_NAME_V=#verticalBgSaveFileName#,
+			BG_FILE_NAME_H=#horizontalBgFileName#,
+			BG_SAVE_FILE_NAME_H=#horizontalBgSaveFileName#,
+			ADS_ORDER=#order#,
+			ADS_DATE_TYPE=#dateType#,
+			ETC=#textEtc#,
+			ETC2=#textEtc2#
+		WHERE ADS_NO=#number#
+	</update>
+
+	<update id="changeOrder" parameterClass="com.dmi.smartux.admin.ads.vo.AdsVO">
+		UPDATE
+			PT_HDTV_ADS_INFO
+		SET
+			ADS_ORDER=#order#
+		WHERE ADS_NO=#number#
+	</update>
+	
+	<!-- 	만료된 라이브 광고의 LiveType을 D로 변경 -->
+	<update id="checkExpire">
+		UPDATE
+			   PT_HDTV_ADS_INFO
+			   SET LIVE_YN = 'D'
+		 WHERE
+			   SYSDATE <![CDATA[>]]> E_TIME
+		   AND
+			   LIVE_YN = 'Y'
+		   AND ADS_ID IN (SELECT A.ADS_ID
+		                    FROM PT_HDTV_ADS_MASTER A
+		                   WHERE A.ADS_ID = ADS_ID
+		                     AND A.SERVICE_TYPE = 'I')
+	</update>
+	
+	   
+    <!-- 배너버전 UPDATE-->
+    <insert id="insertBannerVersion">
+        
+        MERGE INTO PT_UX_CODE_ITEMS 
+            USING DUAL ON (ITEM_CODE = 'BANNER_VERSION')
+        WHEN MATCHED THEN
+        UPDATE
+            SET 
+                ITEM_NM = TO_CHAR(sysdate,'YYYYMMDDHH24MISS'),
+                UPDATED = SYSDATE
+        WHEN NOT MATCHED THEN
+            INSERT (CODE
+                ,ITEM_CODE
+                ,ITEM_NM
+                ,ORDERED
+                ,SS_GBN
+                ,APP_TYPE
+                ,USE_YN
+                ,CREATED
+                ,UPDATED
+                ,CREATE_ID
+                ,UPDATE_ID) 
+            VALUES (
+                'A0009'
+                ,'BANNER_VERSION'
+                ,TO_CHAR(sysdate,'YYYYMMDDHH24MISS')
+                ,'1'
+                ,''
+                ,'ALL'
+                ,'Y'
+                ,SYSDATE
+                ,SYSDATE
+                ,'admin'
+                ,'admin'
+             )
+
+    </insert>
+    
+    <select id="checkLastApply" resultClass="string">
+        SELECT 
+            TO_CHAR(UPDATED+5/24/60, 'YYYYMMDDHH24MISS')
+        FROM PT_UX_CODE_ITEMS
+        WHERE ITEM_CODE ='BANNER_VERSION'
+        AND code = 'A0009'
+    </select>
+    
+    <select id="getNow" resultClass="string">
+        SELECT 
+            TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+        FROM DUAL
+    </select>
+	
+</sqlMap>

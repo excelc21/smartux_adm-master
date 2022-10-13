@@ -1,0 +1,26 @@
+<jboss-web>
+    <resource-env-ref>
+        <resource-env-ref-name>jdbc/suxm</resource-env-ref-name>
+        <jndi-name>java:jdbc/suxm</jndi-name>
+    </resource-env-ref>
+    <resource-env-ref>
+        <resource-env-ref-name>jdbc/pvs</resource-env-ref-name>
+        <jndi-name>java:jdbc/pvs</jndi-name>
+    </resource-env-ref>
+    <resource-env-ref>
+        <resource-env-ref-name>jdbc/recmh</resource-env-ref-name>
+        <jndi-name>java:jdbc/recmh</jndi-name>
+    </resource-env-ref>
+    <resource-env-ref>
+        <resource-env-ref-name>jdbc/hmims</resource-env-ref-name>
+        <jndi-name>java:jdbc/hmims</jndi-name>
+    </resource-env-ref>
+    <resource-env-ref>
+        <resource-env-ref-name>jdbc/mims</resource-env-ref-name>
+        <jndi-name>java:jdbc/mims</jndi-name>
+    </resource-env-ref>
+    <resource-env-ref>
+        <resource-env-ref-name>jdbc/iptv</resource-env-ref-name>
+        <jndi-name>java:jdbc/iptv</jndi-name>
+    </resource-env-ref>
+</jboss-web>

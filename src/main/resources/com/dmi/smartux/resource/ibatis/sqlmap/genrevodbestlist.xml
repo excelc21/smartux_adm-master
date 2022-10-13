@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="genrevodbestlist">
+	<typeAlias alias="checkecrmvo" type="com.dmi.smartux.smartstart.vo.EcrmCategoryInfoVO"/>
+	<typeAlias alias="genrebestlistvo" type="com.dmi.smartux.smartstart.vo.GenreVodBestListVO"/>
+	
+	<select id="getCheckVODList" resultClass="checkecrmvo">
+		SELECT  
+			 CATEGORY_ID, 
+			 ALBUM_CNT
+		FROM PT_UX_PANEL_TITLE
+		WHERE 
+			CATEGORY_TYPE IN ('VOD', 'CA_RANK')
+	</select>	
+	
+	<select id="getVodAlbumCount" parameterClass="map" resultClass="int" >
+		SELECT 
+			COUNT(*)		
+		FROM 
+			PT_UX_BEST_VOD 
+		WHERE 1=1
+		<isNotEmpty property="genre_code">	
+			AND   GENRE = #genre_code#
+		</isNotEmpty>	
+	</select>
+		      
+	<select id="getGenreVodBestList" resultClass="genrebestlistvo" remapResults="true">
+		SELECT 
+                RANKING                AS RANK_NO,
+                A.ALBUM_ID            AS ALBUM_ID,
+                A.H_PRICE            AS H_PRICE,
+                A.S_PRICE            AS S_PRICE,
+                DECODE(A.RULE_TYPE, 'S', A.CATEGORY_ID, A.CAT_ID)    AS CAT_ID,
+                A.ALBUM_TITLE        AS ALBUM_TITLE,
+                A.IS_HD                AS IS_HD,
+                A.PROGRAM_INFO        AS PROGRAM_INFO,
+                A.ONAIR_DATE        AS ONAIR_DATE,
+                A.SERIES_FLAG        AS SERIES_FLAG,
+                A.SERIES_DESC        AS SERIES_DESC,
+                A.CLOSE_YN            AS CLOSE_YN,
+                A.IS_CAPTION        AS IS_CAPTION,
+                A.IMG_URL            AS IMG_URL,
+                NVL(B.WIDTH_IMG, A.W_IMG)    AS W_IMG,
+                NVL(B.HEIGHT_IMG, A.H_IMG)    AS H_IMG,
+                A.GENRE1            AS GENRE1,
+                A.RELEASE_DATE        AS RELEASE_DATE,
+                A.WATCH_RIGHT_YN    AS WATCH_RIGHT_YN,
+                A.IS_FH                AS IS_FH,
+                A.CATEGORY_GB        AS CATEGORY_GB,
+                C.CATEGORY_NAME     AS CATEGORY_NAME
+        FROM 
+        (
+            SELECT
+                    C.ADI_ALBUM_ID          AS ALBUM_ID,
+                    MAX(C.SERVICE_ICON)     AS SERVICE_GB,
+                    MAX(B.CATEGORY_ID)      AS CAT_ID, 
+                    MAX(WI.ASSET_NAME)      AS ALBUM_TITLE, 
+                    MAX(G.HDCONTENT)        AS IS_HD,
+                    MAX(DECODE(G.HDCONTENT, 'N', 'Y', 'N'))  AS IS_SD,       
+                    MAX(E.SUGGESTED_PRICE)  AS H_PRICE, 
+                    MIN(E.SUGGESTED_PRICE)  AS S_PRICE,       
+                    MAX(E.RATING)           AS PROGRAM_INFO, 
+                    MAX(E.ONAIR_DATE)         AS ONAIR_DATE, 
+                    MIN(DECODE(A.SERIES_YN, NULL, 'N', A.SERIES_YN))        AS SERIES_FLAG,
+                    MIN(DECODE(DECODE(A.SERIES_YN, NULL, 'N', A.SERIES_YN), 'Y', C.SERIES_NO, '')) AS SERIES_DESC,            
+                    MAX(A.CLOSE_YN)            AS CLOSE_YN, 
+                    MAX(G.SMI_YN)           AS IS_CAPTION, 
+                    F_SERVER_URL('P')        AS IMG_URL,
+                    MAX(DECODE(F.POSTER_TYPE, 'Y', F.CONTENT_VALUE, '')) AS W_IMG,
+                    MAX(DECODE(F.POSTER_TYPE, 'V', F.CONTENT_VALUE, '')) AS H_IMG,
+                    MAX(E.CATEGORY)         AS CATEGORY,       
+                    MAX(WI.GENRE)           AS GENRE,
+                    MAX(WI.RANKING)         AS RANKING,
+                    MAX(E.GENRE_LARGE)        AS GENRE1,
+                    MAX(E.RELEASE_DATE)        AS RELEASE_DATE,
+                    MAX(DECODE(C.WATCH_RIGHT_YN, NULL, 'Y', C.WATCH_RIGHT_YN))    AS WATCH_RIGHT_YN,
+                    MAX(DECODE(C.IS_FH, NULL, 'N', C.IS_FH)) AS IS_FH,
+                    MAX(NVL(WR.CATEGORY_GB, 'I20')) AS CATEGORY_GB,
+                    MAX(WI.CATEGORY_ID) AS CATEGORY_ID,
+                    (SELECT RULE_TYPE FROM PT_UX_ECRM_RULE WHERE TO_CHAR(RULE_CODE) = WR.RULE_CODE) AS RULE_TYPE
+            FROM     PT_UX_BEST_VOD WI,
+                    PT_UX_ECRM_RANK WR,
+                    PT_VO_CATEGORY A, 
+                    PT_VO_CATEGORY_MAP B, 
+                    PT_LA_ALBUM_MST C, 
+                    PT_LA_PACKAGE_ASSET D, 
+                    PT_LA_TITLE_ASSET E, 
+                    PT_LA_POSTER_ASSET F, 
+                    PT_LA_CONTENT_ASSET G 
+            WHERE 1 = 1
+				<isNotEmpty property="genre_code">
+					AND   WI.GENRE = #genre_code#
+				</isNotEmpty>
+                    AND   WI.CONTENTS_ID  = B.CONTENTS_ID
+                    AND   WI.GENRE = WR.RANK_CODE
+                    AND   A.category_id = B.category_id
+                    AND   A.category_gb  = NVL(WR.CATEGORY_GB, 'I20')
+                    AND   B.CONTENTS_ID  = C.ADI_ALBUM_ID
+                    AND   C.ADI_ALBUM_ID = D.ADI_ALBUM_ID
+                    AND   D.ADI_PRODUCT_ID = E.ADI_PRODUCT_ID 
+                    AND   D.ADI_PRODUCT_ID = F.ADI_PRODUCT_ID
+                    AND   D.ADI_PRODUCT_ID = G.ADI_PRODUCT_ID        
+                    AND   F.poster_type IN ('Y', 'V', 'P')
+                    AND
+                        (
+                            (
+                                (C.PRE_MAPPING_YN IS NULL OR C.PRE_MAPPING_YN = 'N') AND (B.VIEWING_FLAG = 'V' OR B.VIEWING_FLAG IS NULL)
+                            )
+                        OR
+                            (
+                                C.PRE_MAPPING_YN = 'Y' AND B.VIEWING_FLAG = 'V'
+                            )
+                        )
+            GROUP BY C.ADI_ALBUM_ID, WI.RANKING, WR.RULE_CODE
+        )A,
+        PT_UX_PANEL_IMG B,
+        PT_VO_CATEGORY C
+        WHERE 1=1
+        AND    A.ALBUM_ID = B.ALBUM_ID(+)
+        AND A.CATEGORY_ID = C.CATEGORY_ID(+)
+        ORDER BY  A.GENRE, RANKING   ASC
+	</select>
+	
+	<select id="getGenreVodBestList_Main" resultClass="genrebestlistvo">
+		SELECT  
+				rownum				AS rank_no,
+				A.album_id			AS album_id,
+		    	A.h_price       	AS h_price,
+		    	A.s_price       	AS s_price,
+		  		A.cat_id			AS cat_id,
+				A.album_title		AS album_title,
+				A.is_hd				AS is_hd,
+				A.program_info		AS program_info,
+				A.onair_date		AS onair_date,
+				A.series_flag		AS series_flag,
+				A.series_desc		AS series_desc,
+				A.is_caption		AS is_caption,
+				A.img_url			AS img_url,
+				A.img_src			AS w_img,
+				A.img_src			AS h_img				
+		FROM 
+		(
+		    SELECT
+		        c.ADI_ALBUM_ID          AS ALBUM_ID,
+		        WI.RANKING              AS RANK_NO,
+		        MAX(b.category_id)      AS CAT_ID, 
+		        MAX(D.ASSET_NAME)       AS ALBUM_TITLE, 
+		        MAX(G.HDCONTENT)        AS IS_HD,
+		        MAX(E.SUGGESTED_PRICE)  AS H_PRICE, 
+		        MIN(E.SUGGESTED_PRICE)  AS S_PRICE,       
+		        MAX(e.rating)           AS PROGRAM_INFO, 
+		        MAX(NVL(c.onair_date, '00000000'))          AS ONAIR_DATE, 
+		        MAX(DECODE(C.series_NO, NULL, 'N', 'Y'))    AS SERIES_FLAG, 
+		        MAX(C.series_NO)        AS SERIES_DESC, 
+		        MAX(G.smi_yn)           AS IS_CAPTION,
+		        F_SERVER_URL('P')		AS IMG_URL, 
+		        MAX(F.CONTENT_VALUE)    AS IMG_SRC,
+		        MAX(E.CATEGORY)         AS CATEGORY,       
+		        MAX(E.GENRE)            AS GENRE
+		    FROM 	PT_UX_BEST_VOD WI, 
+		        PT_VO_CATEGORY A, 
+		        PT_VO_CATEGORY_MAP B, 
+		        PT_LA_ALBUM_MST C, 
+		        PT_LA_PACKAGE_ASSET D, 
+		        PT_LA_TITLE_ASSET E, 
+		        PT_LA_POSTER_ASSET F, 
+		        PT_LA_CONTENT_ASSET G 
+		    WHERE 1 = 1
+		        AND   WI.CONTENTS_ID  = B.CONTENTS_ID
+		        AND   A.category_id = B.category_id
+		        AND   A.category_gb  = 'I20'
+		        AND   B.CONTENTS_ID  = C.ADI_ALBUM_ID
+		        AND   C.ADI_ALBUM_ID = D.ADI_ALBUM_ID
+		        AND   D.ADI_PRODUCT_ID = E.ADI_PRODUCT_ID 
+		        AND   D.ADI_PRODUCT_ID = F.ADI_PRODUCT_ID
+		        AND   D.ADI_PRODUCT_ID = G.ADI_PRODUCT_ID
+		        AND   WI.PPV_YN = 'Y'
+		        AND   WI.GENRE = 'MAIN'
+			GROUP BY C.ADI_ALBUM_ID, WI.RANKING
+		    ORDER BY WI.RANKING ASC
+		)A
+		<![CDATA[
+		WHERE ROWNUM < 11
+		]]>			
+		UNION ALL
+		SELECT  
+				rownum + 10			AS rank_no,
+				Z.album_id			AS album_id,
+		    	Z.h_price       	AS h_price,
+		    	Z.s_price       	AS s_price,
+		  		Z.cat_id			AS cat_id,
+				Z.album_title		AS album_title,
+				Z.is_hd				AS is_hd,
+				Z.program_info		AS program_info,
+				Z.onair_date		AS onair_date,
+				Z.series_flag		AS series_flag,
+				Z.series_desc		AS series_desc,
+				Z.is_caption		AS is_caption,
+				Z.img_url			AS img_url,
+				Z.img_src			AS w_img,
+				Z.img_src			AS h_img				
+		FROM 
+		(
+		    SELECT
+		        c.ADI_ALBUM_ID          AS ALBUM_ID,
+		        WI.RANKING              AS RANK_NO,
+		        MAX(b.category_id)      AS CAT_ID, 
+		        MAX(D.ASSET_NAME)       AS ALBUM_TITLE, 
+		        MAX(G.HDCONTENT)        AS IS_HD,
+		        MAX(E.SUGGESTED_PRICE)  AS H_PRICE, 
+		        MIN(E.SUGGESTED_PRICE)  AS S_PRICE,       
+		        MAX(e.rating)           AS PROGRAM_INFO, 
+		        MAX(NVL(c.onair_date, '00000000'))          AS ONAIR_DATE, 
+		        MAX(DECODE(C.series_NO, NULL, 'N', 'Y'))    AS SERIES_FLAG, 
+		        MAX(C.series_NO)        AS SERIES_DESC, 
+		        MAX(G.smi_yn)           AS IS_CAPTION,
+		        F_SERVER_URL('P')		AS IMG_URL, 
+		        MAX(F.CONTENT_VALUE)    AS IMG_SRC,
+		        MAX(E.CATEGORY)         AS CATEGORY,       
+		        MAX(E.GENRE)            AS GENRE
+		    FROM 	PT_UX_BEST_VOD WI, 
+		        PT_VO_CATEGORY A, 
+		        PT_VO_CATEGORY_MAP B, 
+		        PT_LA_ALBUM_MST C, 
+		        PT_LA_PACKAGE_ASSET D, 
+		        PT_LA_TITLE_ASSET E, 
+		        PT_LA_POSTER_ASSET F, 
+		        PT_LA_CONTENT_ASSET G 
+		    WHERE 1 = 1
+		        AND   WI.CONTENTS_ID  = B.CONTENTS_ID
+		        AND   A.category_id = B.category_id
+		        AND   A.category_gb  = 'I20'
+		        AND   B.CONTENTS_ID  = C.ADI_ALBUM_ID
+		        AND   C.ADI_ALBUM_ID = D.ADI_ALBUM_ID
+		        AND   D.ADI_PRODUCT_ID = E.ADI_PRODUCT_ID 
+		        AND   D.ADI_PRODUCT_ID = F.ADI_PRODUCT_ID
+		        AND   D.ADI_PRODUCT_ID = G.ADI_PRODUCT_ID
+		        AND   WI.PPV_YN = 'N'
+		        AND   WI.GENRE = 'MAIN'
+			GROUP BY C.ADI_ALBUM_ID, WI.RANKING
+		    ORDER BY WI.RANKING ASC
+		)Z
+		<![CDATA[
+		WHERE ROWNUM < 11
+		]]>
+	</select>
+		
+</sqlMap>

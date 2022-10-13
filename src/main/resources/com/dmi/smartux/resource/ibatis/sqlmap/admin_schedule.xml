@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="admin_schedule">
+	<typeAlias alias="admin_schedulevo" type="com.dmi.smartux.admin.schedule.vo.ScheduleVO"/>
+	<typeAlias alias="admin_scheduledetailvo" type="com.dmi.smartux.admin.schedule.vo.ScheduleDetailVO"/>
+	<typeAlias alias="admin_categoryalbumvo" type="com.dmi.smartux.admin.schedule.vo.CategoryAlbumVO"/>
+	
+	<select id="getScheduleList" resultClass="admin_schedulevo" parameterClass="map">
+		SELECT SCHEDULE_CODE, SCHEDULE_NAME, NVL(CATEGORY_GB, 'I20') AS CATEGORY_GB
+		FROM PT_UX_SMUX_VOD_SCHEDULE
+		<isNotEmpty property="category_gb">
+		WHERE NVL(CATEGORY_GB, 'I20') = #category_gb#
+		</isNotEmpty>
+		ORDER BY SCHEDULE_CODE
+	</select>
+	
+	<select id="viewSchedule" parameterClass="map" resultClass="admin_schedulevo">
+		SELECT SCHEDULE_CODE
+			, SCHEDULE_NAME
+			, NVL(CATEGORY_GB, 'I20') AS CATEGORY_GB
+			, TEST_ID
+			, VARIATION_ID
+		FROM PT_UX_SMUX_VOD_SCHEDULE
+		WHERE SCHEDULE_CODE = #schedule_code#
+	</select>
+	
+	<insert id="insertSchedule" parameterClass="map">
+		<selectKey resultClass="Long" keyProperty="schedule_code">
+        	SELECT NVL(MAX(SCHEDULE_CODE), 0) + 1 FROM PT_UX_SMUX_VOD_SCHEDULE
+    	</selectKey>
+		INSERT INTO PT_UX_SMUX_VOD_SCHEDULE(SCHEDULE_CODE, SCHEDULE_NAME, CREATED, UPDATED, CREATE_ID, UPDATE_ID, CATEGORY_GB, TEST_ID, VARIATION_ID)
+		VALUES(
+			  #schedule_code#
+    		, #schedule_name#
+    		, SYSDATE
+    		, SYSDATE
+   	 		, #create_id#
+    		, #create_id#
+    		, #category_gb#
+    		, #test_id#
+    		, #variation_id#
+    	)
+	</insert>
+	
+	<update id="updateSchedule" parameterClass="map">
+		UPDATE PT_UX_SMUX_VOD_SCHEDULE
+		SET SCHEDULE_NAME = #schedule_name# 
+		, UPDATED = SYSDATE
+		, UPDATE_ID = #update_id#
+		, CATEGORY_GB = #category_gb#
+		, TEST_ID = #test_id#
+		, VARIATION_ID = #variation_id#
+		WHERE SCHEDULE_CODE = #schedule_code#
+	</update>
+	
+	<delete id="deleteSchedule" parameterClass="map">
+		DELETE PT_UX_SMUX_VOD_SCHEDULE
+		WHERE schedule_code = #schedule_code#         
+	</delete>
+	
+	<select id="getScheduleDetailList" resultClass="admin_scheduledetailvo" parameterClass="map">
+		SELECT A.CATEGORY_ID AS CATEGORY_ID, 
+		       A.ALBUM_ID AS ALBUM_ID, 
+		       D.ASSET_NAME AS ALBUM_NAME, 
+		       A.ORDERED AS ORDERED,
+		       C.SERIES_NO
+		 FROM PT_UX_SMUX_VOD_SCHEDULE_DETAIL A, 
+		       PT_VO_CATEGORY B, 
+		       (
+		          SELECT
+		              BB.CATEGORY_ID,
+		              BB.CONTENTS_ID,
+		              CC.SERIES_NO
+		          FROM
+		              PT_VO_CATEGORY_MAP BB,
+		              PT_LA_ALBUM_MST CC
+		          WHERE
+		              BB.CONTENTS_ID = CC.ADI_ALBUM_ID
+		          AND
+		              (
+		                  (
+		                      (CC.PRE_MAPPING_YN IS NULL OR CC.PRE_MAPPING_YN = 'N') AND (BB.VIEWING_FLAG = 'V' OR BB.VIEWING_FLAG IS NULL)
+		                  )
+		              OR
+		                  (
+		                      CC.PRE_MAPPING_YN = 'Y' AND BB.VIEWING_FLAG = 'V'
+		                  )
+		              )
+		       ) C,
+		       PT_LA_PACKAGE_ASSET D
+		 WHERE A.SCHEDULE_CODE = #schedule_code# 
+		       AND A.CATEGORY_ID = B.CATEGORY_ID 
+		       AND B.CATEGORY_ID = C.CATEGORY_ID 
+		       AND A.ALBUM_ID = C.CONTENTS_ID 
+		       AND B.CATEGORY_GB = #category_gb#
+		       AND C.CONTENTS_ID = D.ADI_ALBUM_ID 
+		       AND D.ALBUM_TYPE <![CDATA[<>]]> 'PR'
+		GROUP BY A.CATEGORY_ID,A.ALBUM_ID,D.ASSET_NAME,A.ORDERED,C.SERIES_NO
+		ORDER BY A.ORDERED
+	</select>
+	
+	<insert id="insertScheduleDetail" parameterClass="map">
+		INSERT INTO PT_UX_SMUX_VOD_SCHEDULE_DETAIL(SCHEDULE_CODE, ALBUM_ID, CATEGORY_ID, ORDERED, CREATED, UPDATED, CREATE_ID, UPDATE_ID)
+		VALUES(
+			#schedule_code#
+			, #album_id#
+    		, #category_id#
+    		, #ordered#
+    		, SYSDATE
+    		, SYSDATE
+   	 		, #create_id#
+    		, #create_id#
+    	)
+	</insert>
+	
+	
+	<delete id="deleteScheduleDetail" parameterClass="map">
+		DELETE PT_UX_SMUX_VOD_SCHEDULE_DETAIL
+		WHERE SCHEDULE_CODE = #schedule_code#
+	</delete>
+	
+	<select id="getCategoryAlbumList" parameterClass="map" resultClass="admin_categoryalbumvo">
+		SELECT RANK_NO, ALBUM_ID, ALBUM_NAME, CATEGORY_ID, CATEGORY_NAME, SERIES_NO
+        FROM(
+            SELECT SORT_NO AS RANK_NO, '' AS ALBUM_ID, '' AS ALBUM_NAME, A.CATEGORY_ID AS CATEGORY_ID, A.CATEGORY_NAME AS CATEGORY_NAME, 1 AS MYTYPE, '' AS SERIES_NO
+            FROM  PT_VO_CATEGORY A
+            WHERE A.CATEGORY_GB = #type#
+            AND   A.PARENT_CATEGORY_ID = #category_id#   
+            GROUP BY A.SORT_NO, A.CATEGORY_ID, A.CATEGORY_NAME
+            UNION
+            SELECT B.RANK_NO AS RANK_NO, B.CONTENTS_ID AS ALBUM_ID, C.ASSET_NAME AS ALBUM_NAME, '' AS CATEGORY_ID, '' AS CATEGORY_NAME, 2 AS MYTYPE, B.SERIES_NO
+            FROM  PT_VO_CATEGORY A,
+            (
+                SELECT
+                    BB.RANK_NO,
+		            BB.CATEGORY_ID,
+		            BB.CONTENTS_ID,
+		            CC.SERIES_NO
+		        FROM
+		            PT_VO_CATEGORY_MAP BB, 
+		            PT_LA_ALBUM_MST CC
+		        WHERE
+		            BB.CONTENTS_ID = CC.ADI_ALBUM_ID
+		        AND
+		            (
+		                (
+		                    (CC.PRE_MAPPING_YN IS NULL OR CC.PRE_MAPPING_YN = 'N') AND (BB.VIEWING_FLAG = 'V' OR BB.VIEWING_FLAG IS NULL)
+		                )
+		            OR
+		                (
+		                    CC.PRE_MAPPING_YN = 'Y' AND BB.VIEWING_FLAG = 'V'
+		                )
+		            )
+		       ) B,
+		       PT_LA_PACKAGE_ASSET C
+            WHERE A.CATEGORY_GB = #type#
+            AND   A.CATEGORY_ID = B.CATEGORY_ID
+            AND   B.CONTENTS_ID = C.ADI_ALBUM_ID
+            AND   A.CATEGORY_ID = #category_id#
+            <isEqual property="series_yn" compareValue="Y">
+            AND A.SERIES_YN = 'Y'
+            </isEqual>
+        )
+        ORDER BY MYTYPE, RANK_NO, ALBUM_ID, ALBUM_NAME, CATEGORY_ID, CATEGORY_NAME
+	</select>
+	
+	<select id="getAlbumListByCategoryIdAlbumId" parameterClass="map" resultClass="admin_categoryalbumvo">
+		SELECT   
+				B.RANK_NO			AS RANK_NO,
+				B.CONTENTS_ID		AS ALBUM_ID,
+				B.CONTENTS_NAME		AS ALBUM_NAME,
+				C.WIDTH_IMG			AS WIDTH_IMG,
+				C.HEIGHT_IMG		AS HEIGHT_IMG
+		FROM	PT_VO_CATEGORY A,
+				(
+					SELECT
+							BB.RANK_NO,
+							BB.CATEGORY_ID,
+							BB.CONTENTS_ID,
+							BB.CONTENTS_NAME
+					FROM
+							PT_VO_CATEGORY_MAP BB,
+							PT_LA_ALBUM_MST CC
+					WHERE	BB.CONTENTS_ID = CC.ADI_ALBUM_ID
+					AND (
+							(
+								(CC.PRE_MAPPING_YN IS NULL OR CC.PRE_MAPPING_YN = 'N') AND (BB.VIEWING_FLAG = 'V' OR BB.VIEWING_FLAG IS NULL)
+							)
+							OR
+							(
+								CC.PRE_MAPPING_YN = 'Y' AND BB.VIEWING_FLAG = 'V'
+							)
+					)
+				) B,
+				PT_UX_PANEL_IMG C
+		WHERE    A.CATEGORY_GB = #type#
+		AND      A.CATEGORY_ID = B.CATEGORY_ID
+		AND      A.CATEGORY_ID = #category_id#
+		AND      B.CONTENTS_ID = C.ALBUM_ID(+)
+		<isNotEmpty property="album_id"> 
+			AND   B.CONTENTS_ID = #album_id#
+		</isNotEmpty>
+		ORDER BY RANK_NO, ALBUM_ID, ALBUM_NAME
+	</select>
+	
+	<!-- mims.xml로 이동 -->
+	<!-- <select id="selectUseSchedule" parameterClass="map" resultClass="admin_schedulevo">
+		SELECT B.SCHEDULE_CODE, B.SCHEDULE_NAME
+		FROM( 
+			SELECT CATEGORY_ID FROM PT_UX_PANEL_TITLE_TEMP WHERE CATEGORY_TYPE='SCHEDULE'
+			UNION
+			SELECT CATEGORY_ID FROM PT_UX_PANEL_TITLE WHERE CATEGORY_TYPE='SCHEDULE'
+		)A, PT_UX_SMUX_VOD_SCHEDULE B
+		WHERE A.CATEGORY_ID = B.SCHEDULE_CODE
+		AND B.SCHEDULE_CODE IN ($schedule_codes$)
+		ORDER BY SCHEDULE_CODE
+	</select> -->
+	
+	<!-- 	패널 편성 컨텐츠 이미지 등록  및 수정 16.12.09-->
+	<insert id="mergeContentsImg" parameterClass="map">
+		MERGE INTO PT_UX_PANEL_IMG
+		USING DUAL
+		ON(ALBUM_ID = #albumId#)
+		WHEN MATCHED THEN
+		UPDATE
+			SET 
+				WIDTH_IMG = #widthImg#,
+				HEIGHT_IMG = #heightImg#,
+				CREATED = sysdate,
+				CREATE_ID = #createId#
+		WHEN NOT MATCHED THEN
+		INSERT (ALBUM_ID, WIDTH_IMG, HEIGHT_IMG, CREATED, CREATE_ID)
+		VALUES(
+			  #albumId#
+    		, #widthImg#
+    		, #heightImg#
+    		, SYSDATE
+   	 		, #createId#
+    	)
+	</insert>
+	<update id="changeOrder" parameterClass="admin_scheduledetailvo">
+		UPDATE
+			PT_UX_SMUX_VOD_SCHEDULE_DETAIL
+		SET
+			ORDERED=#ordered#
+		WHERE SCHEDULE_CODE=#schedule_code#
+		AND CATEGORY_ID = #category_id#
+		AND ALBUM_ID = #album_id#
+    	
+	</update>
+</sqlMap>

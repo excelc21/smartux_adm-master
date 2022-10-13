@@ -1,0 +1,423 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="bonbang">
+	
+	<select id="cntReservedProgramData" parameterClass="map" resultClass="int">
+			SELECT COUNT(SA_ID) 
+			FROM PT_UX_EPG_REV_MGT_VW_KOR 
+			WHERE 
+					SA_ID = #sa_id#
+				AND STB_MAC = #stb_mac#
+				AND	EVENT_ID = #program_id#
+				AND SERVICE_ID = #service_id#
+	</select>
+	
+	<select id="cntReservedProgramData_NotKor" parameterClass="map" resultClass="int">
+			SELECT COUNT(SA_ID) 
+			FROM PT_UX_EPG_REV_MGT_VW 
+			WHERE 
+					SA_ID = #sa_id#
+				AND STB_MAC = #stb_mac#
+				AND	EVENT_ID = #program_id#
+				AND SERVICE_ID = #service_id#
+	</select>
+	
+	<select id="cntReservedProgramDataTime" parameterClass="map" resultClass="int">
+		<![CDATA[
+			SELECT COUNT(SA_ID) 
+			FROM PT_UX_EPG_REV_MGT_VW_KOR 
+			WHERE 
+					SA_ID = #sa_id#
+				AND STB_MAC = #stb_mac#
+				AND (TO_DATE('$program_stime$','YYYYMMDDHH24MISS') + 5/(24*60)) >= TO_DATE(START_TIME,'YYYYMMDDHH24MISS')
+            	AND (TO_DATE('$program_stime$','YYYYMMDDHH24MISS') - 5/(24*60)) <= TO_DATE(START_TIME,'YYYYMMDDHH24MISS')
+        ]]>	  
+	</select> 
+	
+	<select id="cntReservedProgramDataTime_NotKor" parameterClass="map" resultClass="int">
+		<![CDATA[
+			SELECT COUNT(SA_ID) 
+			FROM PT_UX_EPG_REV_MGT_VW 
+			WHERE 
+					SA_ID = #sa_id#
+				AND STB_MAC = #stb_mac#
+				AND (TO_DATE('$program_stime$','YYYYMMDDHH24MISS') + 5/(24*60)) >= TO_DATE(START_TIME,'YYYYMMDDHH24MISS')
+            	AND (TO_DATE('$program_stime$','YYYYMMDDHH24MISS') - 5/(24*60)) <= TO_DATE(START_TIME,'YYYYMMDDHH24MISS')
+        ]]>	  
+	</select> 
+	
+	<insert id="insertReservedProgramData" parameterClass="com.dmi.smartux.bonbang.vo.ReservedProgramParamVO">
+    		INSERT INTO PT_UX_EPG_REV_MGT
+			(
+				 SA_ID
+			    ,STB_MAC
+			    ,SMA_MAC
+			    ,APP_TYPE
+			    ,EVENT_ID
+			    ,SERVICE_ID
+			    ,EVENT_NAME
+			    ,START_TIME
+			    ,RATING
+			    ,AV_RESOLUTION
+			    ,CHANNEL_NO
+			    ,CHANNEL_NAME
+			    ,CREATED
+			    ,UPDATED
+			    ,REPEAT_DAY
+			)
+			VALUES
+			(
+				 #sa_id#
+				,#stb_mac#
+			<isEmpty property="sma_mac">
+				,NULL
+			</isEmpty>
+			<isNotEmpty property="sma_mac">
+				,#sma_mac#
+			</isNotEmpty>
+				,#app_type#
+				,#program_id#
+				,#service_id#
+				,#program_name#
+				,#program_stime#
+				,#program_info#
+				,#defin_flag#
+				,#channel_no#
+				,#channel_name#
+				,SYSDATE
+				,SYSDATE
+				,#repeat_day#
+			)
+ 	</insert>
+	
+	<delete id="deleteReservedProgramData" parameterClass="com.dmi.smartux.bonbang.vo.ReservedProgramParamVO">
+			DELETE FROM PT_UX_EPG_REV_MGT
+			WHERE 
+					SA_ID = #sa_id#
+				AND STB_MAC = #stb_mac#
+			<isEmpty property="repeat_day">
+			 	AND	REPEAT_DAY IS NULL
+			</isEmpty>
+			<isNotEmpty property="repeat_day">
+				AND REPEAT_DAY = #repeat_day#
+			</isNotEmpty>			
+				AND EVENT_ID = #program_id#
+				AND SERVICE_ID = #service_id#
+	</delete>
+	
+	<delete id="deleteReservedProgramData_20121005" parameterClass="com.dmi.smartux.bonbang.vo.ReservedProgramParamVO">
+			DELETE FROM PT_UX_EPG_REV_MGT
+			WHERE 
+					SA_ID = #sa_id#
+				AND STB_MAC = #stb_mac#
+			<isEmpty property="sma_mac">
+				AND	SMA_MAC IS NULL
+			</isEmpty>
+			<isNotEmpty property="sma_mac">
+				AND SMA_MAC = #sma_mac#
+			</isNotEmpty>
+			<isEmpty property="repeat_day">
+			 	AND	REPEAT_DAY IS NULL
+			</isEmpty>
+			<isNotEmpty property="repeat_day">
+				AND REPEAT_DAY = #repeat_day#
+			</isNotEmpty>			
+				AND EVENT_ID = #program_id#
+				AND SERVICE_ID = #service_id#
+	</delete>
+	
+	
+	
+	<delete id="deleteAllReservedProgramData" parameterClass="com.dmi.smartux.bonbang.vo.ReservedProgramParamVO">
+			DELETE FROM PT_UX_EPG_REV_MGT
+			WHERE 
+					SA_ID = #sa_id#
+				AND STB_MAC = #stb_mac#
+	</delete>
+	
+
+	<resultMap id="listReservedProgramMap" class="com.dmi.smartux.bonbang.vo.ReservedProgramVO"> 
+		<result property="service_id" column="SERVICE_ID" />
+		<result property="channel_no" column="CHANNEL_NO" />
+		<result property="channel_name" column="CHANNEL_NAME" />
+		<result property="program_id" column="EVENT_ID" />
+		<result property="program_name" column="EVENT_NAME" />
+		<result property="program_info" column="RATING" />
+		<result property="defin_flag" column="AV_RESOLUTION" />
+		<result property="program_stime" column="START_TIME" />	
+		<result property="repeat_day" column="REPEAT_DAY" />
+	</resultMap>
+		
+ 	
+	<select id="listReservedProgram" parameterClass="com.dmi.smartux.bonbang.vo.ReservedProgramParamVO" resultMap="listReservedProgramMap" resultClass="com.dmi.smartux.bonbang.vo.ReservedProgramVO" >
+	<![CDATA[
+			SELECT
+					 APP_TYPE
+					,EVENT_ID
+			        ,EVENT_NAME
+			        ,RATING
+			        ,AV_RESOLUTION
+			        ,START_TIME
+			        ,SERVICE_ID
+			        ,CHANNEL_NO
+			        ,CHANNEL_NAME
+			        ,REPEAT_DAY
+			FROM (
+				  
+			          SELECT 
+				  		ROWNUM rnum,
+			             APP_TYPE
+			            ,EVENT_ID
+			            ,EVENT_NAME
+			            ,RATING
+			            ,AV_RESOLUTION
+			            ,START_TIME
+			            ,SERVICE_ID
+			            ,CHANNEL_NO
+			            ,CHANNEL_NAME
+			            ,REPEAT_DAY
+			      FROM 
+			            (SELECT  
+			            		APP_TYPE
+			                    ,EVENT_ID
+			                    ,EVENT_NAME
+			                    ,RATING
+			                    ,AV_RESOLUTION
+			                    ,START_TIME
+			                    ,SERVICE_ID
+			                    ,CHANNEL_NO
+			                    ,CHANNEL_NAME
+			                    ,REPEAT_DAY
+			                FROM PT_UX_EPG_REV_MGT_VW_KOR 
+			            WHERE 
+			                    SA_ID= #sa_id# 
+			                AND	STB_MAC= #stb_mac#
+			                AND TO_CHAR(SYSDATE,'YYYYMMDDHH24MISS') < START_TIME
+			                ORDER BY START_TIME ASC
+			            )
+			      
+			) 
+	]]>	
+		WHERE 1=1
+		<isNotEmpty prepend="AND" property="start_num">
+			<isNotEqual property="start_num" compareValue="-1">
+				rnum BETWEEN #start_num# AND (#start_num#+#req_count#)-1
+			</isNotEqual>
+		</isNotEmpty>	
+	</select>
+	
+	<select id="listReservedProgram_NotKor" parameterClass="com.dmi.smartux.bonbang.vo.ReservedProgramParamVO" resultMap="listReservedProgramMap" resultClass="com.dmi.smartux.bonbang.vo.ReservedProgramVO" >
+	<![CDATA[
+			SELECT
+					 APP_TYPE
+					,EVENT_ID
+			        ,EVENT_NAME
+			        ,RATING
+			        ,AV_RESOLUTION
+			        ,START_TIME
+			        ,SERVICE_ID
+			        ,CHANNEL_NO
+			        ,CHANNEL_NAME
+			        ,REPEAT_DAY
+			FROM (
+				  
+			          SELECT 
+				  		ROWNUM rnum,
+			             APP_TYPE
+			            ,EVENT_ID
+			            ,EVENT_NAME
+			            ,RATING
+			            ,AV_RESOLUTION
+			            ,START_TIME
+			            ,SERVICE_ID
+			            ,CHANNEL_NO
+			            ,CHANNEL_NAME
+			            ,REPEAT_DAY
+			      FROM 
+			            (SELECT  
+			            		APP_TYPE
+			                    ,EVENT_ID
+			                    ,EVENT_NAME
+			                    ,RATING
+			                    ,AV_RESOLUTION
+			                    ,START_TIME
+			                    ,SERVICE_ID
+			                    ,CHANNEL_NO
+			                    ,CHANNEL_NAME
+			                    ,REPEAT_DAY
+			                FROM PT_UX_EPG_REV_MGT_VW 
+			            WHERE 
+			                    SA_ID= #sa_id# 
+			                AND	STB_MAC= #stb_mac#
+			                AND TO_CHAR(SYSDATE,'YYYYMMDDHH24MISS') < START_TIME
+			                ORDER BY START_TIME ASC
+			            )
+			      
+			) 
+	]]>	
+		WHERE 1=1
+		<isNotEmpty prepend="AND" property="start_num">
+			<isNotEqual property="start_num" compareValue="-1">
+				rnum BETWEEN #start_num# AND (#start_num#+#req_count#)-1
+			</isNotEqual>
+		</isNotEmpty>	
+	</select>
+	
+	<select id="getReservedProgramListTotalCnt" parameterClass="map" resultClass="int">
+		<![CDATA[
+			SELECT COUNT(SA_ID) 
+			FROM PT_UX_EPG_REV_MGT_VW_KOR 
+			WHERE 
+					SA_ID = #sa_id# 
+	                AND	STB_MAC = #stb_mac#
+	                AND TO_CHAR(SYSDATE,'YYYYMMDDHH24MISS') < START_TIME
+		 ]]>	
+	</select>
+	
+	<select id="getReservedProgramListTotalCnt_NotKor" parameterClass="map" resultClass="int">
+		<![CDATA[
+			SELECT COUNT(SA_ID) 
+			FROM PT_UX_EPG_REV_MGT_VW
+			WHERE 
+					SA_ID = #sa_id# 
+	                AND	STB_MAC = #stb_mac#
+	                AND TO_CHAR(SYSDATE,'YYYYMMDDHH24MISS') < START_TIME
+		 ]]>	
+	</select>
+	
+	<select id="getUXRegistrationID" parameterClass="com.dmi.smartux.bonbang.vo.RegistrationIDParamVO" resultClass="String">
+		SELECT 
+		    	reg_id
+		    FROM 
+		    	PT_UX_PAIRING
+		    WHERE 
+		    	    sa_id = #sa_id#
+		    	AND stb_mac = #stb_mac#
+		        AND sma_mac IS NULL
+	</select>
+	
+	<insert id="insertUXRegistrationID" parameterClass="com.dmi.smartux.bonbang.vo.RegistrationIDParamVO">
+		INSERT INTO PT_UX_PAIRING 
+	       (
+	           sa_id ,
+	           stb_mac ,
+	           sma_mac ,
+	           reg_id ,
+	           app_type ,
+	           created ,
+	           updated 
+	       )
+	       VALUES
+	       ( 
+	           #sa_id# ,
+	           #stb_mac# ,
+	           NULL ,
+	           #reg_id# ,
+	           #app_type# ,
+	           SYSDATE ,
+	           SYSDATE 
+	       )
+	</insert>
+	
+	<update id="updateUXRegistrationID" parameterClass="com.dmi.smartux.bonbang.vo.RegistrationIDParamVO">
+		UPDATE PT_UX_PAIRING 
+		       SET reg_id = #reg_id# , 
+		       updated = SYSDATE 
+		 WHERE sa_id = #sa_id# 
+		       AND stb_mac = #stb_mac# 
+		       AND sma_mac IS NULL
+	</update>
+	
+	<select id="getSMARegistrationID" parameterClass="com.dmi.smartux.bonbang.vo.RegistrationIDParamVO" resultClass="String">
+		SELECT reg_id 
+		  FROM PT_UX_PAIRING 
+		 WHERE sa_id = #sa_id# 
+		       AND stb_mac = #stb_mac#  
+		       AND sma_mac = #sma_mac#
+	</select>
+	
+	<insert id="insertSMARegistrationID" parameterClass="com.dmi.smartux.bonbang.vo.RegistrationIDParamVO">
+		INSERT INTO PT_UX_PAIRING 
+	        	(sa_id
+	        	,stb_mac
+	            ,sma_mac
+	            ,reg_id
+	            ,app_type
+	            ,created
+	            ,updated
+	    )VALUES(
+	    		#sa_id#
+	            ,#stb_mac#
+	            ,#sma_mac#
+		    <isEmpty property="reg_id">
+				,NULL
+			</isEmpty>
+			<isNotEmpty property="reg_id">
+				,#reg_id#
+			</isNotEmpty>		    
+	            ,#app_type#
+	            ,SYSDATE
+	            ,SYSDATE            
+	    )
+	</insert>
+	
+	<update id="updateSMARegistrationID" parameterClass="com.dmi.smartux.bonbang.vo.RegistrationIDParamVO">
+			UPDATE PT_UX_PAIRING 
+			SET updated = SYSDATE
+		    <isEmpty property="reg_id">
+				,reg_id = NULL
+			</isEmpty>
+			<isNotEmpty property="reg_id">
+				,reg_id = #reg_id#
+			</isNotEmpty>
+		    WHERE sa_id = #sa_id# 
+       		AND stb_mac = #stb_mac# 
+       		AND sma_mac = #sma_mac#
+	</update>
+	  
+	<delete id="removeUXRegistrationID" parameterClass="com.dmi.smartux.bonbang.vo.RegistrationIDParamVO">
+	<![CDATA[
+		DELETE FROM PT_UX_PAIRING
+		WHERE 
+				SA_ID = #sa_id#
+			AND STB_MAC = #stb_mac#
+			AND SMA_MAC IS NULL
+	]]>	
+	</delete>
+	
+	<delete id="removeSMARegistrationID" parameterClass="com.dmi.smartux.bonbang.vo.RegistrationIDParamVO">
+	<![CDATA[
+		DELETE FROM PT_UX_PAIRING
+		WHERE 
+				SA_ID = #sa_id#
+			AND STB_MAC = #stb_mac#
+			AND SMA_MAC = #sma_mac#
+	]]>	
+	</delete>
+	
+	<resultMap id="listRegistrationIDMap" class="com.dmi.smartux.bonbang.vo.RegistrationIDParamVO">
+		<result property="sa_id" column="SA_ID" />
+		<result property="stb_mac" column="STB_MAC" />
+		<result property="sma_mac" column="SMA_MAC" /> 
+		<result property="reg_id" column="REG_ID" nullValue="" />
+	</resultMap>
+	
+	<select id="listRegistrationID" parameterClass="map" resultMap="listRegistrationIDMap" resultClass="com.dmi.smartux.bonbang.vo.RegistrationIDParamVO" >
+		SELECT
+			 SA_ID
+			,STB_MAC			
+			,SMA_MAC 
+			,REG_ID
+		FROM
+			PT_UX_PAIRING
+		WHERE
+				SA_ID = #sa_id#
+			AND STB_MAC = #stb_mac#
+		<isEmpty property="sma_mac">
+			AND	SMA_MAC IS NOT NULL
+		</isEmpty>
+		<isNotEmpty property="sma_mac">
+			AND	(SMA_MAC != #sma_mac# OR SMA_MAC IS NULL)
+		</isNotEmpty>
+	</select>
+</sqlMap>

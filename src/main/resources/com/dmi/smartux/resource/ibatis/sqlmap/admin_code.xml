@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="admin_code">
+	<typeAlias alias="admin_codevo" type="com.dmi.smartux.admin.code.vo.CodeVO"/>
+	<typeAlias alias="admin_codeitemvo" type="com.dmi.smartux.admin.code.vo.CodeItemVO"/>
+	
+	<!-- 코드값의 길이가 5이고 코드 앞이 C로 시작하며 나머지 뒤의 4자리가 숫자로 되어 있는 것들중의 MAX값 찾기 -->
+	<select id="getMaxCode" resultClass="string">
+		SELECT NVL(MAX(TO_NUMBER(SUBSTR(CODE, 2, 4))), 0) + 1 FROM PT_UX_CODE
+		WHERE CODE LIKE 'C%'
+		AND LENGTH(CODE) = 5
+		AND IS_NUMBER(SUBSTR(CODE, 2, 4)) = 1
+	</select>
+	
+	<select id="getCodeList" resultClass="admin_codevo">
+		SELECT CODE, CODE_NM
+		FROM PT_UX_CODE
+		ORDER BY CODE
+	</select>
+	
+	<!-- mims.xml로 이동 -->
+	<!-- <select id="getUseSsgbnCnt" parameterClass="String" resultClass="int">
+		SELECT COUNT(CATEGORY_TYPE) 
+          FROM PT_UX_PANEL_TITLE_TEMP
+         WHERE CATEGORY_TYPE = #ss_gbn#
+	</select> -->
+	
+	<select id="getSmartstartList" resultClass="String">
+		SELECT DISTINCT SS_GBN
+		FROM PT_UX_CODE_ITEMS 
+		WHERE SS_GBN IS NOT NULL
+		ORDER BY SS_GBN
+	</select>
+	
+	<select id="viewCode" parameterClass="map" resultClass="admin_codevo">
+		SELECT CODE
+			, CODE_NM
+			, TO_CHAR(CREATED, 'YYYYMMDDHH24MISS')
+			, TO_CHAR(UPDATED, 'YYYYMMDDHH24MISS')
+			, CREATE_ID
+			, UPDATE_ID
+		FROM PT_UX_CODE
+		WHERE CODE = #code#
+	</select>
+	
+	<select id="getCodenmCnt" parameterClass="map" resultClass="int">
+		SELECT COUNT(CODE_NM)
+		FROM PT_UX_CODE
+		WHERE CODE_NM = #code_nm#
+	</select>
+	
+	<insert id="insertCode" parameterClass="map">
+		INSERT INTO PT_UX_CODE(CODE, CODE_NM, CREATED, UPDATED, CREATE_ID, UPDATE_ID)
+		VALUES(
+			#code#
+    		, #code_nm#
+    		, SYSDATE
+    		, SYSDATE
+   	 		, #create_id#
+    		, #update_id#
+    	)
+	</insert>
+	
+	<update id="updateCode" parameterClass="map">
+		UPDATE PT_UX_CODE
+		SET CODE_NM = #code_nm# 
+		, UPDATED = SYSDATE
+		, UPDATE_ID = #update_id#
+		WHERE CODE = #code#
+	</update>
+	
+	<delete id="deleteCode" parameterClass="string">
+		DELETE PT_UX_CODE
+		WHERE CODE = #code#         
+	</delete>
+	
+	<select id="checkItemCode" parameterClass="map" resultClass="admin_codevo">
+		SELECT A.CODE_NM AS CODE_NM, COUNT(A.CODE_NM) AS ITEMCODECNT
+		FROM PT_UX_CODE A, PT_UX_CODE_ITEMS B
+		WHERE A.CODE = #code#
+		AND A.CODE = B.CODE
+		GROUP BY A.CODE_NM
+	</select>
+	
+	<select id="getCodeItemList" resultClass="admin_codeitemvo">
+		<!-- 
+		SELECT ITEM_CODE, ITEM_NM, SS_GBN, APP_TYPE, USE_YN
+		FROM PT_UX_CODE_ITEMS
+		WHERE CODE = #code#
+		ORDER BY ORDERED
+		-->
+		
+		<!-- CODE가 A0010인 어플타입의 서브 아이템과의 조인을 위해 다음과 같이 쿼리를 수정 -->
+		SELECT A.ITEM_CODE AS ITEM_CODE, A.ITEM_NM AS ITEM_NM, A.SS_GBN AS SS_GBN, B.ITEM_NM AS APP_TYPE, A.USE_YN AS USE_YN
+		FROM PT_UX_CODE_ITEMS A
+		, (
+			SELECT ITEM_CODE, ITEM_NM
+      		FROM  PT_UX_CODE_ITEMS
+      		WHERE CODE = 'A0010'
+      	) B
+		WHERE A.CODE = #code#
+		AND A.APP_TYPE = B.ITEM_CODE(+)
+		ORDER BY A.ORDERED
+	</select>
+	
+	<select id="viewCodeItem" parameterClass="map" resultClass="admin_codeitemvo">
+		SELECT CODE
+			, ITEM_CODE
+			, ITEM_NM
+			, SS_GBN
+			, APP_TYPE
+			, ORDERED
+			, USE_YN
+			, TO_CHAR(CREATED, 'YYYYMMDDHH24MISS')
+			, TO_CHAR(UPDATED, 'YYYYMMDDHH24MISS')
+			, CREATE_ID
+			, UPDATE_ID
+		FROM PT_UX_CODE_ITEMS
+		WHERE CODE = #code#
+		AND ITEM_CODE=#item_code#
+	</select>
+	
+	<select id="getCodeItemCnt" parameterClass="map" resultClass="int">
+		SELECT COUNT(ITEM_CODE)
+		FROM PT_UX_CODE_ITEMS
+		WHERE CODE = #code#
+		AND ITEM_CODE = #item_code#
+	</select>
+	
+	<select id="getCodeItemNmCnt" parameterClass="map" resultClass="int">
+		SELECT COUNT(ITEM_NM)
+		FROM PT_UX_CODE_ITEMS
+		WHERE CODE = #code#
+		AND ITEM_NM = #item_nm#
+	</select>
+	
+	<select id="getCodeItemssgbnCnt" parameterClass="String" resultClass="int">
+		SELECT COUNT(SS_GBN) 
+		FROM PT_UX_CODE_ITEMS 
+		WHERE SS_GBN = #ss_gbn#
+	</select>
+	
+	<insert id="insertCodeItem" parameterClass="map">
+		INSERT INTO PT_UX_CODE_ITEMS(CODE, ITEM_CODE, ITEM_NM, SS_GBN, APP_TYPE, ORDERED, USE_YN, CREATED, UPDATED, CREATE_ID, UPDATE_ID)
+		VALUES(
+			#code#
+			, #item_code#
+    		, #item_nm#
+    		, #ss_gbn#
+    		, #app_type#
+    		, (SELECT NVL(MAX(ORDERED), 0) + 1 FROM PT_UX_CODE_ITEMS WHERE CODE = #code#)
+    		, #use_yn#
+    		, SYSDATE
+    		, SYSDATE
+   	 		, #create_id#
+    		, #update_id#
+    	)
+	</insert>
+	
+	<update id="updateCodeItem" parameterClass="map">
+		UPDATE PT_UX_CODE_ITEMS
+		SET ITEM_CODE = #newitem_code# 
+		, ITEM_NM = #item_nm#
+		
+		<isEqual property="update_type" compareValue="1">		<!-- 스마트스타트 업데이트시 -->
+			, SS_GBN = #ss_gbn#
+		</isEqual>
+		<isEqual property="update_type" compareValue="2">	<!-- 설정정보 업데이트시 -->
+			, APP_TYPE = #app_type#
+		</isEqual>
+		
+		, USE_YN = #use_yn# 
+		, UPDATED = SYSDATE
+		, UPDATE_ID = #update_id#
+		WHERE CODE = #code#
+		AND ITEM_CODE = #item_code#
+	</update>
+	
+	<delete id="deleteCodeItem" parameterClass="admin_codeitemvo">
+		DELETE PT_UX_CODE_ITEMS
+		WHERE CODE = #code#
+		AND ITEM_CODE = #item_code#         
+	</delete>
+	
+	<update id="changeCodeItemOrder" parameterClass="admin_codeitemvo">
+		UPDATE PT_UX_CODE_ITEMS
+		SET ORDERED = #ordered#
+		, UPDATED = SYSDATE
+		, UPDATE_ID = #update_id#
+		WHERE CODE = #code#
+		AND ITEM_CODE = #item_code#
+	</update>
+</sqlMap>

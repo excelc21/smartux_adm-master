@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="admin_rule">
+	<typeAlias alias="admin_rulevo" type="com.dmi.smartux.admin.rule.vo.RuleVO"/>
+	<typeAlias alias="admin_ruledetailvo" type="com.dmi.smartux.admin.rule.vo.RuleDetailVO"/>
+	
+	<select id="getRuleList" resultClass="admin_rulevo">
+		SELECT RULE_CODE, RULE_NAME, RULE_TYPE
+		FROM PT_UX_ECRM_RULE
+		ORDER BY RULE_CODE
+	</select>
+	
+	<select id="viewRule" parameterClass="map" resultClass="admin_rulevo">
+		SELECT RULE_CODE
+			, RULE_NAME
+			, RULE_TYPE
+		FROM PT_UX_ECRM_RULE
+		WHERE RULE_CODE = #rule_code#
+	</select>
+	
+	<insert id="insertRule" parameterClass="map">
+		<selectKey resultClass="Long" keyProperty="rule_code">
+        	SELECT NVL(MAX(RULE_CODE), 0) + 1 FROM PT_UX_ECRM_RULE
+    	</selectKey>
+		INSERT INTO PT_UX_ECRM_RULE(RULE_CODE, RULE_NAME, RULE_TYPE, CREATED, UPDATED, CREATE_ID, UPDATE_ID)
+		VALUES(
+			  #rule_code#
+    		, #rule_name#
+    		, #rule_type#
+    		, SYSDATE
+    		, SYSDATE
+   	 		, #create_id#
+    		, #create_id#
+    	)
+	</insert>
+	
+	<update id="updateRule" parameterClass="map">
+		UPDATE PT_UX_ECRM_RULE
+		SET RULE_NAME = #rule_name# 
+		, UPDATED = SYSDATE
+		, UPDATE_ID = #update_id#
+		WHERE RULE_CODE = #rule_code#
+	</update>
+	
+	<delete id="deleteRule" parameterClass="map">
+		DELETE PT_UX_ECRM_RULE
+		WHERE rule_code = #rule_code#         
+	</delete>
+	
+	<select id="getRuleDetailList" resultClass="admin_ruledetailvo">
+		SELECT RULE_CODE, RULE_TYPE_DATA1, RULE_TYPE_DATA2, WEIGHT
+		FROM PT_UX_ECRM_RULE_DETAIL
+		WHERE RULE_CODE = #rule_code#
+		ORDER BY RULE_CODE, RULE_TYPE_DATA1, RULE_TYPE_DATA2
+	</select>
+	
+	<select id="viewRuleDetail" parameterClass="map" resultClass="admin_ruledetailvo">
+		SELECT RULE_CODE
+			, RULE_TYPE_DATA1
+			, RULE_TYPE_DATA2
+			, WEIGHT
+		FROM PT_UX_ECRM_RULE_DETAIL
+		WHERE RULE_CODE = #rule_code#
+	</select>
+	
+	<insert id="insertRuleDetail" parameterClass="map">
+		INSERT INTO PT_UX_ECRM_RULE_DETAIL(RULE_CODE, RULE_TYPE_DATA1, RULE_TYPE_DATA2, WEIGHT, CREATED, UPDATED, CREATE_ID, UPDATE_ID)
+		VALUES(
+			#rule_code#
+			, #rule_type_data1#
+    		, #rule_type_data2#
+    		, #weight#
+    		, SYSDATE
+    		, SYSDATE
+   	 		, #create_id#
+    		, #create_id#
+    	)
+	</insert>
+	
+	
+	<delete id="deleteRuleDetail" parameterClass="map">
+		DELETE PT_UX_ECRM_RULE_DETAIL
+		WHERE RULE_CODE = #rule_code#
+	</delete>
+	
+	<select id="selectUseRule" resultClass="string">
+		SELECT RULE_CODE 
+		FROM PT_UX_ECRM_RANK
+	</select>
+	
+	<select id="getRuleList2" parameterClass="map" resultClass="admin_rulevo">
+		SELECT RULE_CODE, RULE_NAME
+		FROM PT_UX_ECRM_RULE
+		WHERE RULE_CODE IN ($rule_codes$)
+		ORDER BY RULE_NAME
+	</select>
+</sqlMap>

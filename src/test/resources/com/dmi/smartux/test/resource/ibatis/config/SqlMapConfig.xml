@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMapConfig PUBLIC "-//ibatis.apache.org//DTD SQL Map Config 2.0//EN"
+    "http://ibatis.apache.org/dtd/sql-map-config-2.dtd">
+<sqlMapConfig>
+	<settings 
+		useStatementNamespaces="true"
+	/>
+	
+	<!-- sqlMap resource="com/dmi/smartux/test/resource/ibatis/sqlmap/select.xml" / -->
+	<sqlMap resource="com/dmi/smartux/test/resource/ibatis/sqlmap/mainpanel.xml" />
+	<!-- sqlMap resource="com/dmi/smartux/test/resource/ibatis/sqlmap/bonbang.xml" / -->
+	<!-- sqlMap resource="com/dmi/smartux/test/resource/ibatis/sqlmap/wishlist.xml" / -->
+	<!-- sqlMap resource="com/dmi/smartux/test/resource/ibatis/sqlmap/configuration.xml" / -->
+	<!-- sqlMap resource="com/dmi/smartux/test/resource/ibatis/sqlmap/smartstart_itemlist.xml" / -->
+	<!-- sqlMap resource="com/dmi/smartux/test/resource/ibatis/sqlmap/genrevodbestlist.xml" / -->
+			
+</sqlMapConfig>

@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ 
+<ehcache xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xsi:noNamespaceSchemaLocation="http://ehcache.org/ehcache.xsd" updateCheck="false">      
+ 	<diskStore path="java.io.tmpdir" />
+        
+ 	<!--
+	######EHCACHE 옵션 활용법 시작#######	
+	
+	name -> 캐시의 이름(필수) 
+	maxElementsInMemory -> 메모리에 저장될 수 있는 객체의 최대 개수(필수)
+	eternal -> 이 값이 true이면 timeout 관련 설정은 무시되고, Element가 캐시에서 삭제되지 않는다.(필수)
+	overflowToDisk -> 메모리에 저장된 객체 개수가 maxElementsInMemory에서 지정한 값에 다다를 경우 디스크에 오버플로우 되는 객체는 저장할 지의 여부를 지정한다.(필수)
+	timeToIdleSeconds -> Element가 지정한 시간 동안 사용(조회)되지 않으면 캐시에서 제거된다. 이 값이 0인 경우 조회 관련 만료 시간을 지정하지 않는다. 기본값은 0이다.(선택)
+	timeToLiveSeconds -> Element가 존재하는 시간. 이 시간이 지나면 캐시에서 제거된다. 이 시간이 0이면 만료 시간을 지정하지 않는다. 기본값은 0이다.(선택)
+	diskPersistent -> VM이 재 가동할 때 디스크 저장소에 캐싱된 객체를 저장할지의 여부를 지정한다. 기본값은 false이다.(선택)
+	diskExpiryThreadIntervalSeconds -> Disk Expiry 쓰레드의 수행 시간 간격을 초 단위로 지정한다. 기본값은 120 이다.(선택)
+	memoryStoreEvictionPolicy -> 객체의 개수가 maxElementsInMemory에 도달했을 때,메모리에서 객체를 어떻게 제거할 지에 대한 정책을 지정한다. 기본값은 LRU이다. FIFO와 LFU도 지정할 수 있다.(선택)
+	memoryStoreEvictionPolicy="LRU"  ->  최근에 이용한 것을 남기는 알고리즘
+	memoryStoreEvictionPolicy="LFU"  ->  가장 적게 이용된 것을 제거하는 알고리즘
+	memoryStoreEvictionPolicy="FIFO" ->  먼저 입력된것을 제거하는 알고리즘으로 
+	
+	######EHCACHE 옵션 활용법 끝#######
+	 -->
+ 	
+    <defaultCache 
+    	eternal="false" 
+    	maxElementsInMemory="1000"
+        overflowToDisk="false" 
+        diskPersistent="false" 
+        timeToIdleSeconds="0"
+        timeToLiveSeconds="600" 
+        memoryStoreEvictionPolicy="LRU"/>
+ 
+	<!--
+	 최근에 이용한 것을 남기는 알고리즘
+	 sampleCache1 캐시. 최대 10000개의 객체를 저장할 수 있으며, 
+	 5분 이상 사용되지 않거나 또는 10분 이상 캐시에 저장되어 있을 경우 
+	 캐시에서 제거된다. 저장되는 객체가 10000개를 넘길 경우, 
+	 디스크 캐시에 저장한다.
+	 -->  
+    <cache name="selectCache" 
+    	eternal="false"
+        maxElementsInMemory="100" 
+        overflowToDisk="false" 
+        diskPersistent="false"
+        timeToIdleSeconds="0" 
+        timeToLiveSeconds="0"
+        memoryStoreEvictionPolicy="LRU">
+    </cache>
+ 
+    <!--
+	 sampleCache1 캐시. 최대 10000개의 객체를 저장할 수 있으며, 
+	 5분 이상 사용되지 않거나 또는 10분 이상 캐시에 저장되어 있을 경우 
+	 캐시에서 제거된다. 저장되는 객체가 10000개를 넘길 경우, 
+	 디스크 캐시에 저장한다.
+	 -->
+	<cache name="sampleCache1"
+        maxElementsInMemory="10000"
+        maxElementsOnDisk="1000"
+        eternal="false"
+        overflowToDisk="true"
+        timeToIdleSeconds="300"
+        timeToLiveSeconds="600"
+        memoryStoreEvictionPolicy="LFU" />
+ 
+	<!--
+	 sampleCache2 캐시. 최대 1000개의 객체를 저장한다. 
+	 오버플로우 된 객체를 디스크에 저장하지 않기 때문에 
+	 캐시에 최대 개수는 1000개이다. eternal이 true 이므로, 
+	 timeToLiveSeconds와 timeToIdleSeconds 값은 무시된다.
+	 -->
+	<cache name="sampleCache2"
+        maxElementsInMemory="1000"
+        eternal="true"
+        overflowToDisk="false"
+        memoryStoreEvictionPolicy="FIFO" />
+ 
+	<!--
+	 sampleCache3 캐시. 오버플로우 되는 객체를 디스크에 저장한다.
+	 디스크에 저장된 객체는 VM이 재가동할 때 다시 캐시로 로딩된다.
+	 디스크 유효성 검사 쓰레드는 10분 간격으로 수행된다.
+	 -->
+	<cache name="sampleCache3"
+        maxElementsInMemory="500"
+        eternal="false"
+        overflowToDisk="true"
+        timeToIdleSeconds="300"
+        timeToLiveSeconds="600"
+        diskPersistent="true"
+        diskExpiryThreadIntervalSeconds="600"
+        memoryStoreEvictionPolicy="LFU"  />
+	
+	<!-- 
+	timeToIdleSeconds : 3일이상 안쓰이면 삭제
+	maximumChunkSizeBytes : 5M단위로 전송 
+	-->
+	<cache name="DyNScreenCache" 
+		eternal="false"
+		maxElementsInMemory="30000" 
+		overflowToDisk="false" 
+		diskPersistent="false"
+		timeToIdleSeconds="259200" 
+		timeToLiveSeconds="0"
+		memoryStoreEvictionPolicy="FIFO">  
+	</cache>
+ 
+ 	
+</ehcache>
+ 

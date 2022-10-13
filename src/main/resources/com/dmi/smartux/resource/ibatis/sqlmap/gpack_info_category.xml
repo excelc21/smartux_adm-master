@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="gpack_info_category">
+	<typeAlias alias="gpackCategoryInfoVO"		type="com.dmi.smartux.gpack.category.vo.GpackCategoryInfoVO"/>
+	<typeAlias alias="gpackCategoryAlbumInfoVO"		type="com.dmi.smartux.gpack.category.vo.GpackCategoryAlbumInfoVO"/>
+	
+	<!-- I20 앨범 리스트 조회 쿼리 -->	
+	<sql id="getGpackI20AlbumList">
+			SELECT
+				  A.CATEGORY_ID			  AS CAT_ID,
+				  C.ADI_ALBUM_ID          AS ALBUM_ID,
+				  MAX(C.SERVICE_ICON)     AS SERVICE_GB,
+				  MAX(B.CONTENTS_NAME)    AS ALBUM_TITLE, 
+				  MAX(G.HDCONTENT)        AS IS_HD,
+				  MAX(DECODE(G.HDCONTENT, 'N', 'Y', 'N'))  AS IS_SD,       
+				  MAX(E.SUGGESTED_PRICE)  AS H_PRICE, 
+				  MIN(E.SUGGESTED_PRICE)  AS S_PRICE,       
+				  MAX(E.RATING)           AS PROGRAM_INFO, 
+				  MAX(NVL(E.ONAIR_DATE, '00000000')) AS ONAIR_DATE, 
+				  MAX(DECODE(A.SERIES_YN, NULL, 'N', A.SERIES_YN))        AS SERIES_FLAG,
+				  MAX(DECODE(DECODE(A.SERIES_YN, NULL, 'N', A.SERIES_YN), 'Y', C.SERIES_NO, '')) AS SERIES_DESC,
+				  MAX(DECODE(DECODE(A.SERIES_YN, NULL, 'N', A.SERIES_YN), 'Y', B.SERIES_NO, '')) AS SERIES_NO,		            
+				  MAX(A.CLOSE_YN)		  AS CLOSE_YN,
+				  MAX(G.SMI_YN)           AS IS_CAPTION, 
+				  F_SERVER_URL('P')		  AS IMG_URL,
+				  MAX(DECODE(F.POSTER_TYPE, 'Y', F.CONTENT_VALUE, '')) AS WIDTH_IMG,
+				  MAX(DECODE(F.POSTER_TYPE, 'V', F.CONTENT_VALUE, '')) AS HEIGHT_IMG,
+				  MAX(DECODE(F.POSTER_TYPE, 'P', F.CONTENT_VALUE, '')) AS POSTER_IMG,
+				  MAX(E.CATEGORY)         AS CATEGORY,       
+				  MAX(B.RANK_NO)          AS RANKING,
+				  MAX(E.GENRE_LARGE)	  AS GENRE1,
+				  MAX(E.RELEASE_DATE)	  AS RELEASE_DATE,
+				  MAX(DECODE(C.WATCH_RIGHT_YN, NULL, 'Y', C.WATCH_RIGHT_YN))	AS WATCH_RIGHT_YN,
+				  MAX(ROUND(TO_NUMBER(NVL(C.POINT_SUM,'0'))/ (CASE WHEN NVL(C.POINT_CNT,'0')= '0' THEN 1  ELSE TO_NUMBER(NVL(C.POINT_CNT,'0')) END), 0)) POINT,
+				  MAX(DECODE(C.IS_FH, NULL, 'N', C.IS_FH)) AS IS_FH  
+			      <!--'N' AS IS_FH -->
+			FROM  PT_VO_CATEGORY A, 
+			      PT_VO_CATEGORY_MAP B, 
+			      PT_LA_ALBUM_MST C, 
+			      PT_LA_PACKAGE_ASSET D, 
+			      PT_LA_TITLE_ASSET E, 
+			      PT_LA_POSTER_ASSET F, 
+			      PT_LA_CONTENT_ASSET G 
+			WHERE 1=1
+			  AND (((C.PRE_MAPPING_YN IS NULL OR C.PRE_MAPPING_YN = 'N') AND (B.VIEWING_FLAG = 'V' OR B.VIEWING_FLAG IS NULL)) OR ((C.PRE_MAPPING_YN = 'Y') AND (B.VIEWING_FLAG = 'V')))
+			  AND A.CATEGORY_ID = B.CATEGORY_ID
+			  AND A.CATEGORY_GB  = 'I20'
+			  AND B.CONTENTS_ID  = C.ADI_ALBUM_ID
+			  AND B.CONTENTS_ID  = D.ADI_ALBUM_ID
+			  AND C.ADI_ALBUM_ID = D.ADI_ALBUM_ID
+			  AND D.ADI_PRODUCT_ID = E.ADI_PRODUCT_ID 
+			  AND D.ADI_PRODUCT_ID = F.ADI_PRODUCT_ID
+			  AND D.ADI_PRODUCT_ID = G.ADI_PRODUCT_ID
+			  AND F.POSTER_TYPE IN ('Y', 'V', 'P')							
+		 GROUP BY A.CATEGORY_ID, C.ADI_ALBUM_ID  	
+	</sql>
+	
+	<!-- 카테고리 개수 조회 -->
+	<select id="getGpackCategoryCount" parameterClass="map" resultClass="int">
+		SELECT 	COUNT(*) AS TOTAL_COUNT
+		  FROM 	PT_GP_CATEGORY_INFO CT
+		 WHERE 	1=1
+		   AND 	CT.PACK_ID = #pack_id#
+		   AND 	CT.CATEGORY_YN = 'Y'
+		   AND  CT.USE_YN = 'Y'
+	</select>
+	
+	<!-- 카테고리 목록 조회 -->
+	<select id="getGpackCategoryList" parameterClass="map" resultClass="gpackCategoryInfoVO">
+		SELECT 	CT.CATEGORY_NM AS TITLE,
+			  	CT.CATEGORY_COMMENT AS MENT,
+			  	CT.CATEGORY_ID AS PCATEGORY_ID,
+			  	COUNT(AI.IMCS_CATEGORY_ID) AS TOTAL_COUNT
+		  FROM 	PT_GP_CATEGORY_INFO CT,
+		  		PT_GP_AUTO_SET_INFO AI,
+				(
+				<include refid="getGpackI20AlbumList"/>
+				) IMCS
+		 WHERE	1=1
+		   AND 	CT.PACK_ID = #pack_id#
+		   AND 	CT.CATEGORY_YN = 'Y'
+		   AND  CT.USE_YN = 'Y' 
+		   AND 	CT.PACK_ID = AI.PACK_ID
+		   AND 	CT.CATEGORY_ID = AI.CATEGORY_ID
+		   AND  AI.USE_YN = 'Y' 
+		   AND 	AI.IMCS_CATEGORY_ID = IMCS.CAT_ID
+	  GROUP BY 	CT.CATEGORY_ID, CT.CATEGORY_NM, CT.CATEGORY_COMMENT, CT.ORDERED
+	  ORDER BY  CT.ORDERED
+	</select>
+	
+	<!-- 앨범 정보 조회 (카테고리 정보 조회 후 for문 돌아서..) -->
+	<select id="getGpackCategoryAlbumList" parameterClass="map" resultClass="gpackCategoryAlbumInfoVO">
+		SELECT * FROM (
+		
+				SELECT 	IMCS.ALBUM_ID, 
+				       	IMCS.CAT_ID AS CATEGORY_ID, 
+				       	IMCS.ALBUM_TITLE, 
+				       	IMCS.RANKING AS ORDERED, 
+				       	IMCS.IMG_URL, 
+				       	IMCS.WIDTH_IMG AS W_IMG, 
+				       	IMCS.HEIGHT_IMG AS H_IMG, 
+				       	IMCS.SERIES_FLAG, 
+				       	IMCS.SERIES_DESC,
+				       	IMCS.SERIES_NO, 
+				       	IMCS.CLOSE_YN, 
+				       	IMCS.IS_HD, 
+				       	IMCS.PROGRAM_INFO, 
+				       	IMCS.ONAIR_DATE, 
+				       	IMCS.IS_CAPTION, 
+				       	IMCS.GENRE1, 
+				       	IMCS.RELEASE_DATE, 
+				       	IMCS.WATCH_RIGHT_YN, 
+						IMCS.IS_FH
+				  FROM 	PT_GP_AUTO_SET_INFO AI,
+					    (  
+							<include refid="getGpackI20AlbumList"/>
+					    ) IMCS
+				 WHERE 	1=1
+				   AND 	AI.PACK_ID = #pack_id#
+				   AND 	AI.CATEGORY_ID = #category_id#
+				   AND 	AI.IMCS_CATEGORY_ID = IMCS.CAT_ID
+				   
+		 ) 
+		 WHERE 1=1
+		 ORDER BY ORDERED
+	</select>
+
+</sqlMap>

@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="admin_season">
+	<typeAlias alias="seasonVo" type="com.dmi.smartux.admin.season.vo.SeasonVo"/>
+	<typeAlias alias="seasonSearchVo" type="com.dmi.smartux.admin.season.vo.SeasonSearchVo"/>
+	
+	<!-- 시즌 목록 조회 -->
+	<select id="getSeasonList" parameterClass="seasonSearchVo" resultClass="seasonVo">
+		SELECT A.*
+		  FROM (SELECT ROW_NUMBER() OVER(ORDER BY REG_DT DESC) AS ROWNO
+					 , SEASON_ID
+					 , SEASON_TITLE
+					 , PARENT_SEASON_ID
+					 , SEASON_NAME
+					 , CONTENT_ID
+					 , SERIES_YN
+					 , TO_CHAR(TO_DATE(REG_DT, 'YYYY-MM-DD HH24:MI:SS'), 'YYYY-MM-DD HH24:MI:SS') AS REG_DT
+					 , TO_CHAR(TO_DATE(CACHE_MOD_DT, 'YYYY-MM-DD HH24:MI:SS'), 'YYYY-MM-DD HH24:MI:SS') AS CACHE_MOD_DT
+					 , APP_TP
+				  FROM PT_CM_SEASON
+				 WHERE PARENT_SEASON_ID IS NULL
+				   AND APP_TP = #app_tp#
+				 <isNotEmpty prepend="AND" property="findValue">
+				 	<isEqual property="findName" compareValue="SEASON_TITLE">
+				 	   	$findName$ LIKE '%$findValue$%'
+				 	</isEqual>
+				 </isNotEmpty>
+				 <isNotEmpty prepend="AND" property="series_yn">
+				 		SERIES_YN = #series_yn#
+				 </isNotEmpty>
+				 ) A
+		 WHERE ROWNO BETWEEN '$start_rnum$' AND '$end_rnum$'
+	</select>
+	
+	<!-- 시즌 목록 개수 -->
+	<select id="getSeasonListCnt" parameterClass="seasonSearchVo" resultClass="int">
+		SELECT COUNT(SEASON_ID)
+		  FROM PT_CM_SEASON
+		 WHERE PARENT_SEASON_ID IS NULL
+		   AND APP_TP = #app_tp#
+		 <isNotEmpty prepend="AND" property="findValue">
+		 	<isEqual property="findName" compareValue="SEASON_TITLE">
+		 	   	$findName$ LIKE '%$findValue$%'
+		 	</isEqual>
+		 </isNotEmpty>	
+		 <isNotEmpty prepend="AND" property="series_yn">
+		 		SERIES_YN = #series_yn#
+		 </isNotEmpty>			 
+	</select>
+	
+	<!-- 시즌 아이디 생성 -->
+	<select id="getSeasonId" resultClass="String">
+		SELECT SEQ_PT_CM_SEASON.NEXTVAL
+ 		  FROM DUAL
+	</select>
+	
+	<!-- 시즌 등록 -->
+	<insert id="insertProc" parameterClass="seasonVo">
+		INSERT INTO PT_CM_SEASON(
+				SEASON_ID
+				, SEASON_TITLE
+				, PARENT_SEASON_ID
+				, SEASON_NAME
+				, CONTENT_ID
+				, ORDERS
+				, SERIES_YN
+				, REG_DT
+				, REG_ID
+				, MOD_DT
+				, MOD_ID
+				, APP_TP
+			) VALUES (
+				#season_id#
+				, #season_title#
+				, #parent_season_id#
+				, #season_name#
+				, #content_id#
+				, #orders#
+				, #series_yn#
+				, TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+				, #reg_id#
+				, TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+				, #mod_id#
+				, #app_tp#
+			)
+	</insert>
+	
+	<!-- 시즌 상세 조회 (부모시즌)-->
+	<select id="getSeasonDetail" parameterClass="String" resultClass="seasonVo">
+		SELECT SEASON_ID
+			 , SEASON_TITLE
+			 , SERIES_YN
+		  FROM PT_CM_SEASON
+		 WHERE SEASON_ID = #season_id#
+	</select>
+	
+	<!-- 시즌 상세 목록 조회 -->
+	<select id="getSeasonDetailList" parameterClass="String" resultClass="seasonVo">
+		SELECT A.SEASON_ID
+			 , A.SEASON_NAME
+			 , A.CONTENT_ID
+			 , A.APP_TP
+			 , B.ADI_ALBUM_NAME AS CONTENT_NAME
+		  FROM PT_CM_SEASON A
+		  	 , PT_LA_ALBUM_MST B
+		 WHERE A.PARENT_SEASON_ID = #parent_season_id#
+		   	   AND A.CONTENT_ID = B.ADI_ALBUM_ID
+	  ORDER BY ORDERS
+	</select>
+	
+	<!-- 시즌 수정 -->
+	<update id="updateProc" parameterClass="seasonVo">
+		UPDATE PT_CM_SEASON
+		   SET SEASON_TITLE = #season_title#
+		   <isNotEmpty property="season_name">
+		     , SEASON_NAME = #season_name#
+		   </isNotEmpty>
+		   <isNotEmpty property="content_id">
+		     , CONTENT_ID = #content_id#
+		   </isNotEmpty>  
+		   <isNotEmpty property="orders">
+		     , ORDERS = #orders#
+		   </isNotEmpty>
+		   <isNotEmpty property="series_yn">
+		     , SERIES_YN = #series_yn#
+		   </isNotEmpty>
+		   <isNotEmpty property="app_tp">
+		     , APP_TP = #app_tp#
+		   </isNotEmpty>
+		   <isNotEmpty property="mod_id">
+		     , MOD_DT = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+		     , MOD_ID = #mod_id#
+		   </isNotEmpty>
+		 WHERE SEASON_ID = #season_id#
+	</update>
+	
+	<!-- 시즌 삭제 -->
+	<delete id="deleteProc" parameterClass="map">
+		DELETE PT_CM_SEASON
+		 WHERE 
+		 <isNotEmpty property="parentYn">
+		 	<isEqual property="parentYn" compareValue="Y">
+		 		PARENT_SEASON_ID = #season_id#
+		 	</isEqual>
+		 	<isEqual property="parentYn" compareValue="N">
+		 		SEASON_ID = #season_id#
+		 	</isEqual>
+		 </isNotEmpty>
+	</delete>
+	
+	<!-- 시즌적용 카테고리 목록 -->
+	<select id="getCategoryList" parameterClass="map" resultClass="String">
+		SELECT WM_CONCAT(A.CATEGORY_ID || ' | ' || A.CATEGORY_NAME)
+          FROM (SELECT CATEGORY_ID, CATEGORY_NAME, SERIES_YN
+                  FROM PT_VO_CATEGORY A
+                 WHERE TEST_SBC = 'N' OR TEST_SBC IS NULL
+            	 START WITH A.PARENT_CATEGORY_ID = 'VC'
+                       AND A.CATEGORY_GB = #category_gb#
+           	   CONNECT BY PRIOR A.CATEGORY_ID = A.PARENT_CATEGORY_ID
+                ) A, PT_VO_CATEGORY_MAP B
+          WHERE A.CATEGORY_ID = B.CATEGORY_ID
+          		AND NOT EXISTS (SELECT 1 FROM PT_UF_SEASON_EXCEPT WHERE CAT_ID = A.CATEGORY_ID)
+                AND B.CONTENTS_ID = #albumId#
+                AND A.SERIES_YN = #series_yn#
+	</select>
+	
+	<!-- 시즌제외 키워드 목록 조회 -->
+	<select id="getExceptList" resultClass="String">
+		SELECT 
+			KEYWORD
+		  FROM 
+		  	PT_UF_SEASON_EXCEPT
+		 WHERE 
+		 	KEYWORD_YN = 'Y'
+	</select>
+	
+	<!-- 시즌제외 키워드 등록 -->
+	<insert id="insertExcept" parameterClass="map">
+		INSERT INTO 
+			PT_UF_SEASON_EXCEPT(
+				KEYWORD
+				, KEYWORD_YN
+				, CAT_ID
+				, CAT_NM
+			) 
+			<isEqual property="keywordYn" compareValue="Y">
+			VALUES (
+				#keyword#
+				, #keywordYn#
+				, null
+				, null
+			)
+			</isEqual>
+			<isEqual property="keywordYn" compareValue="N">
+			SELECT #keyword#
+				 , #keywordYn#
+				 , CATEGORY_ID
+				 , CATEGORY_NAME  
+			 FROM PT_VO_CATEGORY 
+            WHERE (TEST_SBC = 'N' OR TEST_SBC IS NULL) 
+            	   AND CATEGORY_NAME LIKE '%$keyword$%'
+            START WITH PARENT_CATEGORY_ID = 'VC'
+                   AND CATEGORY_GB = 'I20'
+            CONNECT BY PRIOR CATEGORY_ID = PARENT_CATEGORY_ID
+			</isEqual>
+	</insert>
+	
+	<!-- 시즌제외 키워드 삭제 -->
+	<delete id="deleteExcept">
+		DELETE FROM PT_UF_SEASON_EXCEPT
+	</delete>
+	
+	<!-- 시즌 캐쉬 반영일시 수정 -->
+	<update id="updateCacheTimeProc" parameterClass="String">
+		UPDATE 
+			PT_CM_SEASON
+		SET 
+		   	CACHE_MOD_DT = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+		WHERE 
+		 	SEASON_ID = #season_id#
+	</update>
+	
+</sqlMap>

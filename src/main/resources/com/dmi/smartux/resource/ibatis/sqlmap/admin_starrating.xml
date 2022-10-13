@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="admin_starrating">
+	<typeAlias alias="srVo" type="com.dmi.smartux.admin.starrating.vo.StarRatingVO"/>
+	<typeAlias alias="srSearchVo" type="com.dmi.smartux.admin.starrating.vo.StarRatingSearchVO"/>
+	<typeAlias alias="srHistoryVo" type="com.dmi.smartux.admin.starrating.vo.HistoryVO"/>
+	
+	<!-- 별점 목록 -->
+	<select id="getStarRatingList" parameterClass="srSearchVo" resultClass="srVo">
+		SELECT A.* 
+		  FROM (SELECT ROW_NUMBER() OVER(ORDER BY REG_DATE DESC) AS ROWNO
+					 , SR_ID
+					 , SR_PID
+					 , USE_YN
+					 , SR_TYPE
+					 , SR_ORDER
+					 , SR_TITLE
+					 , SR_POINT
+					 , IMG_FILE
+					 , SYSTEM_GB
+					 , REG_ID
+					 , REG_DATE
+				  FROM PT_VL_STAR_RATING_MST
+				 WHERE SYSTEM_GB = #system_gb#
+				   AND SR_TYPE = '0'
+				   <isNotEmpty prepend="AND" property="use_yn">
+			 	 	   USE_YN = #use_yn#
+				   </isNotEmpty>
+				   <isNotEmpty prepend="AND" property="findValue">
+				      <isEqual property="findName" compareValue="SR_TITLE">
+					 	   $findName$ LIKE '%$findValue$%'
+					  </isEqual>
+				   </isNotEmpty>
+				) A
+		  WHERE ROWNO BETWEEN '$start_rnum$' AND '$end_rnum$'
+	</select>
+	
+	<!-- 별점 목록 개수 -->
+	<select id="getStarRatingListCnt" parameterClass="srSearchVo" resultClass="int">
+		SELECT COUNT(SR_ID)
+		  FROM PT_VL_STAR_RATING_MST
+		 WHERE SYSTEM_GB = #system_gb#
+		   AND SR_TYPE = '0'
+		   <isNotEmpty prepend="AND" property="use_yn">
+	 	 	   USE_YN = #use_yn#
+		   </isNotEmpty>
+		   <isNotEmpty prepend="AND" property="findValue">
+		      <isEqual property="findName" compareValue="SR_TITLE">
+			 	   $findName$ LIKE '%$findValue$%'
+			  </isEqual>
+		   </isNotEmpty>
+	</select>
+	
+	<!-- 별점 아이디 생성 -->
+	<select id="getStarRatingId" resultClass="String">
+		SELECT SEQ_PT_VL_STAR_RATING.NEXTVAL
+ 		  FROM DUAL
+	</select>
+	
+	<!-- 별점 등록 -->
+	<insert id="insertProc" parameterClass="srVo">
+		INSERT INTO PT_VL_STAR_RATING_MST(
+			SR_ID
+		  , SR_PID
+		  , USE_YN
+		  , SR_TYPE
+		  , SR_ORDER
+		  , SR_TITLE
+		  , SR_POINT
+		  , IMG_FILE
+		  , SYSTEM_GB
+		  , REG_ID
+		  , REG_DATE
+		  , MOD_ID
+		  , MOD_DATE
+		) VALUES (
+			#sr_id#
+		  , #sr_pid#
+		  , #use_yn#
+		  , #sr_type#
+		  , #sr_order#
+		  , #sr_title#
+		  , #sr_point#
+		  , #img_file#
+		  , #system_gb#
+		  , #reg_id#
+		  , TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+		  , #mod_id#
+		  , TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+		)
+	</insert>
+	
+	<!-- 별점 수정 -->
+	<update id="updateProc" parameterClass="srVo">
+		UPDATE PT_VL_STAR_RATING_MST
+		   SET SR_TITLE = #sr_title#
+		     , SR_ORDER = #sr_order#
+		     , SR_POINT = #sr_point#
+		     , IMG_FILE = #img_file#
+		     , MOD_ID   = #mod_id#
+		     , MOD_DATE = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+		 WHERE SR_ID = #sr_id#
+	</update>
+	
+	<!-- 별점 삭제 -->
+	<delete id="deleteProc" parameterClass="String">
+		DELETE PT_VL_STAR_RATING_MST
+		 WHERE SR_ID = #sr_id#
+	</delete>
+	
+	<!-- 이미지 서버 URL -->
+	<select id="getImgServer" resultClass="String">
+		SELECT F_SERVER_URL('I') || 'starrating/' FROM DUAL
+	</select>
+	
+	<!-- 별점 제목 -->
+	<select id="getTitle" parameterClass="String" resultClass="String">
+		SELECT SR_TITLE
+		  FROM PT_VL_STAR_RATING_MST
+		 WHERE SR_ID = #sr_id#
+	</select>
+	
+	<!-- 별점 상세 목록 -->
+	<select	id="getSrList" parameterClass="String" resultClass="srVo">
+		SELECT SR_ID
+			 , SR_TITLE
+			 , SR_ORDER
+			 , SR_POINT
+			 , IMG_FILE
+		  FROM PT_VL_STAR_RATING_MST
+		 WHERE SR_PID = #sr_pid#
+	  ORDER BY SR_ORDER
+	</select>
+	
+	<!-- 활성화 상태 -->
+	<select id="getUseYnCnt" parameterClass="String" resultClass="int">
+		SELECT COUNT(SR_ID)
+		  FROM PT_VL_STAR_RATING_MST
+		 WHERE SYSTEM_GB = #system_gb#
+		   AND SR_TYPE = '0'
+		   AND USE_YN = 'Y'
+	</select>
+	
+	<!-- 활성화 상태 수정 -->
+	<update id="updateUseYn" parameterClass="srVo">
+		UPDATE PT_VL_STAR_RATING_MST
+		   SET USE_YN = #use_yn#
+		     , MOD_ID = #mod_id#
+		     , MOD_DATE = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+		 WHERE SR_ID = #sr_id#
+	</update>
+	
+	<!-- 별점 내역 -->           
+	<select id="getAlbumHistoryList" parameterClass="srSearchVo" resultClass="srHistoryVo">
+		SELECT A.* 
+		  FROM (SELECT ROW_NUMBER() OVER(ORDER BY AVG_SR_POINT DESC) AS ROWNO
+		             , ALBUM_ID
+		             , MAX(S_B.CONTENTS_NAME) AS ALBUM_NAME
+		             , MAX(AVG_SR_POINT) AS SR_POINT
+		          FROM PT_UX_STAR_RATING_AVG SR
+		             , PT_VO_CATEGORY_MAP S_B 
+		         WHERE SR.SR_ID = #sr_pid#
+		           AND S_B.CONTENTS_ID(+) = SR.ALBUM_ID
+		           <isNotEmpty prepend="AND" property="findValue">
+				      <isEqual property="findName" compareValue="ALBUM_ID">
+					 	   SR.ALBUM_ID = '$findValue$'
+					  </isEqual>
+					  <isEqual property="findName" compareValue="ALBUM_NAME">
+					 	   S_B.CONTENTS_NAME LIKE '%$findValue$%'
+					  </isEqual>
+				   </isNotEmpty>
+		      GROUP BY ALBUM_ID, AVG_SR_POINT
+		      ) A
+		<isEmpty property="excel_yn">
+			WHERE ROWNO BETWEEN '$start_rnum$' AND '$end_rnum$'
+		</isEmpty>
+	</select>
+	
+	<!-- 별점 내역 개수 -->
+	<select id="getAlbumHistoryListCnt" parameterClass="srSearchVo" resultClass="int">
+		SELECT COUNT(*) 
+		  FROM (SELECT ALBUM_ID
+		          FROM PT_UX_STAR_RATING_AVG SR
+		             , PT_VO_CATEGORY_MAP S_B 
+		         WHERE S_B.CONTENTS_ID(+) = SR.ALBUM_ID
+		           AND SR.SR_ID = #sr_pid#
+		           <isNotEmpty prepend="AND" property="findValue">
+				      <isEqual property="findName" compareValue="ALBUM_ID">
+					 	   SR.ALBUM_ID = '$findValue$'
+					  </isEqual>
+					  <isEqual property="findName" compareValue="ALBUM_NAME">
+					 	   S_B.CONTENTS_NAME LIKE '%$findValue$%'
+					  </isEqual>
+				   </isNotEmpty>
+		      GROUP BY ALBUM_ID
+		      )
+	</select>
+	
+	<!-- 별점 주기 내역 -->
+	<select id="getSrHistoryList" parameterClass="srSearchVo" resultClass="srHistoryVo">
+		SELECT A.* 
+		  FROM (SELECT ROW_NUMBER() OVER(ORDER BY REG_DATE DESC) AS ROWNO
+					 , SA_ID
+					 , STB_MAC
+					 , SR_POINT
+					 , TO_CHAR(TO_DATE(REG_DATE, 'YYYYMMDD HH24:MI:SS'), 'YYYY-MM-DD HH24:MI:SS') AS REG_DATE
+				  FROM PT_UX_STAR_RATING_HIS
+				 WHERE PT_ALBUMID = CASE WHEN substr( #album_id#, 6,1) = 'A' THEN '10'
+     			   						 WHEN substr( #album_id#, 6,1) = 'B' THEN '11'
+     			   						 WHEN substr( #album_id#, 6,1) = 'C' THEN '12'
+     		  	   						 ELSE substr( #album_id#, 6,1)
+     		   						 END
+				   AND PT_YEAR BETWEEN TO_CHAR(TO_DATE('$start_date$', 'YYYYMMDDHH24MISS'), 'Y') AND TO_CHAR(TO_DATE('$end_date$', 'YYYYMMDDHH24MISS'), 'Y')
+				   AND SR_ID = #sr_pid#
+				   AND ALBUM_ID = #album_id#
+				   AND REG_DATE BETWEEN '$start_date$' AND '$end_date$'
+				   <isNotEmpty prepend="AND" property="findValue">
+				      <isEqual property="findName" compareValue="SA_ID">
+					 	   $findName$ LIKE '%$findValue$%'
+					  </isEqual>
+					  <isEqual property="findName" compareValue="STB_MAC">
+					 	   $findName$ LIKE '%$findValue$%'
+					  </isEqual>
+				   </isNotEmpty>
+				) A
+		<isEmpty property="excel_yn">
+			WHERE ROWNO BETWEEN '$start_rnum$' AND '$end_rnum$'
+		</isEmpty>
+	</select>
+	
+	<!-- 별점 주기 내역 개수 -->
+	<select id="getSrHistoryListCnt" parameterClass="srSearchVo" resultClass="int">
+		SELECT COUNT(*)
+		  FROM PT_UX_STAR_RATING_HIS
+		 WHERE PT_ALBUMID = CASE WHEN substr( #album_id#, 6,1) = 'A' THEN '10'
+     			   				 WHEN substr( #album_id#, 6,1) = 'B' THEN '11'
+     			   				 WHEN substr( #album_id#, 6,1) = 'C' THEN '12'
+     		  	   				 ELSE substr( #album_id#, 6,1)
+     		   				 END
+		   AND PT_YEAR BETWEEN TO_CHAR(TO_DATE('$start_date$', 'YYYYMMDDHH24MISS'), 'Y') AND TO_CHAR(TO_DATE('$end_date$', 'YYYYMMDDHH24MISS'), 'Y')
+		   AND SR_ID = #sr_pid#
+		   AND ALBUM_ID = #album_id#
+		   AND REG_DATE BETWEEN '$start_date$' AND '$end_date$'
+		   <isNotEmpty prepend="AND" property="findValue">
+		      <isEqual property="findName" compareValue="SA_ID">
+			 	   $findName$ LIKE '%$findValue$%'
+			  </isEqual>
+			  <isEqual property="findName" compareValue="STB_MAC">
+			 	   $findName$ LIKE '%$findValue$%'
+			  </isEqual>
+		   </isNotEmpty>
+	</select>
+	
+	<!-- 별점 주기 내역 평균별점 -->
+	<select id="getSrHistoryListAvg" parameterClass="srSearchVo" resultClass="String">
+		SELECT TRUNC(AVG(SR_POINT), 1) AS AVG
+		  FROM PT_UX_STAR_RATING_HIS
+		 WHERE PT_ALBUMID = CASE WHEN substr( #album_id#, 6,1) = 'A' THEN '10'
+     			   				 WHEN substr( #album_id#, 6,1) = 'B' THEN '11'
+     			   				 WHEN substr( #album_id#, 6,1) = 'C' THEN '12'
+     		  	   				 ELSE substr( #album_id#, 6,1)
+     		   				 END
+		   AND PT_YEAR BETWEEN TO_CHAR(TO_DATE('$start_date$', 'YYYYMMDDHH24MISS'), 'Y') AND TO_CHAR(TO_DATE('$end_date$', 'YYYYMMDDHH24MISS'), 'Y')
+		   AND SR_ID = #sr_pid#
+		   AND ALBUM_ID = #album_id#
+		   AND REG_DATE BETWEEN '$start_date$' AND '$end_date$'
+		   <isNotEmpty prepend="AND" property="findValue">
+		      <isEqual property="findName" compareValue="SA_ID">
+			 	   $findName$ LIKE '%$findValue$%'
+			  </isEqual>
+			  <isEqual property="findName" compareValue="STB_MAC">
+			 	   $findName$ LIKE '%$findValue$%'
+			  </isEqual>
+		   </isNotEmpty>
+	</select>
+</sqlMap>

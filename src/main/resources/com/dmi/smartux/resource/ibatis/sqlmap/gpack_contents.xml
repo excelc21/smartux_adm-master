@@ -1,0 +1,784 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="gpack_contents">
+	<typeAlias alias="gpackContentsVO"			type="com.dmi.smartux.admin.gpack.contents.vo.GpackContentsVO"/>
+	<typeAlias alias="gpackContentsAutoVO"		type="com.dmi.smartux.admin.gpack.contents.vo.GpackContentsAutoVO"/>
+	<typeAlias alias="gpackImcsCategoryVO"		type="com.dmi.smartux.admin.gpack.contents.vo.GpackImcsCategoryVO"/>
+	<typeAlias alias="gpackImcsCategoryAlbumVO"	type="com.dmi.smartux.admin.gpack.contents.vo.GpackImcsCategoryAlbumVO"/>
+	
+	<resultMap id="gpackContentsVOMap" class="com.dmi.smartux.admin.gpack.contents.vo.GpackContentsVO"> 
+		<result property="pack_id"			column="PACK_ID" />
+		<result property="category_id"		column="CATEGORY_ID" />
+		<result property="contents_id"		column="CONTENTS_ID" />
+		<result property="contents_nm"		column="CONTENTS_NM" />
+		<result property="movepath_type"	column="MOVEPATH_TYPE" />
+		<result property="movepath"			column="MOVEPATH" />
+		<result property="imcs_category_id"	column="IMCS_CATEGORY_ID" />
+		<result property="album_id"			column="ALBUM_ID" />
+		<result property="img_path"			column="IMG_PATH"  />
+		<result property="img_file"			column="IMG_FILE" />	
+		<result property="ordered"			column="ORDERED" />
+		<result property="use_yn"			column="USE_YN" />
+		<result property="created"			column="CREATED" />
+		<result property="updated"			column="UPDATED" />
+		<result property="create_id"		column="CREATE_ID" />
+		<result property="update_id"		column="UPDATE_ID" />
+		<result property="imcs_text"		column="IMCS_TEXT" />
+		<result property="imcs_img_path"	column="IMCS_IMG_PATH" />
+		<result property="imcs_img_file"	column="IMCS_IMG_FILE" />
+		<result property="chnl_info"		column="CHNL_INFO" />
+		<result property="product_info"		column="PRODUCT_INFO" />
+		<result property="dal_type"			column="DAL_TYPE" />
+	</resultMap>
+	<resultMap id="gpackContentsAutoVOMap" class="com.dmi.smartux.admin.gpack.contents.vo.GpackContentsAutoVO"> 
+		<result property="pack_id"			column="PACK_ID" />
+		<result property="category_id"		column="CATEGORY_ID" />
+		<result property="category_nm"		column="CATEGORY_NM" />
+		<result property="auto_set_id"		column="AUTO_SET_ID" />
+		<result property="imcs_category_id"		column="IMCS_CATEGORY_ID" />
+		<result property="imcs_category_text"	column="IMCS_CATEGORY_TEXT" />
+		<result property="use_yn"			column="USE_YN" />
+		<result property="created"			column="CREATED" />
+		<result property="updated"			column="UPDATED" />
+		<result property="create_id"		column="CREATE_ID" />
+		<result property="update_id"		column="UPDATE_ID" />
+	</resultMap>
+		
+	<sql id="getPT_VO_CATEGORY_MAP">
+		FROM 	PT_VO_CATEGORY_MAP T1, PT_LA_ALBUM_MST T2
+		WHERE 	T1.CONTENTS_ID  = T2.ADI_ALBUM_ID
+		AND 	(((T2.PRE_MAPPING_YN IS NULL OR T2.PRE_MAPPING_YN = 'N') AND (T1.VIEWING_FLAG = 'V' OR T1.VIEWING_FLAG IS NULL)) OR ((T2.PRE_MAPPING_YN = 'Y') AND (T1.VIEWING_FLAG = 'V')))
+	</sql>
+	
+	<!-- 직접편성 -->
+	<select id="getGpackContentsList" parameterClass="gpackContentsVO" resultClass="gpackContentsVO">
+		SELECT PACK_ID,
+		       CATEGORY_ID,
+		       CONTENTS_ID,
+		       CONTENTS_NM,
+		       MOVEPATH_TYPE,
+		       MOVEPATH,
+		       IMCS_CATEGORY_ID,
+		       ALBUM_ID,
+		       IMG_PATH,
+		       IMG_FILE,
+		       ORDERED,
+		       USE_YN,
+		       CREATED,
+		       UPDATED,
+		       CREATE_ID,
+		       UPDATE_ID
+		  FROM PT_GP_CONTENTS_INFO_TEMP
+		 WHERE 1=1
+		   AND PACK_ID = #pack_id#
+		   AND CATEGORY_ID = #category_id#
+		 <isNotEmpty property="use_yn">
+		   AND USE_YN = #use_yn#
+		 </isNotEmpty>
+	  ORDER BY ORDERED
+	</select>
+	
+	<!-- 직접 편성 : 
+		콘텐츠 이름이 없고, movepath_type이 'MT006' 이면 IMCS 카테고리 제목, movepath_type이 'MT002' 이면 IMCS 콘텐츠 제목
+		이미지 파일이 없고, movepath_type이 'MT006' 이면 IMCS 카테고리 이미지, movepath_type이 'MT002' 이면 IMCS 앨범 이미지
+	 -->
+	<select id="getGpackContentsView" parameterClass="gpackContentsVO" resultMap="gpackContentsVOMap">
+		SELECT GP.PACK_ID,
+		       GP.CATEGORY_ID,
+		       GP.CONTENTS_ID,
+		       GP.CONTENTS_NM,
+		       GP.MOVEPATH_TYPE,
+		       GP.MOVEPATH,
+		       GP.DAL_TYPE,
+		       GP.IMCS_CATEGORY_ID,
+		       GP.ALBUM_ID,
+		       (CASE 
+		       		WHEN GP.MOVEPATH_TYPE = 'MT002' THEN IMCS.ALBUM_NAME 
+		       		WHEN GP.MOVEPATH_TYPE = 'MT006' THEN IMCS.CATEGORY_NAME 
+		       		WHEN GP.MOVEPATH_TYPE = 'MT007' THEN (SELECT CATEGORY_NAME FROM PT_VO_CATEGORY WHERE CATEGORY_ID = GP.IMCS_CATEGORY_ID)
+		       	END
+		       ) AS IMCS_TEXT,
+		       (CASE WHEN GP.MOVEPATH_TYPE = 'MT006' THEN IMCS.IMCS_IMG_URL END) AS IMCS_IMG_PATH, 
+		       (CASE WHEN GP.MOVEPATH_TYPE = 'MT002' THEN IMCS.HEIGHT_IMG WHEN GP.MOVEPATH_TYPE = 'MT006' THEN IMCS.IMCS_IMG_FILE END) AS IMCS_IMG_FILE,
+		       (CASE WHEN GP.MOVEPATH_TYPE = 'MT005' THEN 
+		       		(SELECT CH.CHANNELNUMBER || '번 ' || CH.CHNL_NAME FROM PT_CD_PLAY_CHNL CH WHERE CH.SERVICE_ID = GP.MOVEPATH AND CH.USE_YN = 'Y')
+		        END) AS CHNL_INFO, 
+		       (CASE WHEN GP.MOVEPATH_TYPE = 'MT001' THEN 
+		       		(SELECT PRODUCT_NAME FROM IMCSUSER.PT_PD_PACKAGE WHERE PRODUCT_ID = GP.MOVEPATH)
+		        END) AS PRODUCT_INFO, 
+		       F_SERVER_URL('P') AS IMG_PATH,
+		       GP.IMG_FILE,
+		       GP.ORDERED,
+		       GP.USE_YN,
+		       GP.CREATED,
+		       GP.UPDATED,
+		       GP.CREATE_ID,
+		       GP.UPDATE_ID
+		  FROM PT_GP_CONTENTS_INFO_TEMP GP,
+		       (
+		            SELECT A.CATEGORY_ID,
+		              A.CATEGORY_NAME, 
+		              A.IMAGE_URL AS IMCS_IMG_URL,
+		              A.IMG_FILE_NAME AS IMCS_IMG_FILE,
+		              B.CONTENTS_NAME AS ALBUM_NAME_BAK,
+		              NVL(AL.ALBUM_ID, '1') AS ALBUM_ID,
+                      NVL(AL.ALBUM_NAME, B.CONTENTS_NAME) AS ALBUM_NAME,
+		              AL.WIDTH_IMG,
+		              AL.HEIGHT_IMG
+		            FROM PT_VO_CATEGORY A,
+		              (SELECT T1.CATEGORY_ID, T1.CONTENTS_ID, T1.CONTENTS_NAME <include refid="getPT_VO_CATEGORY_MAP"/>) B,
+		              (
+		                SELECT C.ADI_ALBUM_ID AS ALBUM_ID,
+                          MAX(D.ASSET_NAME) AS ALBUM_NAME,
+		                  MAX(DECODE(F.POSTER_TYPE, 'Y', F.CONTENT_VALUE, '')) AS WIDTH_IMG,
+		                  MAX(DECODE(F.POSTER_TYPE, 'V', F.CONTENT_VALUE, '')) AS HEIGHT_IMG
+		                FROM PT_LA_ALBUM_MST C,
+		                  PT_LA_PACKAGE_ASSET D,
+		                  PT_LA_POSTER_ASSET F
+		                WHERE 1=1
+		                  AND C.ADI_ALBUM_ID = D.ADI_ALBUM_ID
+		                  AND D.ADI_PRODUCT_ID = F.ADI_PRODUCT_ID
+		                  AND F.POSTER_TYPE IN ('Y', 'V', 'P')
+		                GROUP BY C.ADI_ALBUM_ID ) AL
+		            WHERE 1=1
+		              AND A.CATEGORY_GB = 'I20'
+		              AND A.CATEGORY_ID = B.CATEGORY_ID (+)
+		              AND B.CONTENTS_ID = AL.ALBUM_ID (+)       
+		       )IMCS
+		 WHERE 1=1
+		   AND GP.PACK_ID = #pack_id#
+		   AND GP.CATEGORY_ID = #category_id#
+		   AND GP.CONTENTS_ID = #contents_id#
+		   AND GP.IMCS_CATEGORY_ID = IMCS.CATEGORY_ID (+)
+		   AND NVL(GP.ALBUM_ID, '1') = IMCS.ALBUM_ID (+)
+
+		<!-- 
+		SELECT PACK_ID,
+		       CATEGORY_ID,
+		       CONTENTS_ID,
+		       CONTENTS_NM,
+		       MOVEPATH_TYPE,
+		       MOVEPATH,
+		       IMCS_CATEGORY_ID,
+		       ALBUM_ID,
+		       IMG_PATH,
+		       IMG_FILE,
+		       ORDERED,
+		       USE_YN,
+		       CREATED,
+		       UPDATED,
+		       CREATE_ID,
+		       UPDATE_ID,
+		       '' AS IMCS_TEXT,
+		       '' AS IMCS_IMG_PATH,
+		       '' AS IMCS_IMG_FILE
+		  FROM PT_GP_CONTENTS_INFO_TEMP
+		 WHERE 1=1
+		   AND PACK_ID = #pack_id#
+		   AND CATEGORY_ID = #category_id#
+		   AND CONTENTS_ID = #contents_id#
+		  -->
+	</select>
+	
+	<!-- 콘텐츠 저장하기 (이동경로 타입이 '카테고리 시리즈(MT006)'일 경우에 앨범ID에 콘텐츠의 최종회차 정보를 넣는다. ) -->
+	<insert id="insertGpackContents" parameterClass="gpackContentsVO">
+	
+			MERGE
+			INTO PT_GP_CONTENTS_INFO_TEMP A USING (
+				    SELECT 
+				    	#pack_id#		AS PACK_ID,
+						#category_id#	AS CATEGORY_ID,
+		       			#contents_id#	AS CONTENTS_ID
+				    FROM DUAL ) B 
+			 ON (		A.PACK_ID 	  = B.PACK_ID
+			      AND 	A.CATEGORY_ID = B.CATEGORY_ID
+			      AND 	A.CONTENTS_ID = B.CONTENTS_ID)
+			WHEN MATCHED THEN
+			
+					UPDATE
+					SET    
+						A.CONTENTS_NM		= #contents_nm#,
+						A.MOVEPATH_TYPE		= #movepath_type#,
+						A.MOVEPATH			= #movepath#,
+						A.IMCS_CATEGORY_ID	= #imcs_category_id#,
+						A.ALBUM_ID			= 
+										        DECODE(#movepath_type#, 'MT006',
+														( SELECT CONTENTS_ID FROM PT_VO_CATEGORY_MAP WHERE CATEGORY_ID = #imcs_category_id# AND SERIES_NO = TO_CHAR(
+																(SELECT MAX(TO_NUMBER(T3.SERIES_NO)) FROM (SELECT T1.SERIES_NO, T1.CATEGORY_ID <include refid="getPT_VO_CATEGORY_MAP"/>) T3 WHERE T3.CATEGORY_ID = #imcs_category_id#)) ),
+													   #album_id#
+										        ),
+						A.IMG_PATH			= #img_path#,
+						<isNotEmpty property="img_file">
+						A.IMG_FILE			= #img_file#,
+						</isNotEmpty>
+						<isNotEmpty property="dal_type">
+						A.DAL_TYPE			= #dal_type#,
+						</isNotEmpty>
+						A.ORDERED			= #ordered#,
+						A.USE_YN			= #use_yn#,
+						A.UPDATED			= SYSDATE,
+						A.UPDATE_ID			= #update_id#
+					  
+			WHEN NOT MATCHED THEN
+			
+					INSERT (PACK_ID, 
+							CATEGORY_ID, 
+					        CONTENTS_ID,
+					        CONTENTS_NM,
+					        MOVEPATH_TYPE,
+					        MOVEPATH,
+					        DAL_TYPE,
+					        IMCS_CATEGORY_ID,
+					        ALBUM_ID,
+					        IMG_PATH,
+					        IMG_FILE,
+					        ORDERED,
+					        USE_YN,
+							CREATED, CREATE_ID) 
+						VALUES ( 
+							B.PACK_ID, 
+							B.CATEGORY_ID, 
+							SEQ_PT_GP_CONTENTS_INFO.NEXTVAL, 
+							#contents_nm#,
+					        #movepath_type#,
+					        #movepath#,
+					        #dal_type#,
+					        #imcs_category_id#,
+					        DECODE(#movepath_type#, 'MT006',
+									( SELECT CONTENTS_ID FROM PT_VO_CATEGORY_MAP WHERE CATEGORY_ID = #imcs_category_id# AND SERIES_NO = TO_CHAR(
+											(SELECT MAX(TO_NUMBER(T3.SERIES_NO)) FROM (SELECT T1.SERIES_NO, T1.CATEGORY_ID <include refid="getPT_VO_CATEGORY_MAP"/>) T3 WHERE T3.CATEGORY_ID = #imcs_category_id#)) ),
+								   #album_id#
+					        ),
+					        #img_path#,
+					        #img_file#,
+							NVL((SELECT MAX(ORDERED) FROM PT_GP_CONTENTS_INFO_TEMP WHERE PACK_ID = #pack_id# AND CATEGORY_ID = #category_id#), 0)+1, 
+							#use_yn#, 
+							SYSDATE, #create_id#)
+	</insert>
+	
+	<delete id="deleteGpackContents" parameterClass="gpackContentsVO">
+		DELETE FROM PT_GP_CONTENTS_INFO_TEMP
+		WHERE  PACK_ID          = #pack_id#
+		<isNotEmpty property="category_id">
+		AND    CATEGORY_ID    = #category_id#
+		</isNotEmpty>
+		<isNotEmpty property="contents_id">
+		AND    CONTENTS_ID    = #contents_id#
+		</isNotEmpty>
+	</delete>
+	
+	
+	
+	<!-- 자동편성(IMCS 카테고리 연동) -->
+	<select id="getGpackContentsAutoList" parameterClass="gpackContentsAutoVO" resultClass="gpackContentsAutoVO">
+		SELECT PACK_ID,
+		       CATEGORY_ID,
+		       AUTO_SET_ID,
+		       IMCS_CATEGORY_ID,
+		       ORDERED,
+		       USE_YN,
+		       CREATED,
+		       UPDATED,
+		       CREATE_ID,
+		       UPDATE_ID
+		  FROM PT_GP_AUTO_SET_INFO_TEMP
+		 WHERE 1=1
+		   AND PACK_ID = #pack_id#
+		   AND CATEGORY_ID = #category_id#
+		 <isNotEmpty property="use_yn">
+		   AND USE_YN = #use_yn#
+		 </isNotEmpty>
+	  ORDER BY ORDERED
+	</select>
+	
+	<select id="getGpackContentsAutoView" parameterClass="gpackContentsAutoVO" resultMap="gpackContentsAutoVOMap">
+		SELECT CT.PACK_ID,
+		       CT.CATEGORY_ID,
+		       CT.CATEGORY_NM,
+		       AT.AUTO_SET_ID, 
+		       AT.IMCS_CATEGORY_ID,
+		       (SELECT CATEGORY_NAME FROM PT_VO_CATEGORY WHERE CATEGORY_GB = 'I20' AND CATEGORY_ID = AT.IMCS_CATEGORY_ID) AS IMCS_CATEGORY_TEXT,
+		       AT.USE_YN,
+		       AT.CREATED,
+		       AT.UPDATED,
+		       AT.CREATE_ID,
+		       AT.UPDATE_ID
+		  FROM PT_GP_CATEGORY_INFO_TEMP CT, PT_GP_AUTO_SET_INFO_TEMP AT
+		 WHERE     1 = 1
+		   AND CT.CATEGORY_YN = 'Y'
+		   AND CT.PACK_ID = #pack_id#
+		   AND CT.CATEGORY_ID = #category_id#
+	       AND CT.PACK_ID = AT.PACK_ID(+)
+	       AND CT.CATEGORY_ID = AT.CATEGORY_ID(+)
+	</select>
+	
+	<select id="getGpackOneCategory" parameterClass="gpackContentsAutoVO" resultMap="gpackContentsAutoVOMap">
+		SELECT CT.PACK_ID,
+		       CT.CATEGORY_ID,
+		       CT.CATEGORY_NM,
+		       AT.AUTO_SET_ID, 
+		       AT.IMCS_CATEGORY_ID,
+		       (SELECT CATEGORY_NAME FROM PT_VO_CATEGORY WHERE CATEGORY_GB = 'I20' AND CATEGORY_ID = AT.IMCS_CATEGORY_ID) AS IMCS_CATEGORY_TEXT,
+		       AT.USE_YN,
+		       AT.CREATED,
+		       AT.UPDATED,
+		       AT.CREATE_ID,
+		       AT.UPDATE_ID
+		  FROM PT_GP_CATEGORY_INFO_TEMP CT, PT_GP_AUTO_SET_INFO_TEMP AT
+		 WHERE     1 = 1
+		   AND CT.CATEGORY_YN = 'N'
+		   AND CT.PACK_ID = #pack_id#
+		   AND CT.CATEGORY_ID = #category_id#
+	       AND CT.PACK_ID = AT.PACK_ID(+)
+	       AND CT.CATEGORY_ID = AT.CATEGORY_ID(+)
+	</select>
+	
+	<insert id="insertGpackContentsAuto" parameterClass="gpackContentsAutoVO">
+			MERGE
+			INTO PT_GP_AUTO_SET_INFO_TEMP A USING (
+				    SELECT 
+				    	#pack_id# AS PACK_ID,
+						#category_id# AS CATEGORY_ID,
+						#auto_set_id# AS AUTO_SET_ID
+				    FROM DUAL ) B 
+			 ON (		A.PACK_ID = B.PACK_ID
+			      AND 	A.CATEGORY_ID = B.CATEGORY_ID
+			      AND 	A.AUTO_SET_ID = B.AUTO_SET_ID)
+			WHEN MATCHED THEN
+			
+					UPDATE
+					SET 
+						A.IMCS_CATEGORY_ID	= #imcs_category_id# ,
+						A.ORDERED			= #ordered#,
+						A.USE_YN			= #use_yn#,
+						A.UPDATED			= SYSDATE ,
+						A.UPDATE_ID			= #update_id#
+					  
+			WHEN NOT MATCHED THEN
+			
+					INSERT (PACK_ID,
+					      CATEGORY_ID,
+					      AUTO_SET_ID,
+					      IMCS_CATEGORY_ID,
+					      ORDERED,
+					      USE_YN,
+					      CREATED,
+					      CREATE_ID)
+					VALUES (B.PACK_ID,
+					      B.CATEGORY_ID,
+					      SEQ_PT_GP_AUTO_SET_INFO.NEXTVAL,
+					      #imcs_category_id#,
+					      NVL((SELECT MAX(ORDERED) FROM PT_GP_AUTO_SET_INFO_TEMP WHERE PACK_ID = #pack_id# AND CATEGORY_ID = #category_id#), 0)+1,
+					      #use_yn#,
+					      SYSDATE,
+					      #create_id#) 
+	</insert>
+	
+	<delete id="deleteGpackContentsAuto" parameterClass="gpackContentsAutoVO">
+		DELETE FROM PT_GP_AUTO_SET_INFO_TEMP
+		WHERE  PACK_ID		= #pack_id#
+		<isNotEmpty property="category_id">
+		AND    CATEGORY_ID  = #category_id#
+		</isNotEmpty>
+		<isNotEmpty property="auto_set_id">
+		AND    AUTO_SET_ID  = #auto_set_id#
+		</isNotEmpty>
+	</delete>
+	
+	
+	
+	<!-- 순서바꾸기 -->
+	<update id="updateGpackContentsOrderby" parameterClass="gpackContentsVO">
+		UPDATE PT_GP_CONTENTS_INFO_TEMP
+		SET    ORDERED		= #ordered#,
+		       UPDATED		= SYSDATE,
+		       UPDATE_ID	= #update_id#
+		WHERE  PACK_ID		= #pack_id#
+		AND    CATEGORY_ID	= #category_id#
+		AND    CONTENTS_ID	= #contents_id#
+	</update>
+	<update id="updateGpackContentsAutoOrderby" parameterClass="gpackContentsAutoVO">
+		UPDATE PT_GP_AUTO_SET_INFO_TEMP
+		SET    ORDERED        = #ordered#,
+		       UPDATED        = SYSDATE,
+		       UPDATE_ID      = #update_id#
+		WHERE  PACK_ID        = #pack_id#
+		AND    CATEGORY_ID    = #category_id#
+		AND	   AUTO_SET_ID	  = #auto_set_id#
+	</update>
+	
+	
+	
+	<!-- IMCS 카테고리 조회 (admin_mainpanel.xml > getCategoryList) UNION 이후는 앨범 -->
+	<select id="getImcsCategoryList" parameterClass="map" resultClass="gpackImcsCategoryVO">
+	 <!-- 전체 카테고리 가져올때 쓰세요. -->
+		SELECT CATEGORY_ID, CATEGORY_NAME, ALBUM_YN, SORT_NO, LEAF_YN, CONTENTS_ID, CONTENTS_NAME, SERIES_NO, SERIES_YN
+		 FROM (
+			SELECT 	A.CATEGORY_ID AS CATEGORY_ID, 
+					A.CATEGORY_NAME AS CATEGORY_NAME, 
+					CATEGORY_LEVEL, 
+					DECODE(B.CATEGORY_ID, NULL, 'N', 'Y') AS ALBUM_YN, 
+					A.SORT_NO AS SORT_NO,
+			        DECODE(COUNT(B.CONTENTS_ID), 0, 'N', 'Y') AS LEAF_YN,
+					'' AS CONTENTS_ID,
+					'' AS CONTENTS_NAME,
+					'' AS SERIES_NO,
+					A.SERIES_YN
+
+			  FROM  PT_VO_CATEGORY A, 
+			  		(SELECT T1.CATEGORY_ID, T1.CONTENTS_ID <include refid="getPT_VO_CATEGORY_MAP"/>) B
+			  
+			 WHERE  A.CATEGORY_GB = 'I20'
+			 	<isNotEmpty property="gubun">
+			 	AND  A.CATEGORY_ID in (#category_id#, 'U000')
+			 	</isNotEmpty>
+			 	<isEmpty property="gubun">
+			   AND  A.PARENT_CATEGORY_ID = #category_id# 
+			 	</isEmpty>
+			   AND  A.CATEGORY_ID = B.CATEGORY_ID (+)  
+		  GROUP BY  A.CATEGORY_ID, A.CATEGORY_NAME, CATEGORY_LEVEL, B.CATEGORY_ID, A.SORT_NO, A.SERIES_YN
+		 UNION
+		 <isNotEmpty property="product_id">
+			SELECT 	A.CATEGORY_ID,
+					A.CATEGORY_NAME,
+					A.CATEGORY_LEVEL,
+					DECODE(B.CATEGORY_ID, NULL, 'N', 'Y') AS ALBUM_YN,
+					A.SORT_NO,
+					'Y' AS LEAF_YN,
+					B.CONTENTS_ID,
+					C.ASSET_NAME as CONTENTS_NAME,
+					B.SERIES_NO,
+					A.SERIES_YN
+			  FROM 	PT_VO_CATEGORY A,
+					(SELECT T1.CATEGORY_ID, T1.CONTENTS_ID, T1.SERIES_NO <include refid="getPT_VO_CATEGORY_MAP"/>) B,
+					PT_LA_PACKAGE_ASSET C,
+					IMCSUSER.PT_PD_PACKAGE_DETAIL D
+			 WHERE 	1=1
+			   AND	A.CATEGORY_ID = #category_id# 
+			   AND	A.CATEGORY_ID = B.CATEGORY_ID
+			   AND  B.CONTENTS_ID = C.ADI_ALBUM_ID
+			   AND C.ASSET_ID = D.CONTENTS_ID
+    		   AND D.PRODUCT_ID = #product_id#
+    	</isNotEmpty>
+    	<isEmpty property="product_id">
+    		SELECT 	A.CATEGORY_ID,
+					A.CATEGORY_NAME,
+					A.CATEGORY_LEVEL,
+					DECODE(B.CATEGORY_ID, NULL, 'N', 'Y') AS ALBUM_YN,
+					A.SORT_NO,
+					'Y' AS LEAF_YN,
+					B.CONTENTS_ID,
+					C.ASSET_NAME as CONTENTS_NAME,
+					B.SERIES_NO,
+					A.SERIES_YN
+			  FROM 	PT_VO_CATEGORY A,
+					(SELECT T1.CATEGORY_ID, T1.CONTENTS_ID, T1.SERIES_NO <include refid="getPT_VO_CATEGORY_MAP"/>) B,
+					PT_LA_PACKAGE_ASSET C
+			 WHERE 	1=1
+			   AND	A.CATEGORY_ID = #category_id# 
+			   AND	A.CATEGORY_ID = B.CATEGORY_ID
+			   AND  B.CONTENTS_ID = C.ADI_ALBUM_ID
+		</isEmpty>
+		)
+		WHERE 1=1
+	 ORDER BY SORT_NO
+	 <!-- 콘텐츠 있는 카테고리만 가져올때 쓰세요. 
+		SELECT	A.CATEGORY_ID,
+				A.CATEGORY_NAME,
+				A.CATEGORY_LEVEL, 
+				A.ALBUM_YN, 
+				A.SORT_NO,
+				DECODE(COUNT(B.CONTENTS_ID), 0, 'N', 'Y') AS LEAF_YN,
+				'' AS CONTENTS_ID,
+				'' AS CONTENTS_NAME,
+				'' AS SERIES_NO
+		  FROM	(
+					SELECT 	AA.PARENT_CATEGORY_ID, AA.CATEGORY_ID AS CATEGORY_ID, 
+							AA.CATEGORY_NAME AS CATEGORY_NAME, 
+							AA.CATEGORY_LEVEL, 
+							DECODE(BB.CATEGORY_ID, NULL, 'N', 'Y') AS ALBUM_YN, 
+							AA.SORT_NO AS SORT_NO
+					  FROM  PT_VO_CATEGORY AA, PT_VO_CATEGORY_MAP BB
+					 WHERE  AA.CATEGORY_GB = 'I20'
+					   AND  AA.PARENT_CATEGORY_ID = #category_id# 
+					   AND  AA.CATEGORY_ID = BB.CATEGORY_ID (+)  
+				  GROUP BY  AA.PARENT_CATEGORY_ID, AA.CATEGORY_ID, AA.CATEGORY_NAME, AA.CATEGORY_LEVEL, BB.CATEGORY_ID, AA.SORT_NO		  		
+		  		) A,
+				(
+					SELECT	IA.PARENT_CATEGORY_ID,
+							IA.CATEGORY_ID,
+							IA.CATEGORY_NAME,
+							IB.CONTENTS_ID,
+							IB.CONTENTS_NAME,
+							SYS_CONNECT_BY_PATH(IA.CATEGORY_ID, '/') AS PATH
+					   FROM PT_VO_CATEGORY IA,
+							PT_VO_CATEGORY_MAP IB
+					  WHERE 1=1
+						AND IA.CATEGORY_ID = IB.CATEGORY_ID (+) 
+				 START WITH IA.PARENT_CATEGORY_ID = #category_id# 
+				 CONNECT BY PRIOR IA.CATEGORY_ID = IA.PARENT_CATEGORY_ID 
+			 	) B
+		 WHERE	1=1
+		   AND	A.PARENT_CATEGORY_ID = #category_id# 
+		   AND	B.CONTENTS_ID IS NOT NULL
+		   AND	B.PATH LIKE '/' || A.CATEGORY_ID || '%'
+	  GROUP BY	A.CATEGORY_ID,
+				A.CATEGORY_NAME,
+				A.CATEGORY_LEVEL, 
+				A.ALBUM_YN, 
+				A.SORT_NO
+		 UNION
+		SELECT 	A.CATEGORY_ID,
+				A.CATEGORY_NAME,
+				A.CATEGORY_LEVEL,
+				DECODE(B.CATEGORY_ID, NULL, 'N', 'Y') AS ALBUM_YN,
+				A.SORT_NO,
+				'Y' AS LEAF_YN,
+				B.CONTENTS_ID,
+				C.ASSET_NAME as CONTENTS_NAME,
+				B.SERIES_NO
+		  FROM 	PT_VO_CATEGORY A,
+				PT_VO_CATEGORY_MAP B,
+				PT_LA_PACKAGE_ASSET C
+		 WHERE 	1=1
+		   AND	A.CATEGORY_ID = #category_id# 
+		   AND	A.CATEGORY_ID = B.CATEGORY_ID
+		   AND  B.CONTENTS_ID = C.ADI_ALBUM_ID
+	  ORDER BY	SORT_NO , SERIES_NO 
+	  -->
+	</select>
+	
+	
+	
+	<!-- IMCS 콘텐츠 리스트 가져오기 (mainpanel.xml > getI20AlbumList) -->
+	<sql id="selectImcsCategoryAlbumList">
+		SELECT
+			  A.CATEGORY_ID			  AS CAT_ID,
+			  C.ADI_ALBUM_ID          AS ALBUM_ID,
+			  MAX(C.SERVICE_ICON)     AS SERVICE_GB,
+			  MAX(B.CONTENTS_NAME)    AS ALBUM_TITLE, 
+			  MAX(G.HDCONTENT)        AS IS_HD,
+			  MAX(DECODE(G.HDCONTENT, 'N', 'Y', 'N'))  AS IS_SD,       
+			  MAX(E.SUGGESTED_PRICE)  AS H_PRICE, 
+			  MIN(E.SUGGESTED_PRICE)  AS S_PRICE,       
+			  MAX(E.RATING)           AS PROGRAM_INFO, 
+			  MAX(NVL(E.ONAIR_DATE, '00000000')) AS ONAIR_DATE, 
+			  MAX(DECODE(A.SERIES_YN, NULL, 'N', A.SERIES_YN))        AS SERIES_FLAG,
+			  MAX(DECODE(DECODE(A.SERIES_YN, NULL, 'N', A.SERIES_YN), 'Y', C.SERIES_NO, '')) AS SERIES_DESC,		            
+			  MAX(A.CLOSE_YN)		  AS CLOSE_YN,
+			  MAX(G.SMI_YN)           AS IS_CAPTION, 
+			  F_SERVER_URL('P')		  AS IMG_URL,
+			  MAX(DECODE(F.POSTER_TYPE, 'Y', F.CONTENT_VALUE, '')) AS WIDTH_IMG,
+			  MAX(DECODE(F.POSTER_TYPE, 'V', F.CONTENT_VALUE, '')) AS HEIGHT_IMG,
+			  MAX(E.CATEGORY)         AS CATEGORY,       
+			  MAX(B.RANK_NO)          AS RANKING,
+			  MAX(E.GENRE_LARGE)	  AS GENRE1,
+			  MAX(E.RELEASE_DATE)	  AS RELEASE_DATE,
+			  MAX(DECODE(C.WATCH_RIGHT_YN, NULL, 'Y', C.WATCH_RIGHT_YN))	AS WATCH_RIGHT_YN,
+			  MAX(DECODE(C.IS_FH, NULL, 'N', C.IS_FH)) AS IS_FH 
+			  <!-- 'N' AS IS_FH-->
+		FROM  PT_VO_CATEGORY A, 
+		      (SELECT T1.CATEGORY_ID, T1.CONTENTS_ID, T1.CONTENTS_NAME, T1.RANK_NO <include refid="getPT_VO_CATEGORY_MAP"/>) B, 
+		      PT_LA_ALBUM_MST C, 
+		      PT_LA_PACKAGE_ASSET D, 
+		      PT_LA_TITLE_ASSET E, 
+		      PT_LA_POSTER_ASSET F, 
+		      PT_LA_CONTENT_ASSET G 
+		WHERE A.CATEGORY_ID = B.CATEGORY_ID
+		  AND A.CATEGORY_GB  = 'I20'
+		  AND B.CONTENTS_ID  = C.ADI_ALBUM_ID
+		  AND B.CONTENTS_ID  = D.ADI_ALBUM_ID
+		  AND C.ADI_ALBUM_ID = D.ADI_ALBUM_ID
+		  AND D.ADI_PRODUCT_ID = E.ADI_PRODUCT_ID 
+		  AND D.ADI_PRODUCT_ID = F.ADI_PRODUCT_ID
+		  AND D.ADI_PRODUCT_ID = G.ADI_PRODUCT_ID
+		  AND F.POSTER_TYPE IN ('Y', 'V', 'P')							
+	 GROUP BY A.CATEGORY_ID, C.ADI_ALBUM_ID
+	</sql>
+	
+	
+	<!-- 자동편성(IMCS 카테고리 연동) 리스트 -->
+	<select id="getPrevCategoryAutoList" parameterClass="map" resultClass="gpackImcsCategoryAlbumVO">
+		SELECT  A.PACK_ID,
+				A.CATEGORY_ID,
+				A.AUTO_SET_ID AS CONTENTS_ID,
+				'' AS CONTENTS_NM,
+				'' AS ORDERED,
+				A.USE_YN,
+				
+				B.CAT_ID, 
+				B.ALBUM_ID,
+				B.SERVICE_GB,
+				B.ALBUM_TITLE, 
+				B.IS_HD,
+				B.IS_SD,       
+				B.H_PRICE, 
+				B.S_PRICE,       
+				B.PROGRAM_INFO, 
+				B.ONAIR_DATE, 
+				B.SERIES_FLAG,
+				B.SERIES_DESC,		            
+				B.CLOSE_YN,
+				B.IS_CAPTION, 
+				B.IMG_URL,
+				B.WIDTH_IMG,
+				B.HEIGHT_IMG,
+				B.CATEGORY, 
+				B.RANKING,
+				B.GENRE1,
+				B.RELEASE_DATE,
+				B.WATCH_RIGHT_YN, 
+				B.IS_FH
+				
+		  FROM  PT_GP_AUTO_SET_INFO_TEMP A,
+				(
+				<include refid="selectImcsCategoryAlbumList"/>
+				)B
+		 WHERE  1=1
+		   AND  A.PACK_ID = #pack_id#
+		   AND  A.CATEGORY_ID = #category_id#
+		   AND  A.USE_YN = 'Y' 
+		   AND  A.IMCS_CATEGORY_ID = B.CAT_ID
+	  ORDER BY  B.RANKING
+	</select>
+	
+	
+	<!-- 자동편성(IMCS 카테고리 연동) 상용 리스트 -->
+	<select id="getPrevCategoryAutoBizList" parameterClass="map" resultClass="gpackImcsCategoryAlbumVO">
+		SELECT  A.PACK_ID,
+				A.CATEGORY_ID,
+				A.AUTO_SET_ID AS CONTENTS_ID,
+				'' AS CONTENTS_NM,
+				'' AS ORDERED,
+				A.USE_YN,
+				
+				B.CAT_ID, 
+				B.ALBUM_ID,
+				B.SERVICE_GB,
+				B.ALBUM_TITLE, 
+				B.IS_HD,
+				B.IS_SD,       
+				B.H_PRICE, 
+				B.S_PRICE,       
+				B.PROGRAM_INFO, 
+				B.ONAIR_DATE, 
+				B.SERIES_FLAG,
+				B.SERIES_DESC,		            
+				B.CLOSE_YN,
+				B.IS_CAPTION, 
+				B.IMG_URL,
+				B.WIDTH_IMG,
+				B.HEIGHT_IMG,
+				B.CATEGORY, 
+				B.RANKING,
+				B.GENRE1,
+				B.RELEASE_DATE,
+				B.WATCH_RIGHT_YN, 
+				B.IS_FH
+				
+		  FROM  PT_GP_AUTO_SET_INFO A,
+				(
+				<include refid="selectImcsCategoryAlbumList"/>
+				)B
+		 WHERE  1=1
+		   AND  A.PACK_ID = #pack_id#
+		   AND  A.CATEGORY_ID = #category_id#
+		   AND  A.USE_YN = 'Y' 
+		   AND  A.IMCS_CATEGORY_ID = B.CAT_ID
+	  ORDER BY  B.RANKING
+	</select>
+	
+	<!-- VOD - 수동편성 리스트 -->
+	<select id="getPrevCategoryContentsList" parameterClass="map" resultClass="gpackImcsCategoryAlbumVO">
+		SELECT  A.PACK_ID,
+				A.CATEGORY_ID,
+				A.CONTENTS_ID,
+				A.CONTENTS_NM,
+				A.ORDERED,
+				A.USE_YN,
+				
+				B.CAT_ID, 
+				B.ALBUM_ID,
+				B.SERVICE_GB,
+				B.ALBUM_TITLE, 
+				B.IS_HD,
+				B.IS_SD,       
+				B.H_PRICE, 
+				B.S_PRICE,       
+				B.PROGRAM_INFO, 
+				B.ONAIR_DATE, 
+				B.SERIES_FLAG,
+				B.SERIES_DESC,		            
+				B.CLOSE_YN,
+				B.IS_CAPTION, 
+				B.IMG_URL,
+				B.WIDTH_IMG,
+				B.HEIGHT_IMG,
+				B.CATEGORY,       
+				B.RANKING,
+				B.GENRE1,
+				B.RELEASE_DATE,
+				B.WATCH_RIGHT_YN, 
+				B.IS_FH
+				
+		  FROM  PT_GP_CONTENTS_INFO_TEMP A,
+				(
+				<include refid="selectImcsCategoryAlbumList"/>
+				)B
+		 WHERE  1=1
+		   AND  A.PACK_ID = #pack_id#
+		   AND  A.CATEGORY_ID = #category_id#
+		   AND  A.USE_YN = 'Y'  
+		   AND  A.IMCS_CATEGORY_ID = B.CAT_ID
+		   AND  A.ALBUM_ID = B.ALBUM_ID
+	  ORDER BY  A.ORDERED 
+	</select>
+	
+	<!-- VOD - 수동편성 리스트 -->
+	<select id="getPrevCategoryContentsBizList" parameterClass="map" resultClass="gpackImcsCategoryAlbumVO">
+		SELECT  A.PACK_ID,
+				A.CATEGORY_ID,
+				A.CONTENTS_ID,
+				A.CONTENTS_NM,
+				A.ORDERED,
+				A.USE_YN,
+				
+				B.CAT_ID, 
+				B.ALBUM_ID,
+				B.SERVICE_GB,
+				B.ALBUM_TITLE, 
+				B.IS_HD,
+				B.IS_SD,       
+				B.H_PRICE, 
+				B.S_PRICE,       
+				B.PROGRAM_INFO, 
+				B.ONAIR_DATE, 
+				B.SERIES_FLAG,
+				B.SERIES_DESC,		            
+				B.CLOSE_YN,
+				B.IS_CAPTION, 
+				B.IMG_URL,
+				B.WIDTH_IMG,
+				B.HEIGHT_IMG,
+				B.CATEGORY,       
+				B.RANKING,
+				B.GENRE1,
+				B.RELEASE_DATE,
+				B.WATCH_RIGHT_YN, 
+				B.IS_FH
+				
+		  FROM  PT_GP_CONTENTS_INFO A,
+				(
+				<include refid="selectImcsCategoryAlbumList"/>
+				)B
+		 WHERE  1=1
+		   AND  A.PACK_ID = #pack_id#
+		   AND  A.CATEGORY_ID = #category_id#
+		   AND  A.USE_YN = 'Y'  
+		   AND  A.IMCS_CATEGORY_ID = B.CAT_ID
+		   AND  A.ALBUM_ID = B.ALBUM_ID
+	  ORDER BY  A.ORDERED 
+	</select>
+	
+	
+</sqlMap>

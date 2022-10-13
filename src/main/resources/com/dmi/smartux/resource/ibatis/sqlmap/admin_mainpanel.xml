@@ -1,0 +1,955 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="admin_mainpanel">
+	<typeAlias alias="admin_panelvo" type="com.dmi.smartux.admin.mainpanel.vo.PanelVO"/>
+	<typeAlias alias="admin_panelsearchvo" type="com.dmi.smartux.admin.mainpanel.vo.PanelSearchVo"/>
+	<typeAlias alias="admin_viewvo" type="com.dmi.smartux.admin.mainpanel.vo.ViewVO"/>
+	<typeAlias alias="admin_categoryvo" type="com.dmi.smartux.admin.mainpanel.vo.CategoryVO"/>
+	<typeAlias alias="admin_previewvo" type="com.dmi.smartux.admin.mainpanel.vo.PreviewVO"/>
+	<typeAlias alias="admin_framevo" type="com.dmi.smartux.admin.mainpanel.vo.FrameVO"/>
+	<typeAlias alias="admin_abtestvo" type="com.dmi.smartux.admin.abtest.vo.ABTestVO"/>
+	
+	<select id="getPanelVersion" resultClass="string">
+		SELECT MAX(VERSION) AS VERSION
+		FROM PT_UX_PANEL
+	</select>
+	
+	<select id="getPanelId" resultClass="admin_panelvo">
+	WITH TEMP AS(
+		SELECT 
+		   SUBSTR('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ',LEVEL,1) STR 
+		FROM DUAL 
+		CONNECT BY LEVEL <![CDATA[ <=  ]]> 36
+		),
+		ROW_DATA AS (
+			SELECT C_STR AS PANNEL_ID, NEXT_STR AS NEXT_PANNEL_ID
+			FROM (
+				SELECT 
+				   LPAD('Z'|| A.STR||B.STR|| C.STR, 4, 0) AS C_STR,
+				   CASE WHEN LPAD('Z'|| A.STR||B.STR|| C.STR,4, 0) = 'ZZZZ' THEN ''
+				   ELSE LEAD(LPAD('Z'|| A.STR||B.STR|| C.STR, 4, 0)) OVER (ORDER BY LPAD('Z'|| A.STR||B.STR|| C.STR, 4, 0)) END AS NEXT_STR
+				FROM 
+				   TEMP A
+				   ,TEMP B
+				   ,TEMP C
+				WHERE 'Z'|| A.STR || B.STR || C.STR <![CDATA[ > ]]> 'Z000'
+			)
+			WHERE C_STR = (SELECT max(PANNEL_ID) AS PANNEL_ID
+								FROM PT_UX_PANEL
+						WHERE SUBSTR(PANNEL_ID,0,1) = 'Z')	
+			AND ROWNUM=1
+		),
+		CNT_DATA AS (
+			SELECT  COUNT(*) AS CNT
+			FROM ROW_DATA
+		)
+		SELECT CASE WHEN A.CNT = 0 THEN 'Z001' ELSE (SELECT PANNEL_ID FROM ROW_DATA) END AS PANNEL_ID,
+			   CASE WHEN A.CNT = 0 THEN '' ELSE (SELECT NEXT_PANNEL_ID FROM ROW_DATA) END AS NEXT_PANNEL_ID
+		FROM CNT_DATA A
+	</select>
+	
+	<select id="getPanelList" resultClass="admin_panelvo">
+		SELECT PANNEL_ID, PANNEL_NM, USE_YN, PANEL_UI_TYPE , FOCUS_TYPE, 
+    		NVL((SELECT 'Y'
+            FROM UXUSER.PT_UX_VARIATION_INFO
+            WHERE ORG_MIMS_ID = PANNEL_ID
+            AND ROWNUM <![CDATA[ <= ]]> 1), 'N') AS ABTEST_YN
+    	FROM PT_UX_PANEL
+		ORDER BY ORD, PANNEL_ID
+	</select>
+	
+	<select id="getPanelSearchList" parameterClass="admin_panelsearchvo" resultClass="admin_panelvo">
+		SELECT PANNEL_ID, PANNEL_NM, USE_YN, PANEL_UI_TYPE , FOCUS_TYPE, ORD, ABTEST_YN, CREATED
+		FROM ( 
+		SELECT PANNEL_ID, PANNEL_NM, USE_YN, PANEL_UI_TYPE , FOCUS_TYPE, ORD,
+		    		NVL((SELECT 'Y'
+		            FROM UXUSER.PT_UX_VARIATION_INFO
+		            WHERE ORG_MIMS_ID = PANNEL_ID
+		            AND ROWNUM <![CDATA[ <= ]]> 1), 'N') AS ABTEST_YN,
+		            TO_CHAR(CREATED,'YYYY.MM.DD') AS CREATED
+		    	FROM PT_UX_PANEL
+		    	WHERE 1=1
+		    	<isNotEmpty property="startDt">
+		    	<isNotEmpty prepend="AND" property="endDt">
+		    	TO_CHAR(CREATED, 'YYYYMMDD') BETWEEN REPLACE(#startDt#, '-') AND REPLACE(#endDt#, '-')
+		    	</isNotEmpty>
+		    	</isNotEmpty>
+		)
+		WHERE 1=1
+		<isNotEmpty property="findName">
+		<isNotEmpty prepend="AND" property="findValue">
+			$findName$ LIKE '%$findValue$%'
+		</isNotEmpty>
+		</isNotEmpty>
+		<isNotEmpty prepend="AND" property="abtestYnChk">
+			ABTEST_YN = #abtestYnChk#
+		</isNotEmpty>
+		ORDER BY ORD, PANNEL_ID
+	</select>
+	
+	<select id="getPanelListWithABTest" parameterClass="admin_panelsearchvo" resultClass="admin_abtestvo">
+		SELECT PANNEL_ID, PANNEL_NM, TITLE_ID, TITLE_NM
+		FROM ( 
+		SELECT PANNEL_ID, PANNEL_NM, TITLE_ID, TITLE_NM, USE_YN, PANEL_UI_TYPE , FOCUS_TYPE, ORD,
+		    		NVL((SELECT 'Y'
+		            FROM UXUSER.PT_UX_VARIATION_INFO
+		            WHERE ORG_MIMS_ID = PANNEL_ID
+		            AND ROWNUM <![CDATA[ <= ]]> 1), 'N') AS ABTEST_YN
+		    	FROM (
+		          SELECT 
+		              A.PANNEL_ID AS PANNEL_ID, 
+		              A.PANNEL_NM AS PANNEL_NM, 
+		              B.TITLE_ID AS TITLE_ID, 
+		              B.TITLE_NM AS TITLE_NM,
+		              A.USE_YN AS USE_YN,
+		              A.PANEL_UI_TYPE AS PANEL_UI_TYPE,
+		              A.FOCUS_TYPE AS FOCUS_TYPE,
+		              A.ORD AS ORD,
+					  A.CREATED AS CREATED
+		              FROM PT_UX_PANEL A, PT_UX_PANEL_TITLE B 
+		              WHERE A.PANNEL_ID = B.PANNEL_ID (+) 
+		        )
+		    	WHERE 1=1
+		    	<isNotEmpty property="startDt">
+		    	<isNotEmpty prepend="AND" property="endDt">
+		    	TO_CHAR(CREATED, 'YYYYMMDD') BETWEEN REPLACE(#startDt#, '-') AND REPLACE(#endDt#, '-')
+		    	</isNotEmpty>
+		    	</isNotEmpty>
+		)
+		WHERE 1=1
+		<isNotEmpty property="findName">
+		<isNotEmpty prepend="AND" property="findValue">
+			$findName$ LIKE '%$findValue$%'
+		</isNotEmpty>
+		</isNotEmpty>
+		<isNotEmpty prepend="AND" property="abtestYnChk">
+			ABTEST_YN = #abtestYnChk#
+		</isNotEmpty>
+		<isNotEmpty prepend="AND" property="panel_id">
+			PANNEL_ID = #panel_id#
+		</isNotEmpty>
+		ORDER BY ORD, PANNEL_ID
+	</select>
+	
+	<select id="viewPanel" parameterClass="map" resultClass="admin_panelvo">
+		SELECT PANNEL_ID
+			, PANNEL_NM
+			, USE_YN
+			, TO_CHAR(CREATED, 'YYYYMMDDHH24MISS')
+			, TO_CHAR(UPDATED, 'YYYYMMDDHH24MISS')
+			, CREATE_ID
+			, UPDATE_ID
+			, PANEL_UI_TYPE
+			, PANEL_IMAGE
+			, F_SERVER_URL('I') AS IMG_URL 
+			, FOCUS_TYPE
+		FROM PT_UX_PANEL
+		WHERE PANNEL_ID = #pannel_id#
+	</select>
+	
+	<select id="getPanelidCnt" parameterClass="map" resultClass="int">
+		SELECT COUNT(PANNEL_ID)
+		FROM PT_UX_PANEL
+		WHERE PANNEL_ID = #pannel_id#
+	</select>
+	
+	<select id="getPanelnmCnt" parameterClass="map" resultClass="int">
+		SELECT COUNT(PANNEL_NM)
+		FROM PT_UX_PANEL
+		WHERE PANNEL_NM = #pannel_nm#
+	</select>
+	
+	<insert id="insertPanel" parameterClass="map">
+		INSERT INTO PT_UX_PANEL(PANNEL_ID, PANNEL_NM, USE_YN, VERSION, CREATED, UPDATED, CREATE_ID, UPDATE_ID, PANEL_UI_TYPE, PANEL_IMAGE , FOCUS_TYPE, ORD)
+		VALUES(
+			#pannel_id#
+    		, #pannel_nm#
+    		, #use_yn#
+    		, #version#
+    		, SYSDATE
+    		, SYSDATE
+   	 		, #create_id#
+    		, #update_id#
+    		, #panel_ui_type#
+    		, #panel_image#
+    		, #focus_type# 
+    		, (SELECT nvl(max(ORD),0)+1 FROM PT_UX_PANEL) 
+    	)
+	</insert>
+	
+	<update id="updatePanel" parameterClass="map">
+		UPDATE PT_UX_PANEL
+		SET PANNEL_ID = #newPannel_id# 
+		, PANNEL_NM = #newPannel_nm#
+		, USE_YN = #use_yn# 
+		, UPDATED = SYSDATE
+		, UPDATE_ID = #update_id#
+		, PANEL_UI_TYPE = #panel_ui_type#
+		, FOCUS_TYPE = #focus_type#
+		<isNotEqual property="panel_image" compareValue="">
+		, PANEL_IMAGE = #panel_image#
+		</isNotEqual>
+		WHERE PANNEL_ID = #pannel_id#
+		AND PANNEL_NM = #pannel_nm#
+	</update>
+	
+	
+	<update id="updatePanelDelImage" parameterClass="map">
+		UPDATE PT_UX_PANEL
+		SET PANNEL_ID = #newPannel_id# 
+		, PANNEL_NM = #newPannel_nm#
+		, USE_YN = #use_yn# 
+		, UPDATED = SYSDATE
+		, UPDATE_ID = #update_id#
+		, PANEL_UI_TYPE = #panel_ui_type#
+		, FOCUS_TYPE = #focus_type#		
+		, PANEL_IMAGE = ''
+		WHERE PANNEL_ID = #pannel_id#
+		AND PANNEL_NM = #pannel_nm#
+	</update>
+	
+	
+	
+	<delete id="deletePanel" parameterClass="string">
+		DELETE PT_UX_PANEL
+		WHERE PANNEL_ID = #pannel_id#         
+	</delete>
+	
+	<update id="updatePanelVersion" parameterClass="map">
+		UPDATE PT_UX_PANEL
+		SET VERSION = #version#
+		, UPDATED = SYSDATE
+		, UPDATE_ID = #update_id#
+	</update>
+	
+	<!-- mims.xml로 이동 -->
+	<!-- <update id="updatePanelTitleVersion" parameterClass="map">
+		UPDATE PT_UX_PANEL_TITLE
+		SET VERSION = #version#
+		, UPDATED = SYSDATE
+		, UPDATE_ID = #update_id#
+	</update> -->
+	
+	<select id="getPanelTitleTempList" parameterClass="map" resultClass="admin_viewvo">
+		SELECT A.*, DECODE(B.PANNEL_ID, NULL, 'N', 'Y') AS EXISTSUB, C.ITEM_NM AS CATEGORY_DESC, C.SS_GBN AS ALBUM_DESC
+		FROM (
+			SELECT PANNEL_ID, TITLE_ID, TITLE_NM, P_TITLE_ID, CATEGORY_ID, CATEGORY_TYPE, ALBUM_CNT,FOCUS_YN , ORDERED, LEVEL, USE_YN, CREATED, UPDATED, CREATE_ID, UPDATE_ID, ROWNUM RN, PAGE_TYPE, PAGE_CODE, NVL(CATEGORY_GB, 'I20') AS CATEGORY_GB
+			FROM PT_UX_PANEL_TITLE_TEMP
+			START WITH P_TITLE_ID IS NULL 
+			AND PANNEL_ID = #pannel_id#
+			CONNECT BY PRIOR TITLE_ID = P_TITLE_ID
+			AND PRIOR PANNEL_ID = PANNEL_ID
+    		ORDER SIBLINGS BY ORDERED
+			) A, (SELECT PANNEL_ID, P_TITLE_ID FROM PT_UX_PANEL_TITLE_TEMP GROUP BY PANNEL_ID, P_TITLE_ID)  B
+			, (SELECT SS_GBN, ITEM_NM FROM PT_UX_CODE_ITEMS WHERE code='A0008') C
+		WHERE A.PANNEL_ID = B.PANNEL_ID(+)
+		AND   A.TITLE_ID  = B.P_TITLE_ID(+)
+		AND   A.CATEGORY_TYPE = C.SS_GBN(+) 
+		ORDER BY RN
+	</select>
+	
+	
+	
+	
+	
+	<select id="getPanelTitleTempListSub" parameterClass="map" resultClass="admin_viewvo">
+		SELECT A.*, DECODE(B.PANNEL_ID, NULL, 'N', 'Y') AS EXISTSUB, C.ITEM_NM AS CATEGORY_DESC, C.SS_GBN AS ALBUM_DESC
+		FROM (
+		
+			SELECT PANNEL_ID, TITLE_ID, TITLE_NM, P_TITLE_ID, CATEGORY_ID, CATEGORY_TYPE, ALBUM_CNT,FOCUS_YN , ORDERED, USE_YN, CREATED, UPDATED, CREATE_ID, UPDATE_ID, ROWNUM RN, PAGE_TYPE, PAGE_CODE, NVL(CATEGORY_GB, 'I20') AS CATEGORY_GB
+			FROM PT_UX_PANEL_TITLE_TEMP
+			WHERE PANNEL_ID = #pannel_id#
+     		AND P_TITLE_ID =#p_title_id#
+
+			) A, (SELECT PANNEL_ID, P_TITLE_ID FROM PT_UX_PANEL_TITLE_TEMP GROUP BY PANNEL_ID, P_TITLE_ID)  B
+			, (SELECT SS_GBN, ITEM_NM FROM PT_UX_CODE_ITEMS WHERE code='A0008') C
+		WHERE A.PANNEL_ID = B.PANNEL_ID(+)
+		AND   A.TITLE_ID  = B.P_TITLE_ID(+)
+		AND   A.CATEGORY_TYPE = C.SS_GBN(+) 
+		ORDER BY RN
+	</select>
+	
+	<select id="getPanelTitleTempListSubNull" parameterClass="map" resultClass="admin_viewvo">
+		SELECT A.*, DECODE(B.PANNEL_ID, NULL, 'N', 'Y') AS EXISTSUB, C.ITEM_NM AS CATEGORY_DESC, C.SS_GBN AS ALBUM_DESC
+		FROM (
+		
+			SELECT PANNEL_ID, TITLE_ID, TITLE_NM, P_TITLE_ID, CATEGORY_ID, CATEGORY_TYPE, ALBUM_CNT,FOCUS_YN , ORDERED, USE_YN, CREATED, UPDATED, CREATE_ID, UPDATE_ID, ROWNUM RN, PAGE_TYPE, PAGE_CODE, NVL(CATEGORY_GB, 'I20') AS CATEGORY_GB
+			FROM PT_UX_PANEL_TITLE_TEMP
+			WHERE PANNEL_ID = #pannel_id#
+     		AND P_TITLE_ID IS NULL
+
+			) A, (SELECT PANNEL_ID, P_TITLE_ID FROM PT_UX_PANEL_TITLE_TEMP GROUP BY PANNEL_ID, P_TITLE_ID)  B
+			, (SELECT SS_GBN, ITEM_NM FROM PT_UX_CODE_ITEMS WHERE code='A0008') C
+		WHERE A.PANNEL_ID = B.PANNEL_ID(+)
+		AND   A.TITLE_ID  = B.P_TITLE_ID(+)
+		AND   A.CATEGORY_TYPE = C.SS_GBN(+) 
+		ORDER BY RN
+	</select>
+	
+	
+	<select id="viewPanelTitleTemp" parameterClass="map" resultClass="admin_viewvo">
+		SELECT PANNEL_ID, P_TITLE_ID, TITLE_ID, TITLE_NM, TITLE_COLOR, USE_YN
+			, F_SERVER_URL('I') AS IMG_URL
+			, TITLE_BG_IMG_FILE
+			, BG_IMG_FILE
+			, BG_IMG_FILE2
+			, BG_IMG_FILE3
+		FROM PT_UX_PANEL_TITLE_TEMP
+		WHERE PANNEL_ID = #pannel_id#
+		AND TITLE_ID = #title_id#
+	</select>
+	
+
+	
+	
+	
+	<!-- mims.xml로 이동 -->
+	<!-- <select id="getPanelTitleTempTitlenmCnt" parameterClass="map" resultClass="int">
+		SELECT COUNT(TITLE_NM)
+		FROM PT_UX_PANEL_TITLE_TEMP
+		WHERE PANNEL_ID = #panel_id# 
+		AND TITLE_NM = #title_nm#
+		<isEqual property="p_title_id" compareValue="-1">
+		AND P_TITLE_ID IS NULL
+		</isEqual>
+		<isNotEqual property="p_title_id" compareValue="-1">
+		AND P_TITLE_ID = #p_title_id#
+		</isNotEqual>
+	</select> -->
+	
+	<!-- mims.xml로 이동 -->
+	<!-- <select id="getPanelTitleTempTitleid" parameterClass="map" resultClass="string">
+		SELECT NVL(MAX(TO_NUMBER(TITLE_ID)), 0) + 1
+		FROM PT_UX_PANEL_TITLE_TEMP
+		WHERE PANNEL_ID = #pannel_id#
+	</select> -->
+	
+	<!-- mims.xml로 이동 -->
+	<!-- <insert id="insertPanelTitleTemp" parameterClass="map">
+		INSERT INTO PT_UX_PANEL_TITLE_TEMP(PANNEL_ID, TITLE_ID, TITLE_NM, TITLE_COLOR, P_TITLE_ID, ORDERED, USE_YN, CREATE_ID, UPDATE_ID, TITLE_BG_IMG_FILE, BG_IMG_FILE, BG_IMG_FILE2, BG_IMG_FILE3)
+		VALUES(
+			#pannel_id#, 
+			#title_id#, 
+			#title_nm#, 
+			#title_color#,
+			DECODE(#p_title_id#, '-1', NULL, #p_title_id#), 
+			(
+				SELECT NVL(MAX(ORDERED), 0) + 1 
+				FROM PT_UX_PANEL_TITLE_TEMP 
+				WHERE PANNEL_ID = #pannel_id#
+				<isEqual property="p_title_id" compareValue="-1">
+				AND P_TITLE_ID IS NULL
+				</isEqual>
+				<isNotEqual property="p_title_id" compareValue="-1">
+				AND P_TITLE_ID = #p_title_id#
+				</isNotEqual>
+			),
+			#use_yn#,
+			#create_id#, 
+			#update_id#,
+			#title_bg_img_file#,
+			#bg_img_file#,
+			#bg_img_file2#,
+			#bg_img_file3#)
+	</insert> -->
+	
+	<!-- 지면 등록시 상위 지면의 카테고리를 null로 업데이트 해주는 쿼리 -->
+	<!-- 
+	<update id="updatePanelTitleTempCategorySetNull" parameterClass="map">
+		UPDATE PT_UX_PANEL_TITLE_TEMP
+		SET CATEGORY_ID = NULL,
+		UPDATED = SYSDATE,
+		UPDATE_ID = #update_id#
+		WHERE PANNEL_ID = #pannel_id#
+		AND TITLE_ID = #p_title_id#
+	</update>
+	-->
+	
+	<!-- mims.xml로 이동 -->
+	<!-- <update id="updatePanelTitleTempCategorySetNull" parameterClass="map">
+		UPDATE PT_UX_PANEL_TITLE_TEMP
+		SET CATEGORY_ID = NULL,
+		CATEGORY_TYPE = NULL,
+		ALBUM_CNT = NULL,
+		UI_TYPE = NULL,
+		DESCRIPTION = NULL,
+		UPDATED = SYSDATE,
+		UPDATE_ID = #update_id#
+		WHERE PANNEL_ID = #pannel_id#
+		AND TITLE_ID = #p_title_id#
+	</update> -->
+	
+	<!-- mims.xml로 이동 -->
+	<!-- <update id="updatePanelTitleTemp" parameterClass="map">
+		UPDATE PT_UX_PANEL_TITLE_TEMP
+		SET TITLE_NM = #title_nm#,
+		TITLE_COLOR = #title_color#,
+		USE_YN = #use_yn#,
+		UPDATED = SYSDATE,
+		UPDATE_ID = #update_id#,
+		TITLE_BG_IMG_FILE = #title_bg_img_file#,
+		BG_IMG_FILE = #bg_img_file#,
+		BG_IMG_FILE2 = #bg_img_file2#,
+		BG_IMG_FILE3 = #bg_img_file3#
+		WHERE PANNEL_ID = #pannel_id#
+		AND TITLE_ID = #title_id#
+	</update> -->
+	
+	<!-- mims.xml로 이동 -->
+	<!-- 지면 삭제시 자기 것과 자기의 하위것을 모두 지운다 -->
+	<!-- <delete id="deletePanelTitleTemp" parameterClass="map">
+		DELETE FROM PT_UX_PANEL_TITLE_TEMP
+		WHERE PANNEL_ID = #pannel_id#
+		AND(TITLE_ID = #title_id#
+			OR TITLE_ID IN(
+				SELECT TITLE_ID
+				FROM PT_UX_PANEL_TITLE_TEMP
+				WHERE PANNEL_ID = #pannel_id#
+				START WITH P_TITLE_ID = #title_id#
+				CONNECT BY PRIOR TITLE_ID = P_TITLE_ID
+				AND PRIOR PANNEL_ID = PANNEL_ID
+			)
+		)
+	</delete> -->
+	
+	<!-- mims.xml로 이동 -->
+	<!-- <select id="changePanelTitleTempOrderList" parameterClass="map" resultClass="admin_viewvo">
+		SELECT TITLE_ID, TITLE_NM, ORDERED
+		FROM PT_UX_PANEL_TITLE_TEMP
+		WHERE PANNEL_ID = #pannel_id#
+		<isEqual property="p_title_id" compareValue="-1">
+		AND P_TITLE_ID IS NULL
+		</isEqual>
+		<isNotEqual property="p_title_id" compareValue="-1">
+		AND P_TITLE_ID = #p_title_id#
+		</isNotEqual>
+		ORDER BY ORDERED
+	</select> -->
+	
+	<!-- mims.xml로 이동 -->
+	<!-- <update id="changePanelTitleTempOrderJob" parameterClass="admin_viewvo">
+		UPDATE PT_UX_PANEL_TITLE_TEMP
+		SET ORDERED = #ordered#
+		, UPDATED = SYSDATE
+		, UPDATE_ID = #update_id#
+		WHERE PANNEL_ID = #pannel_id#
+		AND TITLE_ID = #title_id#
+	</update> -->
+	
+	<select id="getCategoryList" parameterClass="map" resultClass="admin_categoryvo">
+	 	<!-- decode 항목에서 N이 나오면 앨범 없음(카테고리 있음), Y면 앨범 있음(카테고리 없음) -->
+		SELECT A.CATEGORY_ID AS CATEGORY_ID, A.CATEGORY_NAME AS CATEGORY_NAME, CATEGORY_LEVEL, DECODE(B.CATEGORY_ID, NULL, 'N', 'Y') AS ALBUM_YN, A.SORT_NO AS SORT_NO
+        FROM  PT_VO_CATEGORY A,
+        (
+            SELECT
+                BB.CATEGORY_ID
+            FROM
+                PT_VO_CATEGORY_MAP BB,
+                PT_LA_ALBUM_MST CC
+            WHERE
+                BB.CONTENTS_ID = CC.ADI_ALBUM_ID
+            AND
+                (
+                    (
+                        (CC.PRE_MAPPING_YN IS NULL OR CC.PRE_MAPPING_YN = 'N') AND (BB.VIEWING_FLAG = 'V' OR BB.VIEWING_FLAG IS NULL)
+                    )
+                OR
+                    (
+                        CC.PRE_MAPPING_YN = 'Y' AND BB.VIEWING_FLAG = 'V'
+                    )
+                )
+        ) B
+		<isEmpty property="category_gb">
+			WHERE A.CATEGORY_GB = 'I20'
+		</isEmpty>
+		<isNotEmpty property="category_gb">
+			WHERE A.CATEGORY_GB = #category_gb#
+		</isNotEmpty>
+		AND   A.PARENT_CATEGORY_ID = #category_id# <!-- 1 Depth만 VC, 2 Depth 이후부터는 사용자가 클릭한 카테고리 코드 입력 -->
+		AND   A.CATEGORY_ID = B.CATEGORY_ID (+)  
+		GROUP BY A.CATEGORY_ID, A.CATEGORY_NAME, CATEGORY_LEVEL, DECODE(B.CATEGORY_ID, NULL, 'N', 'Y'), A.SORT_NO
+		ORDER BY A.SORT_NO
+	</select>
+
+	<!-- 
+	<update id="updateCategory" parameterClass="map">
+		UPDATE PT_UX_PANEL_TITLE_TEMP
+		SET CATEGORY_ID = #category_id#
+		, UPDATED = SYSDATE
+		, UPDATE_ID = #update_id# 
+		WHERE PANNEL_ID = #pannel_id#
+		AND TITLE_ID = #title_id#
+	</update>
+	-->
+	
+	<!-- 	mims.xml로 이동 -->
+	<!-- <update id="updateCategory" parameterClass="map">
+		UPDATE PT_UX_PANEL_TITLE_TEMP
+		SET CATEGORY_ID = #category_id#
+		, CATEGORY_TYPE = #category_type#
+		, ALBUM_CNT = #album_cnt#
+		, UI_TYPE = #ui_type#
+		, PAGE_TYPE = #page_type#
+		, PAGE_CODE = #page_code#
+		, DESCRIPTION = #description#
+		, CATEGORY_GB = #category_gb#
+		, UPDATED = SYSDATE
+		, UPDATE_ID = #update_id#
+		, REPS_ALBUM_ID = #reps_album_id# 
+		, REPS_CATEGORY_ID = #reps_category_id#
+		, TRAILER_VIEWING_TYPE = #trailer_viewing_type#
+		, REPS_TRAILER_VIEWING_TYPE = #reps_trailer_viewing_type#
+		, LOCATION_CODE = #location_code#
+		, LOCATION_YN = #location_yn#		
+		WHERE PANNEL_ID = #pannel_id#
+		AND TITLE_ID = #title_id#
+	</update> -->
+	
+	<!-- mims.xml로 이동 -->
+	<!-- 임시 지면 테이블과 상용 지면 테이블에서 패널의 지면이 변경된 수 조회 -->
+	<!-- <select id="getPanelTitleChangeCount" parameterClass="map" resultClass="int">
+		SELECT	COUNT(*)
+		FROM (
+		  	SELECT A.PANNEL_ID AS PANNEL_ID_TEMP, A.TITLE_ID AS TITLE_ID_TEMP, B.PANNEL_ID PANNEL_ID, B.TITLE_ID TITLE_ID, A.UPDATED, B.VERSION
+		  	FROM
+		    	(SELECT * FROM PT_UX_PANEL_TITLE_TEMP WHERE PANNEL_ID = #pannel_id#) A
+		    	FULL OUTER JOIN
+		    	(SELECT * FROM PT_UX_PANEL_TITLE WHERE PANNEL_ID = #pannel_id#)  B
+		  	ON A.PANNEL_ID = B.PANNEL_ID AND A.TITLE_ID = B.TITLE_ID)
+		WHERE
+		(
+			PANNEL_ID_TEMP IS NULL
+		  	OR PANNEL_ID IS NULL
+		  	OR VERSION <![CDATA[<]]> TO_CHAR(UPDATED, 'YYYYMMDDHH24MISS')
+		)
+	</select> -->
+	
+	<!-- mims.xml로 이동 -->
+	<!-- 하위 지면이 더는 없는데 카테고리 코드가 셋팅이 안된 지면들의 이름을 검색하는 쿼리 -->
+	<!-- <select id="mustCategorySettingList" parameterClass="map" resultClass="string">
+		SELECT TITLE_NM FROM(
+			SELECT A.TITLE_NM, a.CATEGORY_ID, DECODE(B.PANNEL_ID, NULL, 'N', 'Y') AS EXISTSUB, CATEGORY_TYPE
+			FROM (
+    			SELECT PANNEL_ID, TITLE_ID, TITLE_NM, CATEGORY_ID, CATEGORY_TYPE, ROWNUM RN
+    			FROM PT_UX_PANEL_TITLE_TEMP
+    			START WITH P_TITLE_ID IS NULL 
+    			AND PANNEL_ID = #pannel_id#
+    			CONNECT BY PRIOR TITLE_ID = P_TITLE_ID
+    			AND PRIOR PANNEL_ID = PANNEL_ID
+    			ORDER SIBLINGS BY ORDERED
+    			) A, (SELECT PANNEL_ID, P_TITLE_ID FROM PT_UX_PANEL_TITLE_TEMP GROUP BY PANNEL_ID, P_TITLE_ID)  B
+			WHERE A.PANNEL_ID = B.PANNEL_ID(+)
+			AND   A.TITLE_ID  = B.P_TITLE_ID(+)
+			ORDER BY RN
+		) 
+		WHERE CATEGORY_TYPE IS NULL
+		AND EXISTSUB = 'N'
+	</select> -->
+	
+	<!-- mims.xml로 이동 -->
+	<!-- <delete id="deletePanelTitle" parameterClass="string">
+		DELETE PT_UX_PANEL_TITLE
+		WHERE PANNEL_ID = #pannel_id#         
+	</delete> -->
+	
+	<!-- mims.xml로 이동 -->
+	<!-- <delete id="deletePanelTitleTempByDeletePanel" parameterClass="string">
+		DELETE PT_UX_PANEL_TITLE_TEMP
+		WHERE PANNEL_ID = #pannel_id#         
+	</delete> -->
+	
+	<!-- mims.xml로 이동 -->
+	<!-- PT_UX_PANEL_TITLE_TEMP 테이블에서 PT_UX_TITLE 테이블로 등록 -->
+	<!-- <insert id="insertPanelTitle" parameterClass="map">
+		INSERT INTO PT_UX_PANEL_TITLE(PANNEL_ID, TITLE_ID, TITLE_NM, TITLE_COLOR, P_TITLE_ID, CATEGORY_ID, CATEGORY_TYPE, ALBUM_CNT, UI_TYPE, BG_IMG_FILE, DESCRIPTION, ORDERED, USE_YN, VERSION, CREATED, UPDATED, PAGE_TYPE, PAGE_CODE, CREATE_ID, UPDATE_ID, TITLE_BG_IMG_FILE, CATEGORY_GB, REPS_ALBUM_ID, REPS_CATEGORY_ID, TRAILER_VIEWING_TYPE, REPS_TRAILER_VIEWING_TYPE, BG_IMG_FILE2, LOCATION_CODE, LOCATION_YN , FOCUS_YN , BG_IMG_FILE3 )
+		SELECT PANNEL_ID, TITLE_ID, TITLE_NM, TITLE_COLOR, P_TITLE_ID, CATEGORY_ID, CATEGORY_TYPE, ALBUM_CNT, UI_TYPE, BG_IMG_FILE, DESCRIPTION, ORDERED, USE_YN, ' ', SYSDATE, SYSDATE, PAGE_TYPE, PAGE_CODE, '$create_id$', '$create_id$', TITLE_BG_IMG_FILE, CATEGORY_GB, REPS_ALBUM_ID, REPS_CATEGORY_ID, TRAILER_VIEWING_TYPE, REPS_TRAILER_VIEWING_TYPE, BG_IMG_FILE2, LOCATION_CODE, LOCATION_YN , FOCUS_YN , BG_IMG_FILE3 
+		FROM PT_UX_PANEL_TITLE_TEMP WHERE pannel_id = #pannel_id#
+	</insert> -->
+
+	
+	<!-- mims.xml로 이동 -->
+	<!-- <select id="previewPanelTitleTemp" parameterClass="map" resultClass="admin_previewvo">
+		SELECT PANNEL_ID || '_' || TITLE_ID AS CODE
+			, PANNEL_ID || DECODE(P_TITLE_ID, NULL, '', '_') || P_TITLE_ID AS P_CODE
+			, TITLE_NM AS PANELVIEWNAME
+			, CATEGORY_ID AS CATEGORY_CODE
+			, CATEGORY_TYPE AS CATEGORY_TYPE
+			, UI_TYPE AS UI_TYPE
+			, BG_IMG_FILE AS BG_IMG_FILE
+			, DESCRIPTION AS DESCRIPTION
+			, ORDERED AS ORDER_SEQ
+			, LEVEL
+			, PAGE_TYPE
+			, PAGE_CODE
+			, NVL(CATEGORY_GB, 'I20') AS CATEGORY_GB
+		FROM PT_UX_PANEL_TITLE_TEMP
+		START WITH P_TITLE_ID IS NULL 
+		AND PANNEL_ID = #pannel_id#
+		AND USE_YN = 'Y'
+		CONNECT BY PRIOR TITLE_ID = P_TITLE_ID
+		AND PRIOR PANNEL_ID = PANNEL_ID
+		ORDER SIBLINGS BY PANNEL_ID, ORDERED
+	</select> -->
+	
+	<!-- mims.xml로 이동 -->
+	<!-- <select id="previewPanelTitle" parameterClass="map" resultClass="admin_previewvo">
+		SELECT PANNEL_ID || '_' || TITLE_ID AS CODE
+			, PANNEL_ID || DECODE(P_TITLE_ID, NULL, '', '_') || P_TITLE_ID AS P_CODE
+			, TITLE_NM AS PANELVIEWNAME
+			, CATEGORY_ID AS CATEGORY_CODE
+			, CATEGORY_TYPE AS CATEGORY_TYPE
+			, UI_TYPE AS UI_TYPE
+			, BG_IMG_FILE AS BG_IMG_FILE
+			, DESCRIPTION AS DESCRIPTION
+			, ORDERED AS ORDER_SEQ
+			, LEVEL
+			, PAGE_TYPE
+			, PAGE_CODE
+			, NVL(CATEGORY_GB, 'I20') AS CATEGORY_GB
+		FROM PT_UX_PANEL_TITLE
+		START WITH P_TITLE_ID IS NULL 
+		AND PANNEL_ID = #pannel_id#
+		AND USE_YN = 'Y'
+		CONNECT BY PRIOR TITLE_ID = P_TITLE_ID
+		AND PRIOR PANNEL_ID = PANNEL_ID
+		ORDER SIBLINGS BY PANNEL_ID, ORDERED
+	</select> -->
+	
+	<select id="getScheduleAlbumList" parameterClass="map" resultClass="string">
+		SELECT b.contents_name
+		FROM PT_UX_SMUX_VOD_SCHEDULE_DETAIL A,
+		(
+            SELECT
+                BB.CATEGORY_ID,
+                BB.CONTENTS_ID,
+                BB.CONTENTS_NAME
+            FROM
+                PT_VO_CATEGORY_MAP BB,
+                PT_LA_ALBUM_MST CC
+            WHERE
+                BB.CONTENTS_ID = CC.ADI_ALBUM_ID
+            AND
+                (
+                    (
+                        (CC.PRE_MAPPING_YN IS NULL OR CC.PRE_MAPPING_YN = 'N') AND (BB.VIEWING_FLAG = 'V' OR BB.VIEWING_FLAG IS NULL)
+                    )
+                OR
+                    (
+                        CC.PRE_MAPPING_YN = 'Y' AND BB.VIEWING_FLAG = 'V'
+                    )
+                )
+        ) B
+		WHERE schedule_code = #schedule_code#
+		AND a.CATEGORY_ID = b.category_id
+		AND a.ALBUM_ID = b.contents_id
+		ORDER BY A.ORDERED
+	</select>
+	
+	<select id="getCategoryAlbumList" parameterClass="map" resultClass="string">
+		SELECT B.RANK_NO||'. '||B.CONTENTS_NAME C_NAME
+	   	FROM  PT_VO_CATEGORY A,
+        (
+            SELECT
+                BB.CATEGORY_ID,
+                BB.CONTENTS_NAME,
+                BB.RANK_NO
+            FROM
+                PT_VO_CATEGORY_MAP BB,
+                PT_LA_ALBUM_MST CC
+            WHERE
+                BB.CONTENTS_ID = CC.ADI_ALBUM_ID
+            AND
+                (
+                    (
+                        (CC.PRE_MAPPING_YN IS NULL OR CC.PRE_MAPPING_YN = 'N') AND (BB.VIEWING_FLAG = 'V' OR BB.VIEWING_FLAG IS NULL)
+                    )
+                OR
+                    (
+                        CC.PRE_MAPPING_YN = 'Y' AND BB.VIEWING_FLAG = 'V'
+                    )
+                )
+        ) B
+		<isEmpty property="category_gb">
+			WHERE CATEGORY_GB = 'I20'
+		</isEmpty>
+		<isNotEmpty property="category_gb">
+			WHERE CATEGORY_GB = #category_gb#
+		</isNotEmpty>
+	   	AND   A.CATEGORY_ID = B.CATEGORY_ID
+	   	AND   A.CATEGORY_ID = #category_id#
+	   	ORDER BY B.RANK_NO
+   	</select>
+   	
+   	<select id="getBestVODAlbumList" parameterClass="map" resultClass="string">
+   	<!-- genrevodbestlist.xml sqlmap 파일에서 id가 getGenreVodBestList인 쿼리를 그대로 사용(조건절만 그대로 하고 출력은 앨범 이름만 있으면 되는 것이어서 출력 컬럼 항목은 조절)  -->
+   	<!-- 
+   	SELECT ASSET_NAME FROM PT_UX_BEST_VOD
+	WHERE GENRE= #rank_code#
+	ORDER BY RANKING
+	-->
+	SELECT ASSET_NAME
+	FROM 
+	(
+		SELECT
+			MAX(WI.ASSET_NAME)      AS ASSET_NAME, 
+		    MAX(WI.GENRE)           AS GENRE,
+            MAX(WI.RANKING)         AS RANKING
+		FROM 	PT_UX_BEST_VOD WI, 
+		        PT_VO_CATEGORY A, 
+		        PT_VO_CATEGORY_MAP B, 
+		        PT_LA_ALBUM_MST C, 
+		        PT_LA_PACKAGE_ASSET D, 
+		        PT_LA_TITLE_ASSET E, 
+		        PT_LA_POSTER_ASSET F, 
+		        PT_LA_CONTENT_ASSET G 
+		WHERE 1 = 1
+		AND   WI.CONTENTS_ID  = B.CONTENTS_ID
+		AND   A.category_id = B.category_id
+		AND   A.category_gb  = 'I20'
+		AND   B.CONTENTS_ID  = C.ADI_ALBUM_ID
+		AND   C.ADI_ALBUM_ID = D.ADI_ALBUM_ID
+		AND   D.ADI_PRODUCT_ID = E.ADI_PRODUCT_ID 
+		AND   D.ADI_PRODUCT_ID = F.ADI_PRODUCT_ID
+		AND   D.ADI_PRODUCT_ID = G.ADI_PRODUCT_ID
+		AND   F.POSTER_TYPE = 'P' <!-- 포스터 형태는 세로형으로 셋팅한다 -->	
+		AND   D.ALBUM_TYPE <![CDATA[<>]]> 'PR'
+        AND
+            (
+                (
+                    (C.PRE_MAPPING_YN IS NULL OR C.PRE_MAPPING_YN = 'N') AND (B.VIEWING_FLAG = 'V' OR B.VIEWING_FLAG IS NULL)
+                )
+            OR
+                (
+                    C.PRE_MAPPING_YN = 'Y' AND B.VIEWING_FLAG = 'V'
+                )
+            )
+		GROUP BY C.ADI_ALBUM_ID, WI.RANKING, WI.GENRE
+	)A
+	WHERE GENRE = #rank_code#
+  	ORDER BY  GENRE, RANKING   ASC
+   	</select>
+   	
+   	<select id="getCategoryIdName" parameterClass="map" resultClass="admin_categoryvo">
+		SELECT CATEGORY_ID, CATEGORY_NAME
+		FROM  PT_VO_CATEGORY
+		<isEmpty property="category_gb">
+			WHERE CATEGORY_GB = 'I20'
+		</isEmpty>
+		<isNotEmpty property="category_gb">
+			WHERE CATEGORY_GB = #category_gb#
+		</isNotEmpty>
+		AND   CATEGORY_ID = #category_code#
+   	</select>
+   	
+   	<!-- PT_UX_PANEL_TITLE_TEMP 테이블에서 UI_TYPE 컬럼과 Description 컬럼을 조회한다 -->
+    <select id="getUITypeDescription" parameterClass="map" resultClass="admin_viewvo">
+        SELECT A.UI_TYPE AS UI_TYPE, A.DESCRIPTION AS DESCRIPTION, A.PAGE_TYPE AS PAGE_TYPE, A.PAGE_CODE AS PAGE_CODE, NVL(A.CATEGORY_GB, 'I20') AS CATEGORY_GB
+             , A.REPS_ALBUM_ID
+             , A.REPS_CATEGORY_ID
+             , (CASE WHEN A.CATEGORY_TYPE IN ('CONT_LINK', 'WISH', 'AHOME_04', 'AHOME_05', 'BANNER', 'VLIST', 'HLIST', 'GALLERY', 'HOTVOD', 'OTT', 'REC_APP', 'MIX') THEN CATEGORY_ID
+                ELSE ''
+                END) AS CATEGORY_CODE
+             , (CASE WHEN A.CATEGORY_TYPE IN ('CONT_LINK', 'WISH', 'AHOME_04', 'AHOME_05') AND A.CATEGORY_ID IS NOT NULL 
+                     THEN (SELECT B.CATEGORY_NAME FROM PT_VO_CATEGORY B WHERE B.CATEGORY_ID = A.CATEGORY_ID)
+                     WHEN A.CATEGORY_TYPE = 'BANNER' AND A.CATEGORY_ID IS NOT NULL 
+                     THEN (SELECT ADS_NM FROM PT_HDTV_ADS_MASTER WHERE ADS_ID = A.CATEGORY_ID)
+                     WHEN A.CATEGORY_TYPE = 'HLIST' AND A.CATEGORY_ID IS NOT NULL
+                     THEN (SELECT CATEGORY_NAME FROM PT_HDTV_HV_CATEGORY WHERE HV_CATEGORY_ID = A.CATEGORY_ID)
+                     WHEN A.CATEGORY_TYPE = 'VLIST' AND A.CATEGORY_ID IS NOT NULL
+                     THEN (SELECT CATEGORY_NAME FROM PT_VO_CATEGORY WHERE CATEGORY_ID = A.CATEGORY_ID)
+                     WHEN A.CATEGORY_TYPE = 'HOTVOD' AND A.CATEGORY_ID IS NOT NULL
+                     THEN (SELECT CATEGORY_NAME FROM PT_UX_HV_CATEGORY WHERE HV_CATEGORY_ID = A.CATEGORY_ID)
+                     WHEN A.CATEGORY_TYPE = 'OTT' AND A.CATEGORY_ID IS NOT NULL
+                     THEN (SELECT OTT_CAT_NAME FROM VODUSER.VW_PT_OT_CATEGORY WHERE MIMS_LINK_TYPE = 'P' AND PAIRING_TYPE = 'OTT' AND OTT_CAT_ID = A.CATEGORY_ID)
+                     WHEN A.CATEGORY_TYPE = 'REC_APP' AND A.CATEGORY_ID IS NOT NULL
+                     THEN (SELECT OTT_CAT_NAME FROM VODUSER.VW_PT_OT_CATEGORY WHERE MIMS_LINK_TYPE = 'P' AND PAIRING_TYPE = 'APP' AND OTT_CAT_ID = A.CATEGORY_ID)
+                     WHEN A.CATEGORY_TYPE = 'MIX' AND A.CATEGORY_ID IS NOT NULL
+                     THEN (SELECT OTT_CAT_NAME FROM VODUSER.VW_PT_OT_CATEGORY WHERE MIMS_LINK_TYPE = 'P' AND PAIRING_TYPE = 'MIX' AND OTT_CAT_ID = A.CATEGORY_ID)
+                ELSE ''
+                END) AS CATEGORY_DES
+             , NVL(TRAILER_VIEWING_TYPE, 'NONE') AS TRAILER_VIEWING_TYPE
+             , NVL(REPS_TRAILER_VIEWING_TYPE, 'NONE') AS REPS_TRAILER_VIEWING_TYPE
+             , LOCATION_CODE
+             , LOCATION_YN
+<!-- 2019.11.04 : PAPER_UI_TYPE [지면UI타입 추가] Start - 이태광 -->             
+             , PAPER_UI_TYPE
+<!-- 2019.11.04 : PAPER_UI_TYPE [지면UI타입 추가] End - 이태광 -->             
+             , PRODUCT_CODE  
+             , PRODUCT_CODE_NOT        
+             , SHOW_CNT        
+        FROM PT_UX_PANEL_TITLE_TEMP A
+        WHERE A.PANNEL_ID = #pannel_id#
+        AND A.TITLE_ID = #title_id#
+    </select>
+   	
+   	<select id="getImageServerURL" parameterClass="map" resultClass="string">
+   		SELECT F_SERVER_URL('$type$')
+   		FROM DUAL   		
+   	</select>
+   	
+   	<select id="getAlbumName" parameterClass="string" resultClass="string">
+		SELECT CONTENTS_NAME
+		FROM   PT_VO_CATEGORY_MAP
+		WHERE  CONTENTS_ID = #album_id#
+		AND    ROWNUM      = 1		
+   	</select>
+   	
+   	<select id="getPanelUiTypeList" parameterClass="map" resultClass="admin_framevo">
+		<![CDATA[
+			SELECT * FROM 
+			(SELECT ROWNUM R, FRAME_TYPE_CODE, FRAME_TYPE, FRAME_NM, IMG_FILE, USE_YN,DATA_TYPE FROM
+				(SELECT FRAME_TYPE_CODE, FRAME_TYPE, FRAME_NM, IMG_FILE, USE_YN,DATA_TYPE
+				FROM PT_VL_FRAME 
+				WHERE FRAME_TYPE = #frame_type#
+				ORDER BY FRAME_TYPE_CODE )
+			) WHERE R >= #startNum#  AND R <=#endNum#
+		]]>
+	</select>
+	
+	<select id="getPanelUiTypeCnt" parameterClass="map" resultClass="int">
+		SELECT COUNT(FRAME_TYPE_CODE) FROM PT_VL_FRAME WHERE FRAME_TYPE = #frame_type# 
+	</select>
+	
+	<insert id="insertPanelUiType" parameterClass="map">	
+		INSERT INTO
+	    PT_VL_FRAME
+	    (
+	        FRAME_TYPE_CODE
+	      , FRAME_TYPE
+	      , FRAME_NM
+	      , IMG_FILE
+	      , USE_YN
+	      , CREATED
+	      , UPDATED
+	      , CREATE_ID
+	      , UPDATE_ID
+	      , DEL_YN
+	    )
+	    VALUES
+	    (
+	        (SELECT #frame_flag#||'U'||LPAD(TO_NUMBER(SUBSTR(NVL(MAX(FRAME_TYPE_CODE), '00000'),3,5)+1),3,'0') 
+		    FROM PT_VL_FRAME 
+		    WHERE FRAME_TYPE  = #frame_type#)
+	      , #frame_type#
+	      , #frame_nm#
+	      , #img_file#
+	      , #use_yn#
+	      , SYSDATE
+	      , SYSDATE
+	      , #create_id#
+	      , #create_id#
+	      , #del_yn#
+	    )
+	</insert>
+	
+	<update id="updatePanelUiType" parameterClass="admin_framevo">
+		UPDATE PT_VL_FRAME SET 
+			<isNotEmpty property="frame_nm">
+		    	FRAME_NM    = #frame_nm#,
+		    </isNotEmpty>
+		    <isNotEmpty property="img_file">
+		    	IMG_FILE    = #img_file#,
+		    </isNotEmpty>
+		    <isNotNull property="data_type">
+		    	DATA_TYPE = #data_type#,
+		    </isNotNull>
+		    USE_YN      = #use_yn#,
+		    DEL_YN		= #del_yn#,
+		    UPDATE_ID   = #update_id#,
+		    UPDATED     = SYSDATE
+		WHERE FRAME_TYPE_CODE = #frame_type_code#
+	</update>
+	
+	<select id="viewPanelUiTypeList" parameterClass="map" resultClass="admin_framevo">
+		SELECT FRAME_TYPE_CODE, FRAME_TYPE, FRAME_NM, IMG_FILE, USE_YN, DEL_YN,DATA_TYPE
+		FROM PT_VL_FRAME
+		WHERE FRAME_TYPE_CODE = #frame_type_code#
+	</select>
+   	
+   	<select id="getPanelUiTypeSelect" parameterClass="map" resultClass="admin_framevo">
+		<![CDATA[
+			SELECT FRAME_TYPE_CODE, FRAME_TYPE, FRAME_NM, USE_YN, IMG_FILE
+			FROM PT_VL_FRAME 
+			WHERE FRAME_TYPE = #frame_type#
+			AND USE_YN = 'Y'
+			ORDER BY FRAME_TYPE_CODE
+		]]>
+	</select>
+	
+	<!-- mims.xml로 이동 -->
+	<!-- <update id="focusPanelTitleTemp" parameterClass="map">
+		UPDATE PT_UX_PANEL_TITLE_TEMP
+		SET FOCUS_YN = 'Y' , 
+		UPDATED = SYSDATE
+		WHERE PANNEL_ID = #pannel_id#
+		AND  TITLE_ID = #title_id#
+	</update> -->
+	
+	<!-- mims.xml로 이동 -->
+	<!-- <update id="focusPanelTitle" parameterClass="map">
+		UPDATE PT_UX_PANEL_TITLE_TEMP
+		SET FOCUS_YN = 'Y'
+		WHERE PANNEL_ID = #pannel_id#
+		AND TITLE_ID = #title_id#
+	
+	</update> -->
+	
+	<!-- mims.xml로 이동 -->
+	<!-- <update id="focusPanelTitleNull" parameterClass="map">
+		UPDATE PT_UX_PANEL_TITLE_TEMP
+		SET FOCUS_YN = 'N'
+		WHERE PANNEL_ID = #pannel_id#
+	</update> -->
+	
+
+    <select id="getPanelTitleTempListAll" resultClass="admin_viewvo">
+        SELECT A.*, DECODE(B.PANNEL_ID, NULL, 'N', 'Y') AS EXISTSUB, C.ITEM_NM AS CATEGORY_DESC, C.SS_GBN AS ALBUM_DESC
+        FROM (
+            SELECT PANNEL_ID, TITLE_ID, TITLE_NM, P_TITLE_ID, CATEGORY_ID, CATEGORY_TYPE, ALBUM_CNT,FOCUS_YN , ORDERED, LEVEL, USE_YN, CREATED, UPDATED, CREATE_ID, UPDATE_ID, ROWNUM RN, PAGE_TYPE, PAGE_CODE, NVL(CATEGORY_GB, 'I20') AS CATEGORY_GB
+            FROM PT_UX_PANEL_TITLE_TEMP
+            START WITH P_TITLE_ID IS NULL 
+            CONNECT BY PRIOR TITLE_ID = P_TITLE_ID
+            AND PRIOR PANNEL_ID = PANNEL_ID
+            ORDER SIBLINGS BY ORDERED
+            ) A, (SELECT PANNEL_ID, P_TITLE_ID FROM PT_UX_PANEL_TITLE_TEMP GROUP BY PANNEL_ID, P_TITLE_ID)  B
+            , (SELECT SS_GBN, ITEM_NM FROM PT_UX_CODE_ITEMS WHERE code='A0008') C
+        WHERE A.PANNEL_ID = B.PANNEL_ID(+)
+        AND   A.TITLE_ID  = B.P_TITLE_ID(+)
+        AND   A.CATEGORY_TYPE = C.SS_GBN(+) 
+        ORDER BY RN
+    </select>
+    
+    <update id="changeOrder" parameterClass="admin_panelvo">
+		UPDATE
+			PT_UX_PANEL
+		SET
+			ORD = #order#
+		WHERE PANNEL_ID=#pannel_id#
+	</update>
+	
+	<!-- 카테고리2레벨이상 조회 -->
+    <select id="getOtCategorySelect2" parameterClass="com.dmi.smartux.admin.mainpanel.vo.LinkInfoVO" resultClass="admin_categoryvo">
+        SELECT 
+            OTT_CAT_ID category_id, 
+            OTT_CAT_NAME category_name 
+        FROM VODUSER.VW_PT_OT_CATEGORY 
+        WHERE 1=1
+        AND VIEWING_FLAG = 'V'
+        AND MIMS_LINK_TYPE = #mims_link_type#
+        AND PAIRING_TYPE = #pairing_type#
+        AND PARENT_OTT_CAT_ID = #parent_ott_cat_id#
+        ORDER BY ORDER_NO ASC
+    </select>
+    
+    <!-- 카테고리1레벨 조회 -->
+    <select id="getOtCategorySelect1" parameterClass="com.dmi.smartux.admin.mainpanel.vo.LinkInfoVO" resultClass="admin_categoryvo">
+        SELECT 
+            OTT_CAT_ID category_id, 
+            OTT_CAT_NAME category_name 
+        FROM VODUSER.VW_PT_OT_CATEGORY 
+        WHERE VIEWING_FLAG ='V'
+        AND MIMS_LINK_TYPE ='P'
+        AND OTT_CAT_LEVEL = '1'
+        ORDER BY ORDER_NO ASC
+    </select>
+</sqlMap>

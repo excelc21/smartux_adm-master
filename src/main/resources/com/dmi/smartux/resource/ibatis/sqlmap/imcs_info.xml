@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="imcs_info">
+    
+    <!-- imcs 등록 -->
+    <insert id="insertImcsInfo" parameterClass="com.dmi.smartux.admin.imcs.vo.ImcsVO">
+    
+       INSERT INTO PT_UX_IMCS_INFO(
+           SEQ
+            ,MIMS_TYPE
+            ,MIMS_ID
+            ,IMCS_TYPE
+            ,IMCS_ID
+            ,REG_DATE
+            ,MOD_DATE
+            ,AB_YN
+       )VALUES(
+           (select nvl(max(SEQ),0)+1 from PT_UX_IMCS_INFO)
+           ,#mims_type#
+           ,#mims_id#
+           ,#imcs_type#
+           ,#imcs_id#
+           ,TO_CHAR(SYSDATE,'YYYYMMDDHH24MISS') 
+           ,TO_CHAR(SYSDATE,'YYYYMMDDHH24MISS') 
+           ,#ab_yn#
+       )
+       
+    </insert>
+    
+    <!-- imcs 수정 -->
+    <update id="updateImcsInfo" parameterClass="com.dmi.smartux.admin.imcs.vo.ImcsVO">
+    
+        UPDATE PT_UX_IMCS_INFO
+        SET IMCS_TYPE = #imcs_type#
+            ,IMCS_ID = #imcs_id#
+            ,MOD_DATE = TO_CHAR(SYSDATE,'YYYYMMDDHH24MISS') 
+            ,AB_YN = #ab_yn#
+        WHERE MIMS_TYPE = #mims_type#
+        AND MIMS_ID = #mims_id#
+       
+    </update>
+    
+    <!-- imcs 삭제 -->
+    <delete id="deleteImcsInfo" parameterClass="com.dmi.smartux.admin.imcs.vo.ImcsVO">
+    
+        DELETE FROM PT_UX_IMCS_INFO
+        WHERE MIMS_TYPE = #mims_type#
+        AND MIMS_ID = #mims_id# 
+       
+    </delete>
+    
+    <!-- imcs 카운트 조회 -->
+    <select id="getImcsInfoCnt" parameterClass="com.dmi.smartux.admin.imcs.vo.ImcsVO" resultClass="int">
+        SELECT 
+            COUNT(1) 
+        FROM PT_UX_IMCS_INFO
+        WHERE MIMS_TYPE = #mims_type#
+        AND MIMS_ID = #mims_id# 
+       
+    </select>
+    
+    <!-- 지면 삭제 -->
+    <delete id="deleteImcsPaper" parameterClass="map">
+        DELETE FROM PT_UX_IMCS_INFO  
+        WHERE MIMS_TYPE = 'PAP'     
+        AND (MIMS_ID = #pannel_id#||'|'||#title_id#
+            OR MIMS_ID IN (
+                SELECT PANNEL_ID||'|'||TITLE_ID
+                FROM smartux.PT_UX_PANEL_TITLE_TEMP
+                WHERE PANNEL_ID = #pannel_id#
+                START WITH P_TITLE_ID = #title_id#
+                CONNECT BY PRIOR TITLE_ID = P_TITLE_ID
+                AND PRIOR PANNEL_ID = PANNEL_ID
+            )
+        )
+    </delete>
+</sqlMap>

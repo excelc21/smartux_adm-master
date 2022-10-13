@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="common">
+	
+	<select id="getImageServerIp" resultClass="String">
+		SELECT F_SERVER_URL_DIST('${P.ImgSvIp.Code}','${P.ImgSv.No}','') AS IMG_IP FROM DUAL
+	</select>
+
+	<select id="getImageServerIpMims" resultClass="String">
+		SELECT F_SERVER_URL_DIST('${P.ImgSvIp.Code.Mims}','${P.ImgSv.No}','') AS IMG_IP FROM DUAL
+	</select>
+	
+</sqlMap>

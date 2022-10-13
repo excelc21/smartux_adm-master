@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="suxmalbumlist">
+	<typeAlias alias="suxmalbumlistvo" type="com.dmi.smartux.smartstart.vo.SUXMAlbumListVO"/>
+	<typeAlias alias="ecrmvo" type="com.dmi.smartux.admin.rank.vo.EcrmRankVO"/>
+	
+	<select id="getCheckSCHEDULEList" resultClass="ecrmvo">
+		SELECT  
+			PANNEL_ID, TITLE_ID, CATEGORY_ID 
+		FROM PT_UX_PANEL_TITLE
+		WHERE 
+			CATEGORY_TYPE = 'SCHEDULE'
+	</select>		
+		
+	<select id="getCheckScheduleCodelist" resultClass="ecrmvo">
+		SELECT  
+			PANNEL_ID, TITLE_ID, CATEGORY_ID 
+		FROM PT_UX_PANEL_TITLE
+		WHERE 1=1
+			AND CATEGORY_TYPE = 'SCHEDULE'
+			<isNotEmpty property="schedule_code">	
+				AND   CATEGORY_ID = #schedule_code#
+			</isNotEmpty>	
+	</select>		
+		
+	<select id="getSUXMAlbumList" resultClass="suxmalbumlistvo" remapResults="true">	      
+		SELECT 
+			A.CATEGORY_ID				AS CATEGORY_ID,
+			A.ALBUM_ID					AS ALBUM_ID,
+			A.ALBUM_TITLE				AS ALBUM_TITLE,
+			A.ORDERED					AS ORDERED,
+			A.IMG_URL					AS IMG_URL,
+			NVL(B.WIDTH_IMG, A.W_IMG)	AS W_IMG,
+			NVL(B.HEIGHT_IMG, A.H_IMG)	AS H_IMG,
+			A.SERIES_FLAG				AS SERIES_FLAG,
+			A.SERIES_DESC				AS SERIES_DESC,
+			A.CLOSE_YN					AS CLOSE_YN,
+			A.IS_HD						AS IS_HD,
+			A.PROGRAM_INFO				AS PROGRAM_INFO,
+			A.ONAIR_DATE				AS ONAIR_DATE,
+			A.IS_CAPTION				AS IS_CAPTION,
+			A.GENRE1					AS GENRE1,
+			A.RELEASE_DATE				AS RELEASE_DATE,
+			A.WATCH_RIGHT_YN			AS WATCH_RIGHT_YN,
+			A.IS_FH						AS IS_FH,
+			A.STUDIO					AS STUDIO,
+			A.DIRECTOR_DISPLAY			AS DIRECTOR_DISPLAY,
+			A.WRITER					AS WRITER,
+			A.PLAYER					AS PLAYER,
+			A.STARRING_ACTOR			AS STARRING_ACTOR,
+			A.PUBLIC_CNT				AS PUBLIC_CNT,
+			A.CAST_NAME					AS CAST_NAME,               
+			A.PRODUCING_DATE			AS PRODUCING_DATE,
+			A.AWRD						AS AWRD,               
+			A.RUN_TIME					AS RUN_TIME,
+			A.IS_51_CH					AS IS_51_CH,
+			A.IS_3D						AS IS_3D,               
+			A.IS_UHD					AS IS_UHD
+		FROM 
+		(
+			SELECT
+					C.ADI_ALBUM_ID          AS ALBUM_ID,
+					MAX(B.CATEGORY_ID)      AS CATEGORY_ID, 
+					MAX(B.CONTENTS_NAME)    AS ALBUM_TITLE, 
+					MAX(G.HDCONTENT)        AS IS_HD,
+					MAX(DECODE(G.HDCONTENT, 'N', 'Y', 'N'))  AS IS_SD,       
+					MAX(E.SUGGESTED_PRICE)  AS H_PRICE, 
+					MIN(E.SUGGESTED_PRICE)  AS S_PRICE,       
+					MAX(E.RATING)           AS PROGRAM_INFO, 
+					MAX(E.ONAIR_DATE) AS ONAIR_DATE, 
+					MAX(DECODE(A.SERIES_YN, NULL, 'N', A.SERIES_YN))        AS SERIES_FLAG,
+					MAX(DECODE(DECODE(A.SERIES_YN, NULL, 'N', A.SERIES_YN), 'Y', C.SERIES_NO, '')) AS SERIES_DESC,
+					MAX(A.CLOSE_YN)			AS CLOSE_YN, 
+					MAX(G.SMI_YN)           AS IS_CAPTION, 
+					F_SERVER_URL('P')		AS IMG_URL,
+					MAX(DECODE(F.POSTER_TYPE, 'Y', F.CONTENT_VALUE, '')) AS W_IMG,
+					MAX(DECODE(F.POSTER_TYPE, 'V', F.CONTENT_VALUE, '')) AS H_IMG,		            
+					MAX(WI.SCHEDULE_CODE)   AS SCHEDULE_CODE,
+					MAX(WI.ORDERED)         AS ORDERED,
+					MAX(E.GENRE_LARGE)		AS GENRE1,
+					MAX(E.RELEASE_DATE)		AS RELEASE_DATE,
+					MAX(DECODE(C.WATCH_RIGHT_YN, NULL, 'Y', C.WATCH_RIGHT_YN))	AS WATCH_RIGHT_YN,
+					MAX(DECODE(C.IS_FH, NULL, 'N', C.IS_FH)) AS IS_FH,
+					MAX(E.STUDIO) AS STUDIO,
+					MAX(E.DIRECTOR_DISPLAY) AS DIRECTOR_DISPLAY,
+					MAX(E.WRITER) AS WRITER,
+					MAX(E.PLAYER) AS PLAYER,
+					MAX(E.STARRING_ACTOR) AS STARRING_ACTOR,
+					MAX(G.PUBLIC_CNT) AS PUBLIC_CNT,
+					MAX(E.CAST_NAME) AS CAST_NAME,               
+					MAX(E.PRODUCING_DATE) AS PRODUCING_DATE,
+					MAX(E.AWRD) AS AWRD,               
+					MAX(E.RUN_TIME) AS RUN_TIME,
+					DECODE(UPPER(NVL(MAX(G.AUDIO_TYPE), '')), 'DOLBY 5.1', 'Y', 'N') IS_51_CH,
+					NVL(MAX(G.IS_3D), 'N') IS_3D,
+					NVL(MAX(E.IS_UH), 'N') IS_UHD
+			FROM	PT_UX_SMUX_VOD_SCHEDULE_DETAIL WI, 
+					PT_VO_CATEGORY A, 
+					PT_VO_CATEGORY_MAP B, 
+					PT_LA_ALBUM_MST C, 
+					PT_LA_PACKAGE_ASSET D, 
+					PT_LA_TITLE_ASSET E, 
+					PT_LA_POSTER_ASSET F, 
+					PT_LA_CONTENT_ASSET G 
+			WHERE	1 = 1
+					AND	WI.ALBUM_ID  = B.CONTENTS_ID
+					AND	WI.CATEGORY_ID = A.CATEGORY_ID
+					AND	A.CATEGORY_ID = B.CATEGORY_ID
+					AND	A.CATEGORY_GB  = 'I20'
+					AND	B.CONTENTS_ID  = C.ADI_ALBUM_ID
+					AND	C.ADI_ALBUM_ID = D.ADI_ALBUM_ID
+					AND	D.ADI_PRODUCT_ID = E.ADI_PRODUCT_ID 
+					AND	D.ADI_PRODUCT_ID = F.ADI_PRODUCT_ID
+					AND	D.ADI_PRODUCT_ID = G.ADI_PRODUCT_ID
+					AND	F.POSTER_TYPE IN ('P', 'Y', 'V')
+					AND
+                        (
+                            (
+                                (C.PRE_MAPPING_YN IS NULL OR C.PRE_MAPPING_YN = 'N') AND (B.VIEWING_FLAG = 'V' OR B.VIEWING_FLAG IS NULL)
+                            )
+                        OR
+                            (
+                                C.PRE_MAPPING_YN = 'Y' AND B.VIEWING_FLAG = 'V'
+                            )
+                        )
+		      GROUP BY C.ADI_ALBUM_ID, WI.ORDERED, WI.SCHEDULE_CODE
+		)A,
+		PT_UX_PANEL_IMG B
+		WHERE 1=1
+		AND	A.ALBUM_ID = B.ALBUM_ID(+)
+			<isNotEmpty property="schedule_code">
+				AND   A.SCHEDULE_CODE = #schedule_code#
+			</isNotEmpty>
+		ORDER BY   A.ORDERED    ASC
+	</select>		      
+		      
+	<select id="getSUXMAlbumList_prev" resultClass="suxmalbumlistvo" remapResults="true">
+		SELECT 
+	        A.SCHEDULE_CODE AS SCHEDULE_CODE, 
+	        A.CATEGORY_ID AS CATEGORY_ID, 
+	        A.ALBUM_ID AS ALBUM_ID, 
+	        C.CONTENTS_NAME AS ALBUM_TITLE, 
+	        A.ORDERED AS ORDERED
+		FROM 
+			PT_UX_SMUX_VOD_SCHEDULE_DETAIL A, 
+			PT_VO_CATEGORY B,
+			PT_VO_CATEGORY_MAP C
+		WHERE 1=1
+			<isNotEmpty property="schedule_code">	
+				AND   A.SCHEDULE_CODE = #schedule_code#
+			</isNotEmpty> 
+			AND   A.CATEGORY_ID = B.CATEGORY_ID
+			AND   B.CATEGORY_ID = C.CATEGORY_ID
+			AND   A.ALBUM_ID = C.CONTENTS_ID
+			AND   B.CATEGORY_GB = 'I20'
+		ORDER BY A.ORDERED ASC
+	</select>
+		
+</sqlMap>

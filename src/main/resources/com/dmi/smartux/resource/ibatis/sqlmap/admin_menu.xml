@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<!-- passwordlog -->
+<sqlMap namespace="admin_menu">
+	<resultMap id="menuVoMap" class="com.dmi.smartux.admin.login.vo.AdminMenuVO"> 
+		<result property="menu_id" column="MENU_ID" />
+		<result property="user_auth" column="USER_AUTH" />
+		<result property="menu_name" column="MENU_NAME" />
+	</resultMap>
+	
+	<select id="getMenuList" parameterClass="map" resultMap="menuVoMap">
+			SELECT  MENU_ID,	
+					USER_AUTH,	
+					MENU_NAME 
+			 FROM PT_UX_ADMIN_MENU
+			 WHERE 1=1
+			 <isNotEmpty property="user_auth">
+			 AND USER_AUTH = #user_auth#
+			 </isNotEmpty>
+			 <isNotEmpty property="strArr">
+			 AND MENU_NAME = #strArr#
+			 </isNotEmpty>
+	</select>
+	
+</sqlMap>

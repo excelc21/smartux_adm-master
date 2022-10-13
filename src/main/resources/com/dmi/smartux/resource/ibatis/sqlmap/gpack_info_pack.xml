@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="gpack_info_pack">
+	<typeAlias alias="gpackPackInfoVO"				type="com.dmi.smartux.gpack.pack.vo.GpackPackInfoVO"/>
+	<typeAlias alias="gpackPackPromotionIdVO"		type="com.dmi.smartux.gpack.pack.vo.GpackPackPromotionIdVO"/>
+	<typeAlias alias="gpackPackCategoryIdVO"		type="com.dmi.smartux.gpack.pack.vo.GpackPackCategoryIdVO"/>
+	
+	<!-- 팩 정보 조회 -->
+	<select id="getGpackPackInfo" parameterClass="map" resultClass="gpackPackInfoVO">
+		SELECT 	PK.VERSION,
+				PK.IMCS_CATEGORY_ID AS CATEGORY_ID, 
+				PK.PACK_NM AS TITLE,
+		  		PK.TEMPLATE_TYPE AS TYPE,
+		  		SUM(DECODE(CATEGORY_YN, 'N', 1, 0)) AS P_TOTAL_COUNT,
+		  		SUM(DECODE(CATEGORY_YN, 'Y', 1, 0)) AS C_TOTAL_COUNT
+		  FROM 	PT_GP_PACK_INFO PK,
+		  		PT_GP_CATEGORY_INFO CT
+		 WHERE  1=1
+		   AND  PK.PACK_ID = #pack_id#
+		   AND  PK.PACK_ID = CT.PACK_ID (+)
+		   AND  CT.USE_YN = 'Y'
+	  GROUP BY  PK.VERSION, PK.IMCS_CATEGORY_ID, PK.TEMPLATE_TYPE, PK.PACK_NM
+	</select>
+	
+	<!-- 프로모션 id 조회
+	<select id="getGpackPromotionId" parameterClass="map" resultClass="gpackPackPromotionIdVO">
+		SELECT 	PM.CATEGORY_ID AS PROMOTION_ID
+		  FROM 	PT_GP_CATEGORY_INFO PM
+		 WHERE 	1=1
+		   AND 	PM.PACK_ID = #pack_id#
+		   AND 	PM.CATEGORY_YN = 'N'
+		   AND  PM.USE_YN = 'Y'
+		   ORDER BY PM.ORDERED, PM.PACK_ID DESC, PM.CATEGORY_ID DESC
+	</select>
+	 -->
+	 
+	<!-- 프로모션 id 조회 -->
+	<select id="getGpackPromotionId" parameterClass="map" resultClass="gpackPackPromotionIdVO">
+	<![CDATA[
+		SELECT CATEGORY_ID  AS PROMOTION_ID
+		FROM (
+			SELECT 	PM.CATEGORY_ID AS CATEGORY_ID , 1 AS ORDERED
+					  FROM 	PT_GP_CATEGORY_INFO PM
+					 WHERE 	1=1
+					   AND 	PM.PACK_ID = #pack_id#
+					   AND 	PM.CATEGORY_YN = 'N'
+					   AND  PM.USE_YN = 'Y'
+					   AND  PM.PROMOTION_VIDEO_GB <> 'PV003'
+			UNION ALL
+			SELECT T.CATEGORY_ID AS CATEGORY_ID, ORDERED
+			FROM (
+			SELECT 	P.CATEGORY_ID  , DECODE( P.ORDERED, 1, TO_NUMBER(P.ORDERED+1), P.ORDERED)  AS ORDERED
+					  FROM 	PT_GP_CATEGORY_INFO P
+					 WHERE 	1=1
+					   AND 	P.PACK_ID = #pack_id#
+					   AND 	P.CATEGORY_YN = 'N'
+					   AND  P.USE_YN = 'Y'
+					   AND  P.PROMOTION_VIDEO_GB = 'PV003'
+					    ORDER BY P.ORDERED, P.PACK_ID DESC, P.CATEGORY_ID DESC
+			)	T
+			ORDER BY ORDERED
+		) 
+		]]>
+	</select>
+	
+	<!-- 카테고리 id 조회 -->
+	<select id="getGpackCategoryId" parameterClass="map" resultClass="gpackPackCategoryIdVO">
+		SELECT 	CT.CATEGORY_ID AS PCATEGORY_ID
+		  FROM 	PT_GP_CATEGORY_INFO CT
+		 WHERE 	1=1
+		   AND 	CT.PACK_ID = #pack_id#
+		   AND 	CT.CATEGORY_YN = 'Y'
+		   AND  CT.USE_YN = 'Y'
+		   ORDER BY CT.ORDERED, CT.PACK_ID DESC, CT.CATEGORY_ID DESC
+	</select>
+</sqlMap>

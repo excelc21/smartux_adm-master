@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMapConfig PUBLIC "-//ibatis.apache.org//DTD SQL Map Config 2.0//EN"
+    "http://ibatis.apache.org/dtd/sql-map-config-2.dtd">
+<sqlMapConfig>
+	<settings 
+		useStatementNamespaces="true"
+	/>
+
+    <sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/mims/mims.xml" />
+    <sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/youtube.xml" />
+    <!-- g-pack 관련 SQL Map 파일 -->
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/gpack_category.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/gpack_contents.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/gpack_pack.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/gpack_promotion.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/gpack_pack_version.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/gpack_promotion_info.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/gpack_info_pack.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/gpack_info_category.xml" />
+</sqlMapConfig>

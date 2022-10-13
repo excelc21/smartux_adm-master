@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="test_stat">
+
+	<!-- 백업 테이블 create  -->
+	<statement id="create_stat_bbs_backup_table">
+		CREATE TABLE PT_HDTV_STAT_BBS_BACKUP (
+		  STAT_NO           NUMBER             NOT NULL, 
+		  TITLE             VARCHAR2(50)       NOT NULL, 
+		  CONTENT           VARCHAR2(2000)         NULL, 
+		  E_DATE            DATE               NOT NULL, 
+		  USE_YN            CHAR(1)            NOT NULL, 
+		  STAT_FILE_PATH    VARCHAR2(1000)         NULL
+		)
+	</statement>
+	
+	<!-- 테이블의 실 데이터를 백업 테이블에 insert -->
+	<insert id="insert_stat_bbs_backup_table" >
+		INSERT INTO PT_HDTV_STAT_BBS_BACKUP			
+		SELECT * FROM PT_HDTV_STAT_BBS 
+	</insert>
+	
+	<!-- 테이블의 실 데이터 삭제 -->
+	<delete id="delete_stat_bbs_table" >
+		DELETE FROM PT_HDTV_STAT_BBS 
+	</delete>
+	
+	<!-- 백업 테이블에 보관된 데이터를 기존 테이블에 insert -->
+	<insert id="restore_stat_bbs_table" >
+		INSERT INTO PT_HDTV_STAT_BBS		
+		SELECT * FROM PT_HDTV_STAT_BBS_BACKUP
+	</insert>
+	
+	<!-- 백업 테이블 drop  -->
+	<statement id="drop_stat_bbs_backup_table">
+		DROP TABLE PT_HDTV_STAT_BBS_BACKUP
+	</statement>
+	
+	<!-- 테스트 데이터1-->
+	<insert id="insert_test_data_to_stat_bbs_table1" >
+		INSERT INTO PT_HDTV_STAT_BBS
+		  (STAT_NO, TITLE, CONTENT, E_DATE, USE_YN, STAT_FILE_PATH)
+		VALUES
+		  (1, '참여통계1', '참여통계 참여통계', SYSDATE, 'Y', 'C:/NAS_DATA/web/smartux/hdtv/statbbsfile/tdd_test.stat')
+	</insert>
+
+</sqlMap>

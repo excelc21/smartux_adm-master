@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="test_RegistrationID">
+
+	<!--
+	################################################################################### 
+	Before Query
+	###################################################################################-->
+
+	<!-- 백업 테이블 create  -->
+	<statement id="create_RegistrationID_backup_table">
+		CREATE TABLE SMARTUX.PT_UX_PAIRING_BACKUP (
+		  SA_ID       VARCHAR2(20)      NOT NULL, 
+		  STB_MAC     VARCHAR2(38)      NOT NULL, 
+		  SMA_MAC     VARCHAR2(38)          NULL, 
+		  REG_ID      VARCHAR2(100)     	NULL, 
+		  APP_TYPE    VARCHAR2(5)       NOT NULL, 
+		  CREATED     DATE              NOT NULL, 
+		  UPDATED     DATE              NOT NULL
+		)
+	</statement>
+	
+	<!-- 기존 테이블의 기존 데이터를 백업 테이블에 insert -->
+	<insert id="insert_RegistrationID_to_backup_table">
+		INSERT INTO PT_UX_PAIRING_BACKUP
+		SELECT * FROM PT_UX_PAIRING
+	</insert>
+		
+	<!-- 기존 테이블의 기존 데이터 삭제 -->
+	<delete id="delete_RegistrationID_org_data">
+		DELETE FROM PT_UX_PAIRING
+	</delete>
+	
+	<!--
+	################################################################################### 
+	Data Insert Query
+	###################################################################################-->
+	
+	<insert id="insert_RegistrationID_to_backup_table_1">
+		INSERT INTO PT_UX_PAIRING
+		(	
+			 SA_ID        
+			,STB_MAC      
+			,SMA_MAC     
+			,REG_ID      
+			,APP_TYPE
+			,CREATED      
+			,UPDATED      
+		) VALUES (
+			 '200000000000'
+			,'001C62704959'
+			,NULL       
+			,'LvSg+j3b5FsoEgzt3Nt4lFNEXvkHkBGLstD2so0MCgk='
+			,'UX'     
+			,SYSDATE      
+			,SYSDATE
+		)
+	</insert>
+
+	<insert id="insert_RegistrationID_to_backup_table_2">
+		INSERT INTO PT_UX_PAIRING
+		(	
+			 SA_ID        
+			,STB_MAC      
+			,SMA_MAC     
+			,REG_ID      
+			,APP_TYPE
+			,CREATED      
+			,UPDATED      
+		) VALUES (
+			 '200000000002'
+			,'001C62704959'
+			,NULL       
+			,'LvSg+j3b5FsoEgzt3Nt4lFNEXvkHkBGLstD2so0MCgk='
+			,'UX'     
+			,SYSDATE      
+			,SYSDATE
+		)
+	</insert>
+	
+	<insert id="insert_RegistrationID_to_backup_table_3">
+		INSERT INTO PT_UX_PAIRING
+		(	
+			 SA_ID        
+			,STB_MAC      
+			,SMA_MAC     
+			,REG_ID      
+			,APP_TYPE
+			,CREATED      
+			,UPDATED      
+		) VALUES (
+			 '200000000000'
+			,'001C62704959'
+			,'222262704959'       
+			,'LvSg+j3b5FsoEgzt3Nt4lFNEXvkHkBGLstD2so0MCgk='
+			,'SMA'     
+			,SYSDATE      
+			,SYSDATE
+		)
+	</insert>
+	
+	<insert id="insert_RegistrationID_to_backup_table_4">
+		INSERT INTO PT_UX_PAIRING
+		(	
+			 SA_ID        
+			,STB_MAC      
+			,SMA_MAC     
+			,REG_ID      
+			,APP_TYPE
+			,CREATED      
+			,UPDATED      
+		) VALUES (
+			 '200000000000'
+			,'001C62704959'
+			,'001C62704959'       
+			,NULL
+			,'SMA'     
+			,SYSDATE      
+			,SYSDATE
+		)
+	</insert>
+	
+	<!--
+	################################################################################### 
+	After Query
+	###################################################################################-->
+	<!-- 기존 테이블의 테스트 데이터 삭제 -->
+	<delete id="delete_RegistrationID_test_data">
+		DELETE FROM PT_UX_PAIRING
+	</delete>
+	
+	<!-- 백업 테이블에 보관된 데이터를 기존 테이블에 insert -->
+	<insert id="insert_RegistrationID_to_org_table">
+		INSERT INTO PT_UX_PAIRING
+		SELECT * FROM PT_UX_PAIRING_BACKUP
+	</insert>
+	
+	<!-- 백업 테이블 drop  -->
+	<statement id="drop_RegistrationID_backup_table">
+		DROP TABLE SMARTUX.PT_UX_PAIRING_BACKUP
+	</statement>
+			
+</sqlMap>

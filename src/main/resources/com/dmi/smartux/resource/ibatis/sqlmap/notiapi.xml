@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="notiapi">
+	<typeAlias alias="notiidandversionvo" type="com.dmi.smartux.noti.vo.NotiIdAndVersionVO"/>
+	<typeAlias alias="basebbsvo" type="com.dmi.smartux.noti.vo.BaseNotiVO"/>
+
+	<!-- 각 게시판의 이름과 최대 version 값을 반환한다. -->
+	<select id="getNotiIdAndVersionList" resultClass="notiidandversionvo" >
+		SELECT 
+			bbs_id, VERSION 
+		FROM 
+			PT_HDTV_BBS_MASTER 
+	</select>
+
+	<!-- 단말기의 종류를 반환한다. -->
+	<select id="getTermModelList" resultClass="string" >
+		SELECT 
+			TERM_MODEL 
+		FROM 
+			PT_HDTV_TERMINAL 
+	</select>
+
+	<!-- bbs_id 에 따른 게시판의 모든 정보를 가지고 온다. -->
+	<select id="getNotiInfoList" parameterClass="map" resultClass="basebbsvo" remapResults="true" >
+		SELECT 
+			t2.TERM_MODEL
+			, t1.REG_NO
+			, t1.BBS_ID
+			, t1.TITLE
+			, t1.CONTENT
+			, t1.IS_FIXED
+			, t1.S_DATE
+			, t1.E_DATE
+			, t1.N_DATE
+			, t1.EV_CONT_ID
+			, t1.WIN_DT
+			, t1.ORG_FILE_NM
+			, CASE WHEN t1.SAVE_FILE_NM IS NOT NULL THEN F_SERVER_URL('I')||'hdtv/img/'||t1.SAVE_FILE_NM ELSE NULL END AS SAVE_FILE_NM
+			, TO_CHAR(t1.REG_DT, 'yyyymmdd') AS REG_DT
+			, t1.REG_ID
+			, t1.MOD_DT
+			, t1.MOD_ID 
+			, t1.EV_TYPE
+			, t1.EV_DETAIL
+			, t1.EV_STAT_ID
+		FROM 
+			PT_HDTV_BBS t1 
+			, PT_HDTV_NOTI_TERM t2 
+		WHERE 
+			t1.BBS_ID=#bbs_id#
+		AND t1.IS_ADT='1' 
+		AND	t1.REG_DT > (SYSDATE - #beforeday#)
+		AND t1.REG_NO=t2.REG_NO(+) 
+		ORDER BY 
+			IS_FIXED DESC
+			, REG_DT DESC
+			, REG_NO DESC 
+	</select>
+	
+	<!-- bbs_id 에 따른 게시판의 모든 정보를 가지고 온다. -->
+	<select id="getNotiInfoListTest" parameterClass="map" resultClass="basebbsvo" remapResults="true" >
+		SELECT 
+			t2.TERM_MODEL
+			, t1.REG_NO
+			, t1.BBS_ID
+			, t1.TITLE
+			, t1.CONTENT
+			, t1.IS_FIXED
+			, t1.S_DATE
+			, t1.E_DATE
+			, t1.N_DATE
+			, t1.EV_CONT_ID
+			, t1.WIN_DT
+			, t1.ORG_FILE_NM
+			, CASE WHEN t1.SAVE_FILE_NM IS NOT NULL THEN F_SERVER_URL('I')||'hdtv/img/'||t1.SAVE_FILE_NM ELSE NULL END AS SAVE_FILE_NM
+			, TO_CHAR(t1.REG_DT, 'yyyymmdd') AS REG_DT
+			, t1.REG_ID
+			, t1.MOD_DT
+			, t1.MOD_ID 
+			, t1.EV_TYPE
+			, t1.EV_DETAIL
+			, t1.EV_STAT_ID
+		FROM 
+			PT_HDTV_BBS t1 
+			, PT_HDTV_NOTI_TERM t2 
+		WHERE 
+			t1.BBS_ID=#bbs_id# 
+		AND	t1.REG_DT > (SYSDATE - #beforeday#) 
+		AND t1.REG_NO=t2.REG_NO(+) 
+		ORDER BY 
+			IS_FIXED DESC
+			, REG_DT DESC
+			, REG_NO DESC 
+	</select>
+	
+	<!-- 게시판 내용 조회 (검수용) -->
+	<select id="getNotiContentVOTest" parameterClass="map" resultClass="basebbsvo" remapResults="true" >
+		SELECT  
+		       REG_NO , 
+		       BBS_ID , 
+		       TITLE , 
+		       CONTENT , 
+		       IS_FIXED , 
+		       S_DATE , 
+		       E_DATE , 
+		       N_DATE , 
+		       EV_CONT_ID , 
+		       WIN_DT , 
+		       ORG_FILE_NM , 
+		       CASE WHEN SAVE_FILE_NM IS NOT NULL THEN F_SERVER_URL('I')||'hdtv/img/'||SAVE_FILE_NM ELSE NULL END AS SAVE_FILE_NM, 
+		       TO_CHAR(REG_DT, 'yyyymmdd') AS REG_DT , 
+		       REG_ID , 
+		       MOD_DT , 
+		       MOD_ID 
+		  FROM 
+		  		PT_HDTV_BBS
+		  WHERE 
+		  		REG_NO = #reg_no#
+	</select>
+
+<!-- //- dummy test 를 위해 주석 처리 -->
+<!-- 	bbs_id 에 따른 게시판의 모든 정보를 가지고 온다. -->
+<!-- 	<select id="getNotiInfoList" parameterClass="map" resultClass="basebbsvo" > -->
+<!-- 		SELECT  -->
+<!-- 			TERM_MODEL -->
+<!-- 			, REG_NO -->
+<!-- 			, BBS_ID -->
+<!-- 			, TITLE -->
+<!-- 			, CONTENT -->
+<!-- 			, IS_FIXED -->
+<!-- 			, S_DATE -->
+<!-- 			, E_DATE -->
+<!-- 			, N_DATE -->
+<!-- 			, EV_CONT_ID -->
+<!-- 			, WIN_DT -->
+<!-- 			, ORG_FILE_NM -->
+<!-- 			, SAVE_FILE_NM -->
+<!-- 			, TO_CHAR(REG_DT, 'yyyy-mm-dd') AS REG_DT -->
+<!-- 			, REG_ID -->
+<!-- 			, MOD_DT -->
+<!-- 			, MOD_ID  -->
+<!-- 		FROM  -->
+<!-- 			PT_HDTV_BBS_DUMY_TEST  -->
+<!-- 		WHERE  -->
+<!-- 			BBS_ID=#bbs_id# -->
+<!-- 	</select> -->
+
+</sqlMap>

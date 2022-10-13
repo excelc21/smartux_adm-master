@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="admin_latest">
+	<typeAlias alias="latestContentVO" type="com.dmi.smartux.admin.secondtv_push.vo.LatestContentVO"/>
+
+	<resultMap id="latestContentMap" class="com.dmi.smartux.admin.secondtv_push.vo.LatestContentVO">
+		<result property="contentID" column="CONTENTS_ID" />
+		<result property="contentName" column="CONTENTS_NAME" />
+		<result property="categoryID" column="CATE_ID" />
+		<result property="seriesNumber" column="SERIES_NO" />
+		<result property="categorySeriesNumber" column="CATE_SERIES_NO" />
+		<result property="category_gb" column="CATEGORY_GB" />
+	</resultMap>
+
+	<resultMap id="pushUserMap" class="com.dmi.smartux.admin.secondtv_push.vo.PushUserVO">
+		<result property="regID" column="REG_ID" />
+	</resultMap>
+
+	<!-- mims.xml로 이동 -->
+	<!-- 최신회 등록되었는지 확인 할 카테고리 리스트를 가져온다. -->
+	<!-- <select id="getCategoryList" resultClass="HashMap">
+		SELECT
+			CAT_ID,
+			NVL(CATEGORY_GB, 'I20') AS CATEGORY_GB
+		FROM PT_UX_LATEST
+		GROUP BY CAT_ID, CATEGORY_GB
+	</select> -->
+
+	<!-- 해당 카테고리안에 최신회차를 가져온다. -->
+	<select id="getContent" parameterClass="latestContentVO" resultMap="latestContentMap">
+		SELECT
+			A.CONTENTS_ID,
+			A.ADI_ALBUM_NAME AS CONTENTS_NAME,
+			A.SERIES_NO AS SERIES_NO,
+			A.CATE_SERIES_NO,
+			A.CATEGORY_ID AS CATE_ID,
+			A.CATEGORY_GB AS CATEGORY_GB
+		FROM
+			(SELECT
+				AA.CATEGORY_ID,
+				AA.CONTENTS_ID,
+				AA.CATEGORY_GB,
+				CC.ADI_ALBUM_NAME,
+				CC.SERIES_NO,
+				BB.SERIES_NO AS CATE_SERIES_NO
+			FROM
+				PT_HDTV_PROGRAM_SCHEDULE_P AA,
+				PT_VO_CATEGORY_MAP BB,
+				PT_LA_ALBUM_MST CC
+			WHERE AA.CONTENTS_ID = BB.CONTENTS_ID
+			AND AA.P_KEY IN (0,1)
+			AND AA.CATEGORY_ID=#categoryID#
+			AND AA.CATEGORY_GB = #category_gb#
+			AND AA.CATEGORY_ID = BB.CATEGORY_ID
+			AND AA.TYPE='MI'
+			AND BB.CONTENTS_ID = CC.ADI_ALBUM_ID
+			AND (AA.COMPLETE_YN IS NULL OR AA.COMPLETE_YN = 'N')
+			AND TO_CHAR(AA.REG_DATE,'YYYYMMDDHH24MI') <![CDATA[>=]]> #startDate#
+			AND TO_CHAR(AA.REG_DATE,'YYYYMMDDHH24MI') <![CDATA[<]]> #endDate#
+			AND
+                (
+                    (
+                        (CC.PRE_MAPPING_YN IS NULL OR CC.PRE_MAPPING_YN = 'N') AND (BB.VIEWING_FLAG = 'V' OR BB.VIEWING_FLAG IS NULL)
+                    )
+                OR
+                    (
+                        CC.PRE_MAPPING_YN = 'Y' AND BB.VIEWING_FLAG = 'V'
+                    )
+                )
+		ORDER BY AA.REG_DATE DESC) A
+		WHERE ROWNUM = 1
+	</select>
+
+	<!-- mims.xml로 이동 -->
+	<!-- 푸쉬할 사용자의 전체 카운트를 가져온다. -->
+	<!-- <select id="getUserListCount" parameterClass="String" resultClass="int">
+		SELECT
+			COUNT(*) AS NUM
+		FROM (
+			SELECT
+    			A.REG_ID
+			FROM
+				PT_UX_LATEST A,
+				pvsuser.XCION_SBC_TBL B
+			WHERE A.SA_ID=B.SBC_CONT_NO
+				AND A.MAC=B.MAC_ADDR
+				AND (B.ST_TYP='1' OR B.ST_TYP='3')
+				AND B.MAC_ADDR NOT LIKE 'v%'
+				AND A.CAT_ID=#catID#
+				GROUP BY A.REG_ID
+			)
+	</select> -->
+
+	<!-- mims.xml로 이동 -->
+	<!-- 푸쉬할 사용자 리스트를 가져온다.(분할처리) -->
+	<!-- <select id="getUserList" parameterClass="latestContentVO" resultMap="pushUserMap">
+		SELECT
+			REG_ID
+		FROM
+			(SELECT
+				RMT.REG_ID,
+				ROWNUM RNUM
+			FROM
+				(SELECT
+					A.REG_ID
+				FROM
+					PT_UX_LATEST A,
+					pvsuser.XCION_SBC_TBL B
+				WHERE A.SA_ID=B.SBC_CONT_NO
+				AND A.MAC=B.MAC_ADDR
+				AND (B.ST_TYP='1' OR B.ST_TYP='3')
+				AND B.MAC_ADDR NOT LIKE 'v%'
+				AND A.CAT_ID=#categoryID#
+				GROUP BY A.REG_ID
+				) RMT
+			) MAT
+		WHERE MAT.RNUM BETWEEN $startNumber$ AND $endNumber$
+	</select> -->
+
+	<!-- Push 전송 후 컴플릿 -->
+	<!-- <update id="updatePushComplete" parameterClass="latestContentVO">
+		UPDATE PT_HDTV_PROGRAM_SCHEDULE_P SET
+			COMPLETE_YN='Y'
+		WHERE TYPE='MI'
+		AND CATEGORY_GB = 'I20'
+		AND CATEGORY_ID=#categoryID#
+		AND CONTENTS_ID=#contentID#
+		AND P_KEY IN (0,1)
+	</update> -->
+</sqlMap>

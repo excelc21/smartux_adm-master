@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="authentication">
+
+<resultMap id="AuthSystemDataMap" class="com.dmi.smartux.authentication.vo.AuthenticationVO"> 
+		<result property="key_type" column="KEY_TYPE" />
+		<result property="service_id" column="SERVICE_ID" />
+		<result property="api_id" column="API_ID" />
+		<result property="access_key" column="ACCESS_KEY" />
+		<result property="cp_id" column="CP_ID" />
+		<result property="service_life" column="SERVICE_LIFE" />
+		<result property="use" column="USE" />
+		<result property="method" column="METHOD" />
+		<result property="uri" column="URI" />
+		
+	</resultMap>
+
+<select id="getAuthSystemData" parameterClass="map" resultMap="AuthSystemDataMap" remapResults="true">
+	SELECT
+		KEY_TYPE
+		,SERVICE_ID 
+		,API_ID
+		,ACCESS_KEY
+		,CP_ID
+		,SERVICE_LIFE
+		,USE
+	FROM  
+		VW_OA_AUTH
+	WHERE 
+		SYSTEM=#system_code#
+</select>
+
+<select id="getAuthSystemDataNotCode" resultMap="AuthSystemDataMap" remapResults="true">
+	SELECT
+		KEY_TYPE
+		,SERVICE_ID 
+		,API_ID
+		,ACCESS_KEY
+		,CP_ID
+		,SERVICE_LIFE
+		,USE
+	    ,METHOD
+	    ,URI
+	FROM  
+		VW_OA_AUTH
+  	WHERE SYSTEM='suxm.uplus.co.kr'
+</select>
+
+</sqlMap>

@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="admin_keyword">
+	<typeAlias alias="searchkeywordresultVo" type="com.dmi.smartux.admin.keyword.vo.SearchKeywordResultVo"/>
+	<typeAlias alias="selectkeyworddetailVo" type="com.dmi.smartux.admin.keyword.vo.SelectKeywordDetailVo"/>
+	<typeAlias alias="insertkeywordprocVo" type="com.dmi.smartux.admin.keyword.vo.InsertKeywordProcVo"/>
+	<typeAlias alias="keywordrelationresultVo" type="com.dmi.smartux.admin.keyword.vo.KeywordRelationResultVo"/>
+	<typeAlias alias="deletekeywordprocVo" type="com.dmi.smartux.admin.keyword.vo.DeleteKeywordProcVo"/>
+	<typeAlias alias="keywordorderlistresultVo" type="com.dmi.smartux.admin.keyword.vo.KeywordOrderListResultVo"/>
+	<typeAlias alias="updatekeywordorderprocVo" type="com.dmi.smartux.admin.keyword.vo.UpdateKeywordOrderProcVo"/>
+	
+	<select id="getKeywordCateList" parameterClass="String" resultClass="searchkeywordresultVo" remapResults="true">
+		SELECT
+			A.KEYWORD_ID AS ID,
+			A.P_KEYWORD_ID AS PARENT,
+			A.KEYWORD_NAME AS TEXT,
+			(
+				SELECT
+				CASE
+					WHEN COUNT(*) > 0 THEN 1
+					ELSE 0
+				END
+			FROM
+				PT_UX_AI_KEYWORD B
+			WHERE
+				B.P_KEYWORD_ID = A.KEYWORD_ID
+				AND B.DELETE_YN = 'N' ) AS HASCHILDREN,
+			A.KEYWORD_TYPE AS TYPE,
+			A.USE_YN AS USE_YN
+		FROM
+			PT_UX_AI_KEYWORD A
+		WHERE
+			<isNotEmpty>
+				A.P_KEYWORD_ID = #keyword_id#
+			</isNotEmpty>
+			<isEmpty>
+				A.P_KEYWORD_ID IS NULL
+			</isEmpty>
+			AND DELETE_YN = 'N'
+		ORDER BY
+			A.ORD ASC,
+			A.MOD_DT DESC
+	</select>
+	
+	<select id="getKeywordDetail" resultClass="selectkeyworddetailVo" parameterClass="String">
+		SELECT
+			KEYWORD_ID KEYWORD_ID,
+			P_KEYWORD_ID P_KEYWORD_ID,
+			KEYWORD_NAME KEYWORD_NAME,
+			KEYWORD_TYPE KEYWORD_TYPE,
+			F_SERVER_URL_UX('${P.ImgSvIp.Code.Mims}','${P.ImgSv.No}','') ||IMG AS IMAGE_URL,
+			IMG IMAGE,
+			F_SERVER_URL_UX('${P.ImgSvIp.Code.Mims}','${P.ImgSv.No}','') ||IMG2 AS IMAGE_URL2,
+			IMG2 IMAGE2,
+			MOD_DT MOD_DT,
+			USE_YN USE_YN
+		FROM
+			PT_UX_AI_KEYWORD
+		WHERE
+			KEYWORD_ID=#keyword_id#
+	</select>
+	
+	<insert id="insertKeyword" parameterClass="insertkeywordprocVo">
+		<selectKey keyProperty="keyword_id" resultClass="String">
+			SELECT TO_CHAR(LPAD(TO_NUMBER(SUBSTR(NVL(MAX(KEYWORD_ID),'00'),2))+1,7,'0')) AS K_ID FROM PT_UX_AI_KEYWORD
+		</selectKey>
+	
+		INSERT INTO PT_UX_AI_KEYWORD (
+			KEYWORD_ID,P_KEYWORD_ID,VERSION,KEYWORD_NAME,KEYWORD_TYPE,IMG,IMG2,REG_DT,REG_ID,MOD_DT,MOD_ID,ORD,USE_YN
+		)
+		VALUES (
+		  #keyword_id#,
+		  #p_keyword_id#,
+		  TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS'),
+		  #keyword_name#,
+		  #keyword_type#,
+		  #image#,
+		  #image2#,
+		  TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS'),
+		  #reg_id#,
+		  TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS'),
+		  #reg_id#,
+		  0,
+		  #use_yn#
+		)
+	</insert>
+	
+	<update id="updateKeyword" parameterClass="insertkeywordprocVo">
+		UPDATE
+			PT_UX_AI_KEYWORD
+		SET
+			KEYWORD_NAME = #keyword_name#,
+			VERSION = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS'),
+			IMG = #image#,
+			IMG2 = #image2#,
+			MOD_DT = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS'),
+			MOD_ID = #reg_id#,
+			USE_YN = #use_yn#
+		WHERE
+			KEYWORD_ID = #keyword_id#
+	</update>
+	
+	<update id="updateVersion">
+		UPDATE
+			PT_UX_AI_KEYWORD
+		SET
+			VERSION = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+	</update>
+
+	<select id="getKeywordRelation" parameterClass="String" resultClass="keywordrelationresultVo">
+		SELECT
+			(
+				SELECT COUNT(*)
+			FROM
+				PT_UX_AI_KEYWORD
+			WHERE
+				P_KEYWORD_ID = #keyword_id#
+				AND DELETE_YN = 'N' ) AS CNT,
+			(
+				SELECT P_KEYWORD_ID
+			FROM
+				PT_UX_AI_KEYWORD
+			WHERE
+				KEYWORD_ID = #keyword_id# ) AS P_KEYWORD_ID
+		FROM
+			DUAL
+	</select>
+	
+	<update id="deleteKeyword" parameterClass="deletekeywordprocVo">
+		UPDATE PT_UX_AI_KEYWORD
+		SET    DELETE_YN    ='Y',
+		       MOD_DT    = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS'),
+		       MOD_ID    = #mod_id#
+		WHERE  KEYWORD_ID = #keyword_id#
+	</update>
+	
+	<select id="getKeywordOrderList" parameterClass="String" resultClass="keywordorderlistresultVo" >
+		SELECT   KEYWORD_ID, KEYWORD_NAME
+		FROM     PT_UX_AI_KEYWORD
+		<isNotEmpty prepend="WHERE">
+			P_KEYWORD_ID = #keyword_id#
+		</isNotEmpty>
+		<isEmpty prepend="WHERE">
+			P_KEYWORD_ID IS NULL
+		</isEmpty>
+		AND DELETE_YN='N'
+		ORDER BY ORD ASC, MOD_DT DESC
+	</select>
+	
+	<update id="updateKeywordOrder" parameterClass="updatekeywordorderprocVo">
+		UPDATE PT_UX_AI_KEYWORD
+		SET    ORD       = #ord#,
+		       MOD_ID    = #mod_id#,
+		       MOD_DT    = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+		WHERE  KEYWORD_ID= #keyword_id#
+	</update>
+</sqlMap>

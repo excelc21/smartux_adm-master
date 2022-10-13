@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="test_smartepg">
+	<!-- 백업 테이블 create  -->
+	<statement id="create_theme_backup_table">
+		CREATE TABLE PT_UX_CODE_ITEMS_BACKUP (
+  			CODE         VARCHAR2(5)       NOT NULL, 
+  			ITEM_CODE    VARCHAR2(100)     NOT NULL, 
+  			ITEM_NM      VARCHAR2(100)     NOT NULL, 
+  			ORDERED      NUMBER            NOT NULL, 
+  			SS_GBN       VARCHAR2(4)           NULL, 
+  			APP_TYPE     VARCHAR2(3)           NULL, 
+  			USE_YN       VARCHAR2(1)      DEFAULT 'Y'       NOT NULL, 
+			CREATED      DATE             DEFAULT SYSDATE   NOT NULL, 
+  			UPDATED      DATE             DEFAULT SYSDATE   NOT NULL, 
+  			CREATE_ID    VARCHAR2(30)      NOT NULL, 
+  			UPDATE_ID    VARCHAR2(30)      NOT NULL
+		)
+	</statement>
+	
+	<!-- 기존 테이블의 기존 데이터를 백업 테이블에 insert -->
+	<insert id="insert_theme_to_backup_table">
+		INSERT INTO PT_UX_CODE_ITEMS_BACKUP
+		SELECT * FROM PT_UX_CODE_ITEMS WHERE CODE='A0005'
+	</insert>
+	
+	<!-- 기존 테이블의 기존 데이터 삭제 -->
+	<delete id="delete_org_theme_data">
+		DELETE FROM PT_UX_CODE_ITEMS WHERE CODE='A0005'
+	</delete>
+	
+	<!-- 테스트 데이터를 기존 테이블에 insert-->
+	<insert id="insert_test_data_to_org_theme_table1">
+		INSERT INTO PT_UX_CODE_ITEMS(CODE, ITEM_CODE, ITEM_NM, ORDERED, USE_YN, CREATED, UPDATED, CREATE_ID, UPDATE_ID)
+		VALUES(
+			'A0005'
+			, 'T0001'
+    		, '테스트 테마 01'
+    		, 1
+    		, 'Y'
+    		, SYSDATE
+    		, SYSDATE
+   	 		, 'admin'
+    		, 'admin'
+    	)
+	</insert>
+	
+	<insert id="insert_test_data_to_org_theme_table2">
+		INSERT INTO PT_UX_CODE_ITEMS(CODE, ITEM_CODE, ITEM_NM, ORDERED, USE_YN, CREATED, UPDATED, CREATE_ID, UPDATE_ID)
+		VALUES(
+			'A0005'
+			, 'T0002'
+    		, '테스트 테마 02'
+    		, 2
+    		, 'Y'
+    		, SYSDATE
+    		, SYSDATE
+   	 		, 'admin'
+    		, 'admin'
+    	)
+	</insert>
+	
+	<insert id="insert_test_data_to_org_theme_table3">
+		INSERT INTO PT_UX_CODE_ITEMS(CODE, ITEM_CODE, ITEM_NM, ORDERED, USE_YN, CREATED, UPDATED, CREATE_ID, UPDATE_ID)
+		VALUES(
+			'A0005'
+			, 'T0003'
+    		, '테스트 테마 03'
+    		, 3
+    		, 'Y'
+    		, SYSDATE
+    		, SYSDATE
+   	 		, 'admin'
+    		, 'admin'
+    	)
+	</insert>
+	
+	<insert id="insert_test_data_to_org_theme_table4">
+		INSERT INTO PT_UX_CODE_ITEMS(CODE, ITEM_CODE, ITEM_NM, ORDERED, USE_YN, CREATED, UPDATED, CREATE_ID, UPDATE_ID)
+		VALUES(
+			'A0005'
+			, 'T0004'
+    		, '테스트 테마 04'
+    		, 4
+    		, 'Y'
+    		, SYSDATE
+    		, SYSDATE
+   	 		, 'admin'
+    		, 'admin'
+    	)
+	</insert>
+	
+	
+	<!-- 기존 테이블의 테스트 데이터 삭제 -->
+	<delete id="delete_test_theme_data">
+		DELETE FROM PT_UX_CODE_ITEMS WHERE CODE='A0005'
+	</delete>
+	
+	<!-- 백업 테이블에 보관된 데이터를 기존 테이블에 insert -->
+	<insert id="insert_theme_to_org_table">
+		INSERT INTO PT_UX_CODE_ITEMS
+		SELECT * FROM PT_UX_CODE_ITEMS_BACKUP WHERE CODE='A0005'
+	</insert>
+	
+	<!-- 백업 테이블 drop  -->
+	<statement id="drop_theme_backup_table">
+		DROP TABLE PT_UX_CODE_ITEMS_BACKUP
+	</statement>	
+	
+	
+	
+	
+	
+	
+	
+	
+	<!-- 백업 테이블 create  -->
+	<statement id="create_real_rating_backup_table">
+		CREATE TABLE AVBM_QBIC_3MIN_TB_BACKUP (
+  			RANKING       NUMBER(5)        NOT NULL, 
+  			YMDHM         VARCHAR2(12)     NOT NULL, 
+  			CH_NO         VARCHAR2(10)     NOT NULL, 
+  			CH_NO_NAME    VARCHAR2(50)         NULL, 
+  			REG_DT        VARCHAR2(14)     NOT NULL
+		)
+	</statement>
+	
+	<!-- 기존 테이블의 기존 데이터를 백업 테이블에 insert -->
+	<insert id="insert_real_rating_to_backup_table">
+		INSERT INTO AVBM_QBIC_3MIN_TB_BACKUP
+		SELECT * FROM AVBM_QBIC_3MIN_TB
+	</insert>
+	
+	<!-- 기존 테이블의 기존 데이터 삭제 -->
+	<delete id="delete_org_real_rating_data">
+		DELETE FROM AVBM_QBIC_3MIN_TB 
+	</delete>
+	
+	
+	
+	<!-- 테스트 데이터를 기존 테이블에 insert-->
+	<insert id="insert_test_data_to_org_real_rating_table1">
+		INSERT INTO AVBM_QBIC_3MIN_TB(RANKING, YMDHM, CH_NO, CH_NO_NAME, REG_DT)
+		VALUES(
+			1
+			, '201204230139'
+			, '73'
+			, 'MBC드라마넷'
+			, '20120423013906'
+		)
+	</insert>
+	
+	<insert id="insert_test_data_to_org_real_rating_table2">
+		INSERT INTO AVBM_QBIC_3MIN_TB(RANKING, YMDHM, CH_NO, CH_NO_NAME, REG_DT)
+		VALUES(
+			2
+			, '201204230139'
+			, '16'
+			, 'MBN'
+			, '20120423013906'
+		)
+	</insert>
+
+	<insert id="insert_test_data_to_org_real_rating_table3">
+		INSERT INTO AVBM_QBIC_3MIN_TB(RANKING, YMDHM, CH_NO, CH_NO_NAME, REG_DT)
+		VALUES(
+			3
+			, '201204230139'
+			, '50'
+			, 'SBS ESPN'
+			, '20120423013906'
+		)
+	</insert>
+	
+	<insert id="insert_test_data_to_org_real_rating_table4">
+		INSERT INTO AVBM_QBIC_3MIN_TB(RANKING, YMDHM, CH_NO, CH_NO_NAME, REG_DT)
+		VALUES(
+			4
+			, '201204230139'
+			, '33'
+			, ' Super Action'
+		, '20120423013906'
+		)
+	</insert>
+	
+	<insert id="insert_test_data_to_org_real_rating_table5">
+		INSERT INTO AVBM_QBIC_3MIN_TB(RANKING, YMDHM, CH_NO, CH_NO_NAME, REG_DT)
+		VALUES(
+			5
+			, '201204230139'
+			, '24'
+			, 'YTN'
+			, '20120423013906'
+		)
+	</insert>
+	
+	<insert id="insert_test_data_to_org_real_rating_table6">
+		INSERT INTO AVBM_QBIC_3MIN_TB(RANKING, YMDHM, CH_NO, CH_NO_NAME, REG_DT)
+		VALUES(
+			6
+			, '201204230139'
+			, '75'
+			, 'SBS 플러스'
+			, '20120423013906'
+		)
+	</insert>
+	
+	<insert id="insert_test_data_to_org_real_rating_table7">
+		INSERT INTO AVBM_QBIC_3MIN_TB(RANKING, YMDHM, CH_NO, CH_NO_NAME, REG_DT)
+		VALUES(
+			7
+			, '201204230139'
+			, '152'
+			, '투니버스'
+			, '20120423013906'
+		)
+	</insert>
+	
+	<insert id="insert_test_data_to_org_real_rating_table8">
+		INSERT INTO AVBM_QBIC_3MIN_TB(RANKING, YMDHM, CH_NO, CH_NO_NAME, REG_DT)
+		VALUES(
+			8
+			, '201204230139'
+			, '19'
+			, ' TV조선'
+			, '20120423013906'
+		)
+	</insert>
+	
+	<insert id="insert_test_data_to_org_real_rating_table9">
+		INSERT INTO AVBM_QBIC_3MIN_TB(RANKING, YMDHM, CH_NO, CH_NO_NAME, REG_DT)
+		VALUES(
+			9
+			, '201204230139'
+			, '18'
+			, ' 채널A'
+			, '20120423013906'
+		)
+	</insert>
+	
+	<!-- 기존 테이블의 테스트 데이터 삭제 -->
+	<delete id="delete_test_real_rating_data">
+		DELETE FROM AVBM_QBIC_3MIN_TB
+	</delete>
+	
+	<!-- 백업 테이블에 보관된 데이터를 기존 테이블에 insert -->
+	<insert id="insert_real_rating_to_org_table">
+		INSERT INTO AVBM_QBIC_3MIN_TB
+		SELECT * FROM AVBM_QBIC_3MIN_TB_BACKUP
+	</insert>
+	
+	<!-- 백업 테이블 drop  -->
+	<statement id="drop_real_rating_backup_table">
+		DROP TABLE AVBM_QBIC_3MIN_TB_BACKUP
+	</statement>
+	
+	
+	
+</sqlMap>

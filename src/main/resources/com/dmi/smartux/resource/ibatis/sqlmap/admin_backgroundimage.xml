@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="admin_backgroundimage">
+	<typeAlias alias="categoryalbumvo" type="com.dmi.smartux.admin.backgroundimage.vo.CategoryAlbumVO"/>
+		
+	
+	<select id="getCategoryAlbumList" parameterClass="map" resultClass="categoryalbumvo">
+		SELECT RANK_NO, ALBUM_ID, ALBUM_NAME, CATEGORY_ID, CATEGORY_NAME
+        FROM(
+            SELECT SORT_NO AS RANK_NO, '' AS ALBUM_ID, '' AS ALBUM_NAME, A.CATEGORY_ID AS CATEGORY_ID, A.CATEGORY_NAME AS CATEGORY_NAME, 1 AS MYTYPE
+            FROM  PT_VO_CATEGORY A
+            WHERE A.CATEGORY_GB = #type#
+            AND   A.PARENT_CATEGORY_ID = #category_id#   
+            GROUP BY A.SORT_NO, A.CATEGORY_ID, A.CATEGORY_NAME
+            UNION
+            SELECT B.RANK_NO AS RANK_NO, B.CONTENTS_ID AS ALBUM_ID, C.ASSET_NAME AS ALBUM_NAME, '' AS CATEGORY_ID, '' AS CATEGORY_NAME, 2 AS MYTYPE
+            FROM  PT_VO_CATEGORY A,
+            (
+                SELECT
+                    BB.RANK_NO,
+		            BB.CATEGORY_ID,
+		            BB.CONTENTS_ID
+		        FROM
+		            PT_VO_CATEGORY_MAP BB,
+		            PT_LA_ALBUM_MST CC
+		        WHERE
+		            BB.CONTENTS_ID = CC.ADI_ALBUM_ID
+		        AND
+		            (
+		                (
+		                    (CC.PRE_MAPPING_YN IS NULL OR CC.PRE_MAPPING_YN = 'N') AND (BB.VIEWING_FLAG = 'V' OR BB.VIEWING_FLAG IS NULL)
+		                )
+		            OR
+		                (
+		                    CC.PRE_MAPPING_YN = 'Y' AND BB.VIEWING_FLAG = 'V'
+		                )
+		            )
+		       ) B,
+		       PT_LA_PACKAGE_ASSET C
+            WHERE A.CATEGORY_GB = #type#
+            AND   A.CATEGORY_ID = B.CATEGORY_ID
+            AND   B.CONTENTS_ID = C.ADI_ALBUM_ID
+            AND   A.CATEGORY_ID = #category_id#
+            <isEqual property="series_yn" compareValue="Y">
+            AND A.SERIES_YN = 'Y'
+            </isEqual>
+        )
+        ORDER BY MYTYPE, RANK_NO, ALBUM_ID, ALBUM_NAME, CATEGORY_ID, CATEGORY_NAME
+	</select>
+	
+</sqlMap>

@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="gpack_category">
+	<typeAlias alias="gpackCategoryVO"		type="com.dmi.smartux.admin.gpack.category.vo.GpackCategoryVO"/>
+		
+	<resultMap id="gpackCategoryVOMap" 		class="com.dmi.smartux.admin.gpack.category.vo.GpackCategoryVO"> 
+		<result property="pack_id"			column="PACK_ID" />
+		<result property="category_id"		column="CATEGORY_ID" />
+		<result property="category_nm"		column="CATEGORY_NM" />
+		<result property="category_comment"	column="CATEGORY_COMMENT" />
+		<result property="category_yn"		column="CATEGORY_YN" />
+		<result property="auto_yn"			column="AUTO_YN" />
+		<result property="ordered"			column="ORDERED" />
+		<result property="use_yn"			column="USE_YN" />
+		<result property="created"			column="CREATED" />
+		<result property="updated"			column="UPDATED" />
+		<result property="create_id"		column="CREATE_ID" />
+		<result property="update_id"		column="UPDATE_ID" />
+	</resultMap>
+	
+	<select id="countGpackCategoryContents" parameterClass="gpackCategoryVO" resultClass="int">
+		SELECT COUNT(*) 
+		  FROM (
+				SELECT PACK_ID, CATEGORY_ID
+				  FROM PT_GP_CONTENTS_INFO_TEMP
+				WHERE 1=1 AND PACK_ID = #pack_id# AND CATEGORY_ID = #category_id# AND USE_YN = 'Y'
+				UNION ALL
+				SELECT PACK_ID, CATEGORY_ID
+				  FROM PT_GP_AUTO_SET_INFO_TEMP
+				WHERE 1=1 AND PACK_ID = #pack_id# AND CATEGORY_ID = #category_id# AND USE_YN = 'Y'
+		) 
+	</select>
+	
+	<select id="getGpackCategoryList" parameterClass="gpackCategoryVO" resultClass="gpackCategoryVO">
+		SELECT PACK_ID,
+		       CATEGORY_ID,
+		       CATEGORY_NM,
+		       CATEGORY_COMMENT,
+		       CATEGORY_YN,
+		       AUTO_YN,
+		       ORDERED,
+		       USE_YN,
+		       CREATED,
+		       UPDATED,
+		       CREATE_ID,
+		       UPDATE_ID
+		  FROM PT_GP_CATEGORY_INFO_TEMP
+		 WHERE 1=1
+		 <isNotEmpty property="pack_id">
+		   AND PACK_ID = #pack_id#
+		 </isNotEmpty>
+		 <isNotEmpty property="use_yn">
+		   AND USE_YN = #use_yn#
+		 </isNotEmpty>
+		   AND CATEGORY_YN = 'Y'
+	  ORDER BY ORDERED
+	</select>
+	
+	<select id="getGpackCategoryBizList" parameterClass="gpackCategoryVO" resultClass="gpackCategoryVO">
+		SELECT PACK_ID,
+		       CATEGORY_ID,
+		       CATEGORY_NM,
+		       CATEGORY_COMMENT,
+		       CATEGORY_YN,
+		       AUTO_YN,
+		       ORDERED,
+		       USE_YN,
+		       CREATED,
+		       UPDATED,
+		       CREATE_ID,
+		       UPDATE_ID
+		  FROM PT_GP_CATEGORY_INFO
+		 WHERE 1=1
+		 <isNotEmpty property="pack_id">
+		   AND PACK_ID = #pack_id#
+		 </isNotEmpty>
+		   AND USE_YN = 'Y'
+		   AND CATEGORY_YN = 'Y'
+	  ORDER BY ORDERED
+	</select>
+	
+	<select id="getGpackCategoryView" parameterClass="gpackCategoryVO" resultMap="gpackCategoryVOMap">
+		SELECT PACK_ID,
+		       CATEGORY_ID,
+		       CATEGORY_NM,
+		       CATEGORY_COMMENT,
+		       CATEGORY_YN,
+		       AUTO_YN,
+		       ORDERED,
+		       USE_YN,
+		       CREATED,
+		       UPDATED,
+		       CREATE_ID,
+		       UPDATE_ID
+		  FROM PT_GP_CATEGORY_INFO_TEMP
+		 WHERE 1=1
+		   AND PACK_ID = #pack_id#
+		   AND CATEGORY_ID = #category_id#
+		   AND CATEGORY_YN = 'Y'
+	</select>
+	
+	<select id="getGpackCategoryBizView" parameterClass="gpackCategoryVO" resultMap="gpackCategoryVOMap">
+		SELECT PACK_ID,
+		       CATEGORY_ID,
+		       CATEGORY_NM,
+		       CATEGORY_COMMENT,
+		       CATEGORY_YN,
+		       AUTO_YN,
+		       ORDERED,
+		       USE_YN,
+		       CREATED,
+		       UPDATED,
+		       CREATE_ID,
+		       UPDATE_ID
+		  FROM PT_GP_CATEGORY_INFO
+		 WHERE 1=1
+		   AND PACK_ID = #pack_id#
+		   AND CATEGORY_ID = #category_id#
+		   AND CATEGORY_YN = 'Y'
+	</select>
+	
+	<select id="getNewGpackCategoryId" resultClass="string">
+		SELECT SEQ_PT_GP_CATEGORY_INFO.NEXTVAL FROM DUAL 
+	</select>
+	
+	<insert id="insertGpackCategory" parameterClass="gpackCategoryVO">
+	
+			MERGE
+			INTO PT_GP_CATEGORY_INFO_TEMP A USING (
+				    SELECT 
+				    	#pack_id#		AS PACK_ID,
+						#category_id#	AS CATEGORY_ID
+				    FROM DUAL ) B 
+			 ON (		A.PACK_ID 	  = B.PACK_ID
+			      AND 	A.CATEGORY_ID = B.CATEGORY_ID)
+			WHEN MATCHED THEN
+			
+					UPDATE
+					SET    
+						CATEGORY_NM    		= #category_nm#,
+						CATEGORY_COMMENT	= #category_comment#,
+						CATEGORY_YN    		= 'Y',
+						AUTO_YN        		= #auto_yn#,
+						ORDERED        		= #ordered#,
+						USE_YN         		= #use_yn#,
+						UPDATED        		= SYSDATE,
+						UPDATE_ID      		= #update_id#
+					  
+			WHEN NOT MATCHED THEN
+			
+					INSERT (PACK_ID, 
+							CATEGORY_ID, 
+							CATEGORY_NM, 
+							CATEGORY_COMMENT,
+							CATEGORY_YN, 
+							AUTO_YN, 
+							ORDERED, 
+							USE_YN, 
+							CREATED, CREATE_ID) 
+						VALUES ( 
+						   B.PACK_ID, 
+						   NVL(#category_id#, SEQ_PT_GP_CATEGORY_INFO.NEXTVAL),
+						   #category_nm#, 
+						   #category_comment#,
+						   'Y', 
+						   #auto_yn#, 
+						   NVL((SELECT MAX(ORDERED) FROM PT_GP_CATEGORY_INFO_TEMP WHERE PACK_ID = B.PACK_ID), 0)+1, 
+						   #use_yn#, 
+						   SYSDATE, #create_id#)
+	</insert>
+	
+	<update id="updateGpackCategoryOrderby" parameterClass="gpackCategoryVO">
+		UPDATE PT_GP_CATEGORY_INFO_TEMP
+		SET    ORDERED        = #ordered#,
+		       UPDATED        = SYSDATE,
+		       UPDATE_ID      = #update_id#
+		WHERE  PACK_ID        = #pack_id#
+		AND    CATEGORY_ID    = #category_id#
+	</update>
+	
+	<delete id="deleteGpackCategory" parameterClass="gpackCategoryVO">
+		DELETE FROM PT_GP_CATEGORY_INFO_TEMP
+		WHERE  PACK_ID        = #pack_id#
+		AND    CATEGORY_ID    = #category_id#
+	</delete>
+	
+</sqlMap>

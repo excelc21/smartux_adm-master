@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMapConfig PUBLIC "-//ibatis.apache.org//DTD SQL Map Config 2.0//EN"
+    "http://ibatis.apache.org/dtd/sql-map-config-2.dtd">
+<sqlMapConfig>
+	<settings 
+		useStatementNamespaces="true"
+		defaultStatementTimeout="60"
+	/>
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/select.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/smartepg.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/mainpanel.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/bonbang.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/configuration.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/smartstart_itemlist.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/genrevodbestlist.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/suxmalbumlist.xml" />
+	<!--  DB분리로 인해 SqlMapConfig_mims.xml 로 이동-->
+	<!-- <sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/youtube.xml" /> -->
+
+	<!-- 인증 관련 SQL Map 파일 -->
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/authentication.xml" />
+
+	<!-- 관리자 화면 관련 SQL Map 파일 -->
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/admin_code.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/admin_mainpanel.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/admin_itemlist.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/login.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/admin_rule.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/admin_rank.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/admin_schedule.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/admin_retry.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/admin_latest.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/admin_news.xml" />
+	<!-- Newtui 예약구매 push -->
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/admin_nextuipush.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/admin_paynow.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/admin_season.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/admin_starrating.xml" />
+	<!-- 복합결제 Info -->
+    <sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/admin_multipayment.xml" />
+    
+	<!-- 인터페이스 관련 -->
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/notiapi.xml" />
+	
+	<!-- 공지사항 -->
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/admin_noti.xml" />
+    	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/admin_notimng.xml" />
+    	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/admin_notiemergency.xml" />
+	
+	<!-- 긴급/팝업공지 -->
+    	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/admin_notipop.xml" />
+    	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/notipop.xml" />
+
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/admin_noticeinfo.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/noticeinfo.xml" />
+	
+	<!-- StatBbs -->
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/admin_statbbs.xml" />
+	<!-- 참여통계 -->
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/bbsstat.xml" />
+    
+    <sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/admin_commonMng.xml" />
+	
+
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/common.xml" />
+
+	<!-- JUNit 테스트시 사용되는 SQL Map 파일 -->
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/test/smartepg.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/test/mainpanel.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/test/bonbang.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/test/genrevodbestlist.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/test/smartstart_itemlist.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/test/configuration.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/test/wishlist.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/test/registrationID.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/test/selfschedule.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/test/youtube.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/test/authentication.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/test/noticeinfo.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/test/gpack.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/test/latest.xml" />
+	
+	<!-- 세컨드 TV JUnit -->
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/test/notiapi.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/test/notipop.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/test/stat.xml" />
+	
+	<!-- 가구맞춤형UX Admin 약관관리 -->
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/admin_terms.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/admin_terms_access.xml" />
+	
+	<!-- 배너 관리 -->
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/adsMaster.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/ads.xml" />
+
+	<!-- IPTV시니어 서비스 -->
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/admin_gallery.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/admin_poster.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/admin_dayinfo.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/admin_teleport.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/admin_backgroundimage.xml" />
+	
+	<!-- IPTV화제동영상 -->
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/hotvod.xml" />
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/hotvod_iptv.xml" />
+	
+	<!-- 트리거 -->
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/admin_trigger.xml" />
+	
+	<!-- 시작 채널 설정 -->
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/admin_startchannel.xml" />	
+	<!-- IMCS 상품 조회 -->
+	<sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/goodsList.xml" />
+	
+	<!-- pushconfig -->
+    <sqlMap resource="com/dmi/smartux/resource/ibatis/sqlmap/pushconfig.xml" />
+    
+</sqlMapConfig>

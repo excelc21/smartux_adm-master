@@ -1,0 +1,504 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="admin_noti">
+	
+	<typeAlias alias="notiListVO" type="com.dmi.smartux.admin.noti.vo.NotiListVO"/>
+	<typeAlias alias="notiVO" type="com.dmi.smartux.admin.noti.vo.NotiVO"/>
+	<typeAlias alias="copynotipopupVo" type="com.dmi.smartux.admin.noti.vo.CopyNotiPopupVo"/>
+	<typeAlias alias="notipopVo" type="com.dmi.smartux.admin.noti.vo.NotiPopVo"/>
+	
+	<select id="getNotiListCnt" resultClass="int">
+	
+	SELECT 
+	      COUNT(REG_NO)		
+	FROM
+		PT_HDTV_BBS  
+	WHERE
+		BBS_ID=#bbs_id#				
+		<isNotEmpty prepend="AND" property="findValue">
+		 	<isNotNull property="findName">
+	  			$findName$ LIKE '%$findValue$%'
+	  		</isNotNull>
+		</isNotEmpty>
+		
+	</select>
+	
+	<select id="getNotiList" parameterClass="notiListVO" resultClass="java.util.HashMap" remapResults="true">
+		
+		SELECT
+			A.*
+		FROM
+			(SELECT
+			<isEqual property="bbs_gbn" compareValue="PU">
+				ROW_NUMBER() OVER(ORDER BY IS_FIXED DESC,IS_ADT DESC,REG_NO DESC) AS ROWNO,
+			</isEqual>
+			<isNotEqual property="bbs_gbn" compareValue="PU">
+				ROW_NUMBER() OVER(ORDER BY IS_FIXED DESC,IS_ADT ASC,REG_NO DESC) AS ROWNO,
+			</isNotEqual>
+				REG_NO, 
+				BBS_ID, 
+				TITLE, 
+				CONTENT, 
+				IS_FIXED,				
+				TO_CHAR(S_DATE,'YYYY-MM-DD HH24:MI') as S_DATE,
+				TO_CHAR(E_DATE,'YYYY-MM-DD HH24:MI') as E_DATE,
+				TO_CHAR(N_DATE,'YYYY-MM-DD') as N_DATE,				
+				EV_CONT_ID,
+				TO_CHAR(WIN_DT,'YYYY-MM-DD HH24:MI') as WIN_DT, 
+				ORG_FILE_NM, 
+				SAVE_FILE_NM, 
+				REG_DT, 
+				REG_ID,
+				MOD_DT,
+				MOD_ID,
+				IS_ADT,
+			    EV_TYPE,
+			    EV_STAT_ID,
+			    EV_DETAIL
+			FROM
+				PT_HDTV_BBS  
+			WHERE
+				BBS_ID=#bbs_id#
+			<isNotEmpty prepend="AND" property="findValue">
+			 	<isNotNull property="findName">
+		  			$findName$ LIKE '%$findValue$%'
+		  		</isNotNull>
+			</isNotEmpty>
+			) A
+		 WHERE ROWNO BETWEEN '$start_rnum$' AND '$end_rnum$' 
+		
+
+	</select>
+	
+
+	<insert id="createNoti" parameterClass="notiVO" >
+		<selectKey keyProperty="reg_no" resultClass="string">
+			SELECT nvl(max(REG_NO),0)+1 FROM PT_HDTV_BBS  
+		</selectKey>
+	   INSERT INTO   
+	    	PT_HDTV_BBS	(
+		    	REG_NO,
+		    	BBS_ID, 
+		    	TITLE, 
+		    	CONTENT, 
+		    	IS_FIXED,
+		    	S_DATE, 
+		    	E_DATE, 
+		    	N_DATE,
+		    	EV_CONT_ID,
+		    	WIN_DT,
+		    	ORG_FILE_NM,
+		    	SAVE_FILE_NM,
+		    	REG_ID,
+		    	EV_TYPE,
+		    	EV_DETAIL,
+		    	EV_STAT_ID,
+		    	SHOW_TYPE,
+		    	MOD_DT,
+		    	DISPLAY_TYPE)
+	   VALUES
+	    	(#reg_no#,#bbs_id#,#title#,#content#,#is_fixed#,TO_DATE(#s_date#,'YYYY-MM-DD HH24:MI'),TO_DATE(#e_date#,'YYYY-MM-DD HH24:MI'),TO_DATE(#n_date#,'YYYY-MM-DD'),#ev_cont_id#,TO_DATE(#win_dt#,'YYYY-MM-DD HH24:MI'),#org_file_nm#,#save_file_nm#,#reg_id#,#ev_type#,#ev_detail#,#ev_stat_id#,#show_type#,TO_DATE(#mod_dt#,'yyyy-mm-dd hh24:mi:ss'),#display_type#)	    	    		    	
+	</insert>	
+	
+ 	<insert id="insertTerm" parameterClass="java.util.HashMap">
+ 	
+		INSERT INTO
+			PT_HDTV_NOTI_TERM(REG_NO,TERM_MODEL)		
+		VALUES
+			(#reg_no#,#term_model#)
+	</insert>
+	
+	<delete id="deleteTerm" parameterClass="string">
+			
+		DELETE FROM 
+			PT_HDTV_NOTI_TERM
+		WHERE 
+			REG_NO=#reg_no#	
+	</delete>
+	
+
+	<update id="updateNoti" parameterClass="notiVO">
+	
+	 UPDATE
+	  		PT_HDTV_BBS	 
+	 SET   		  			 
+	    	TITLE=#title#, 
+	    	CONTENT=#content#, 
+	    	IS_FIXED=#is_fixed#,
+	    	S_DATE=TO_DATE(#s_date#,'YYYY-MM-DD HH24:MI'), 
+	    	E_DATE=TO_DATE(#e_date#,'YYYY-MM-DD HH24:MI'), 
+	    	N_DATE=TO_DATE(#n_date#,'YYYY-MM-DD'),
+	    	EV_CONT_ID=#ev_cont_id#,
+	    	WIN_DT=TO_DATE(#win_dt#,'YYYY-MM-DD HH24:MI'),	    	
+	    	ORG_FILE_NM=#org_file_nm#,
+	    	SAVE_FILE_NM=#save_file_nm#,	    	
+	    	MOD_DT=DECODE(TO_CHAR(TO_DATE(#mod_dt#,'yyyy-mm-dd hh24:mi:ss'),'yyyy'),'9999',TO_DATE(#mod_dt#,'yyyy-mm-dd hh24:mi:ss'),SYSDATE),
+	    	MOD_ID=#mod_id#,
+	    	EV_TYPE=#ev_type#,
+	    	EV_DETAIL=#ev_detail#,
+	    	EV_STAT_ID=#ev_stat_id#,
+	    	SHOW_TYPE=#show_type#,
+	    	DISPLAY_TYPE=#display_type#
+     WHERE
+     	reg_no=#reg_no#     	 	    
+
+	</update>	
+	
+	<select id="getBoardList" parameterClass="notiListVO" resultClass="java.util.HashMap" remapResults="true">
+		SELECT
+			BBS_ID, BBS_GBN, BBS_NM,SCR_TP
+		FROM 
+			PT_HDTV_BBS_MASTER
+		WHERE
+		 	BBS_GBN=#bbs_gbn# AND SCR_TP=#scr_tp# AND DEL_YN='0'
+	</select>
+	
+	<select id="getNotiView" parameterClass="string" resultClass="notiVO">		
+		<!-- SELECT
+			REG_NO, BBS_ID,TITLE, CONTENT, IS_FIXED,  S_DATE, E_DATE, N_DATE, EV_CONT_ID, WIN_DT, ORG_FILE_NM, SAVE_FILE_NM, REG_DT, REG_ID, MOD_DT, MOD_ID,IS_ADT
+		FROM
+				PT_HDTV_BBS  
+		WHERE			
+				REG_NO=#reg_no# -->
+		SELECT
+		    REG_NO,
+		    BBS_ID,
+		    TITLE, 
+		    CONTENT,
+		    IS_FIXED,
+		    TO_CHAR(S_DATE,'YYYY-MM-DD HH24:MI') AS S_DATE,
+		    TO_CHAR(E_DATE,'YYYY-MM-DD HH24:MI') AS E_DATE,
+		    TO_CHAR(N_DATE,'YYYY-MM-DD') AS N_DATE,
+		    EV_CONT_ID, 
+		    TO_CHAR(WIN_DT,'YYYY-MM-DD HH24:MI')AS WIN_DT,       
+		    ORG_FILE_NM,
+		    CASE WHEN SAVE_FILE_NM IS NOT NULL THEN F_SERVER_URL('I')||'hdtv/img/'||SAVE_FILE_NM ELSE NULL END AS SAVE_FILE_NM, 
+		    REG_DT, 
+		    REG_ID, 
+		    MOD_DT, 
+		    MOD_ID,
+		    IS_ADT,
+			EV_TYPE,
+			EV_DETAIL,
+			EV_STAT_ID,
+			SHOW_TYPE,
+			DISPLAY_TYPE
+		FROM
+			PT_HDTV_BBS	
+		WHERE			
+			REG_NO=#reg_no#		
+	</select>	
+	<select id="getNotiTerminal" parameterClass="string" resultClass="java.util.HashMap">
+		SELECT 
+			TERM_MODEL
+		FROM
+			PT_HDTV_NOTI_TERM
+		WHERE 
+			REG_NO=#reg_no#
+	
+	</select>
+	
+	<delete id="deleteNoti" parameterClass="string">
+		DELETE FROM 
+			PT_HDTV_BBS
+		WHERE 
+			REG_NO=#reg_no#
+	</delete>
+		
+	<select id="popUpCheck" parameterClass="string" resultClass="string">
+		SELECT
+			REG_NO			
+		FROM
+			PT_HDTV_BBS
+		WHERE
+			BBS_ID=#bbs_id# AND IS_FIXED=1		
+	</select>
+	
+	<select id="adtCheck" parameterClass="string" resultClass="string">
+		SELECT
+			REG_NO			
+		FROM
+			PT_HDTV_BBS
+		WHERE
+			BBS_ID=#bbs_id# AND IS_ADT=1		
+	</select>	
+	<update id="updateConfirmAdt" parameterClass="java.util.HashMap">
+		UPDATE 
+			PT_HDTV_BBS
+		SET
+			IS_ADT=#is_adt#
+		WHERE
+			REG_NO=#reg_no#			
+	</update>	
+	
+	<update id="popUpChange" parameterClass="java.util.HashMap">
+		UPDATE
+	  		PT_HDTV_BBS	 
+	 	SET
+	 		IS_FIXED=#is_fixed#
+	 	WHERE
+	 		REG_NO=#reg_no#	
+	</update>
+	
+	<select id="getIsFixedCount" parameterClass="string" resultClass="int">
+		SELECT 
+			COUNT(*) 
+		FROM 
+			PT_HDTV_BBS 
+		WHERE 
+			IS_FIXED=1 AND BBS_ID=#bbs_id#  	
+	</select>
+	
+	<update id="updateIsFixed" parameterClass="notiVO">
+		UPDATE 
+			PT_HDTV_BBS
+		SET
+			is_fixed=#is_fixed#
+		WHERE
+			REG_NO=#reg_no#	
+	</update>
+	
+	<select id="getTerm" parameterClass="java.util.HashMap" resultClass="java.util.HashMap">
+		SELECT 
+			TERM_MODEL, TERM_MAKE, LCD_SPEC,DEL_YN
+		FROM
+			PT_HDTV_TERMINAL
+		WHERE 
+			DEL_YN=#del_yn# AND SCR_TP=#scr_tp#
+	</select>
+	
+	<insert id="createTermManage" parameterClass="java.util.HashMap">
+		INSERT INTO
+			PT_HDTV_TERMINAL(
+				TERM_MODEL,
+				TERM_MAKE,
+				LCD_SPEC,			
+				SCR_TP				
+			)		
+		VALUES
+			(#term_model#,#term_make#,#lcd_spec#,#scr_tp#)
+	</insert>
+	<update id="deleteTermManage" parameterClass="java.util.HashMap">
+		UPDATE 
+			PT_HDTV_TERMINAL
+		SET
+			DEL_YN=#del_yn#
+		WHERE
+			TERM_MODEL=#term_model#
+		AND 
+		    SCR_TP=#scr_tp#
+	
+	</update>
+	
+	<insert id="insertNotiLog" parameterClass="notiVO">
+	 
+	 INSERT INTO   
+	    	PT_HDTV_BBS_LOG	(
+		    	REG_NO, 
+		    	BBS_ID, 
+		    	TITLE, 
+		    	CONTENT, 
+		    	IS_FIXED,
+		    	S_DATE, 
+		    	E_DATE, 
+		    	N_DATE,
+		    	EV_CONT_ID,
+		    	WIN_DT,
+		    	ORG_FILE_NM,
+		    	SAVE_FILE_NM,
+		    	IS_ADT,	
+		    	SHOW_TYPE,	    	
+		    	ACT_ID,		    	
+		    	ACT_IP,
+		    	ACT_GBN,
+		    	TERM_MODEL,
+		    	DISPLAY_TYPE)
+	   VALUES
+	    	(#reg_no#,
+	    	 #bbs_id#,
+	    	 #title#,
+	    	 #content#,
+	    	 #is_fixed#,
+	    	 TO_DATE(#s_date#,'YYYY-MM-DD HH24:MI'),
+	    	 TO_DATE(#e_date#,'YYYY-MM-DD HH24:MI'),
+	    	 TO_DATE(#n_date#,'YYYY-MM-DD'),
+	    	 #ev_cont_id#,
+	    	 TO_DATE(#win_dt#,'YYYY-MM-DD HH24:MI'),
+	    	 #org_file_nm#,
+	    	 #save_file_nm#,
+	    	 #is_adt#,
+	    	 #show_type#,	    	 
+	    	 #act_id#,
+	    	 #act_ip#,
+	    	 #act_gbn#,
+	    	 #terminal_list#,
+	    	 #display_type#)
+	</insert>
+	<!-- <update id="deleteImageFile" parameterClass="string">
+		UPDATE
+			PT_HDTV_BBS
+		SET 	
+			ORG_FILE_NM='',
+			SAVE_FILE_NM=''
+		WHERE
+			REG_NO=#reg_no#
+	</update> -->
+	<insert id="writeLog" parameterClass="java.util.HashMap">
+	   INSERT INTO 
+	        PT_HDTV_TERMINAL_LOG (TERM_MODEL , TERM_MAKE , LCD_SPEC , SCR_TP, ACT_ID , ACT_IP , ACT_GBN)
+	   VALUES(#term_model#,#term_make#,#lcd_spec#,#scr_tp#,#act_id#,#act_ip#,#act_gbn#)
+	</insert>
+	<insert id="writeLog2" parameterClass="java.util.HashMap">
+	  INSERT INTO 
+	      PT_HDTV_TERMINAL_LOG (TERM_MODEL , TERM_MAKE , LCD_SPEC ,DEL_YN ,  SCR_TP, ACT_ID , ACT_IP , ACT_GBN)
+	  (
+	  SELECT 
+	      A.* , #act_id# , #act_ip# , #act_gbn#
+	  FROM( 
+	      SELECT 
+	          TERM_MODEL,
+	          TERM_MAKE,
+	  	      LCD_SPEC,
+	          DEL_YN,
+	          SCR_TP
+	      FROM
+	          PT_HDTV_TERMINAL    
+	      WHERE
+	          TERM_MODEL = #term_model#
+	         )A
+	    
+	  )
+	  
+	  </insert>
+	  
+	  <select id="getIsExistModel" parameterClass="java.util.HashMap" resultClass="int">
+		SELECT 
+			COUNT(*) 
+		FROM 
+			PT_HDTV_TERMINAL 
+		WHERE 
+			TERM_MODEL=#term_model#  
+		AND 
+		    SCR_TP=#scr_tp#	
+	</select>
+	  
+	<select id="getNotiPopupId" parameterClass="string" resultClass="String">
+		SELECT
+		 BBS_ID
+		FROM PT_HDTV_BBS_MASTER
+		WHERE BBS_GBN='PU'
+		AND SCR_TP=#scr_tp#
+		AND ROWNUM='1'
+	</select>
+	
+	<insert id="copyNotiPopup" parameterClass="copynotipopupVo">
+		<selectKey keyProperty="reg_no" resultClass="String">
+			SELECT NVL(MAX(REG_NO),0)+1 FROM PT_HDTV_BBS
+		</selectKey>
+		INSERT INTO PT_HDTV_BBS
+		(
+		REG_NO, BBS_ID, TITLE, CONTENT, IS_FIXED, S_DATE, E_DATE, N_DATE, EV_CONT_ID,
+		WIN_DT, ORG_FILE_NM, SAVE_FILE_NM, REG_DT, REG_ID, MOD_DT, MOD_ID, IS_ADT,
+		EV_TYPE, EV_STAT_ID, EV_DETAIL, DISPLAY_TYPE
+		)
+		SELECT 
+		  #reg_no#
+		  ,#bbs_id#
+		  ,TITLE
+		  ,CONTENT
+		  ,'0'
+		  ,NVL(S_DATE,TO_DATE(TO_CHAR(SYSDATE,'YYYY-MM-DD HH24'),'YYYY-MM-DD HH24'))
+		  ,NVL(E_DATE,TO_DATE(TO_CHAR(SYSDATE+1,'YYYY-MM-DD HH24'),'YYYY-MM-DD HH24'))
+		  ,NULL
+		  ,EV_CONT_ID
+		  ,WIN_DT
+		  ,ORG_FILE_NM
+		  ,SAVE_FILE_NM
+		  ,SYSDATE
+		  ,#reg_id#
+		  ,NULL
+		  ,NULL
+		  ,'0'
+		  ,EV_TYPE
+		  ,EV_STAT_ID
+		  ,EV_DETAIL
+		  ,DISPLAY_TYPE
+		FROM PT_HDTV_BBS
+		WHERE REG_NO=#cp_reg_no#
+	</insert>
+	
+	<insert id="copyNotiTerm" parameterClass="copynotipopupVo">
+		INSERT INTO PT_HDTV_NOTI_TERM(REG_NO,TERM_MODEL)
+		SELECT
+		 #reg_no#
+		,TERM_MODEL
+		FROM PT_HDTV_NOTI_TERM
+		WHERE REG_NO=#cp_reg_no#
+	</insert>
+	
+	<select id="getNotiPopList" parameterClass="notiListVO" resultClass="notipopVo" remapResults="true">
+		SELECT
+			MA.*
+		FROM
+			(SELECT
+			  ROW_NUMBER() OVER(ORDER BY A.IS_FIXED DESC,A.IS_ADT ASC,A.REG_NO DESC) AS ROWNO,
+			  A.REG_NO, 
+			  A.BBS_ID, 
+			  A.TITLE,			
+			  TO_CHAR(A.S_DATE,'YYYY-MM-DD HH24:MI') as S_DATE,
+			  TO_CHAR(A.E_DATE,'YYYY-MM-DD HH24:MI') as E_DATE,
+			  TO_CHAR(A.N_DATE,'YYYY-MM-DD') as N_DATE,
+			  TO_CHAR(A.WIN_DT,'YYYY-MM-DD HH24:MI') as WIN_DT,
+			  CASE WHEN A.SAVE_FILE_NM IS NOT NULL THEN F_SERVER_URL('I')||'hdtv/banner/'||A.SAVE_FILE_NM ELSE NULL END AS SAVE_FILE_NM,
+			  A.REG_DT, 
+			  A.REG_ID,
+			  A.MOD_DT,
+			  A.MOD_ID,
+			  A.IS_ADT,
+			  A.EV_TYPE,
+			  A.EV_STAT_ID,
+			  B.BBS_NM
+			FROM
+			  PT_HDTV_BBS A, PT_HDTV_BBS_MASTER B
+			WHERE A.BBS_ID=B.BBS_ID
+		 	<isNotEmpty property="bbs_id">
+				AND A.BBS_ID=#bbs_id#
+	  		</isNotEmpty>
+		 	<isNotEmpty property="scr_tp">
+		 		AND B.SCR_TP=#scr_tp#
+	  		</isNotEmpty>
+		 	<isNotEmpty property="bbs_gbn">
+				AND B.BBS_GBN=#bbs_gbn#
+	  		</isNotEmpty>
+			<isNotEmpty prepend="AND" property="findValue">
+			 	<isNotNull property="findName">
+		  			A.$findName$ LIKE '%$findValue$%'
+		  		</isNotNull>
+			</isNotEmpty>
+			) MA
+		 WHERE ROWNO BETWEEN '$start_rnum$' AND '$end_rnum$' 
+	</select>
+	
+	<select id="getNotiPopListCnt" resultClass="int">
+		SELECT
+		  COUNT(*)
+		FROM
+		  PT_HDTV_BBS A, PT_HDTV_BBS_MASTER B
+		WHERE A.BBS_ID=B.BBS_ID	
+			AND B.BBS_GBN <![CDATA[<>]]> 'PU'
+	 	<isNotEmpty property="bbs_id">
+			AND A.BBS_ID=#bbs_id#
+  		</isNotEmpty>
+	 	<isNotEmpty property="scr_tp">
+	 		AND B.SCR_TP=#scr_tp#
+  		</isNotEmpty>
+	 	<isNotEmpty property="bbs_gbn">
+			AND B.BBS_GBN=#bbs_gbn#
+  		</isNotEmpty>
+		<isNotEmpty prepend="AND" property="findValue">
+		 	<isNotNull property="findName">
+	  			A.$findName$ LIKE '%$findValue$%'
+	  		</isNotNull>
+		</isNotEmpty>
+	</select>
+</sqlMap>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="bbsstat">
+	<typeAlias alias="bbsstatlistvo" type="com.dmi.smartux.statbbs.vo.BbsStatListVo"/>
+
+	<!-- bbs_id 에 따른 게시판의 모든 정보를 가지고 온다. -->
+	<select id="refreshCacheOfStatBbs" parameterClass="map" resultClass="bbsstatlistvo" >
+		SELECT
+		  STAT_NO
+		  ,TITLE
+		  ,STAT_FILE_PATH
+		FROM PT_HDTV_STAT_BBS
+		WHERE USE_YN='Y'
+	</select>
+
+</sqlMap>

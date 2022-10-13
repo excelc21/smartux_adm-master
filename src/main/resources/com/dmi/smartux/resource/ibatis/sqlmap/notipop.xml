@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="notipop">
+	<typeAlias alias="getnotipoplistVo" type="com.dmi.smartux.notipop.vo.getNotiPopListVo"/>
+	
+	<select id="getNotiPopList" resultClass="getnotipoplistVo">
+		SELECT 
+		  A.SCR_TP
+		  ,A.DISPLAY_TYPE
+		  ,A.STATUS
+		  ,A.MESSAGE_YN
+		  ,A.MESSAGE
+		  ,A.NET_TYPE
+		  ,A.BBS_ID
+		  ,A.REG_NO
+		  ,B.TITLE
+		  ,B.CONTENT
+		  ,B.SHOW_TYPE
+		  ,TO_CHAR(B.S_DATE,'YYYYMMDDHH24') AS S_DATE
+		  ,TO_CHAR(B.E_DATE,'YYYYMMDDHH24') AS E_DATE
+		  ,B.EV_CONT_ID
+		  ,CASE WHEN B.SAVE_FILE_NM IS NOT NULL THEN F_SERVER_URL('I')||'hdtv/img/'||B.SAVE_FILE_NM ELSE NULL END AS SAVE_FILE_NM
+		  ,B.EV_TYPE
+		  ,B.EV_DETAIL
+		  ,B.EV_STAT_ID
+		FROM PT_HDTV_CHOICE_NOTI A
+		, PT_HDTV_BBS B
+		WHERE A.BBS_ID=B.BBS_ID(+)
+		AND A.REG_NO=B.REG_NO(+)
+	</select>
+
+	
+</sqlMap>

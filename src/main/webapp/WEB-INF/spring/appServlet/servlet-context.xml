@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/mvc"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-3.0.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.0.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+		">
+
+	<!-- DispatcherServlet Context: defines this servlet's request-processing infrastructure -->
+	
+	<!-- Enables the Spring MVC @Controller programming model -->
+	<!-- annotation-driven/ -->
+	
+	<!-- annotation-driven 대신 사용한 설정 시작-->
+	<beans:bean id="conversionService" class="org.springframework.format.support.FormattingConversionServiceFactoryBean" />
+	<beans:bean id="validator" class="org.springframework.validation.beanvalidation.LocalValidatorFactoryBean" />
+	<beans:bean id="webBindingInitializer" class="org.springframework.web.bind.support.ConfigurableWebBindingInitializer">
+		<beans:property name="conversionService" ref="conversionService" />
+		<beans:property name="validator" ref="validator" />
+	</beans:bean>
+	
+	<!-- Intercpetor 설정  -->
+	<beans:bean id="handlerMapping" class="org.springframework.web.servlet.mvc.annotation.DefaultAnnotationHandlerMapping">
+		<beans:property name="interceptors">
+			<beans:list>
+				<beans:ref bean="IptvInterceptor" />
+			</beans:list>
+		</beans:property>
+	</beans:bean>
+	
+	<beans:bean class="org.springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerAdapter">
+		<beans:property name="webBindingInitializer" ref="webBindingInitializer" />
+		<beans:property name="messageConverters">
+			<beans:list>
+				<beans:bean class="org.springframework.http.converter.ByteArrayHttpMessageConverter" />
+				<beans:bean class="org.springframework.http.converter.ResourceHttpMessageConverter" />
+				<beans:bean class="org.springframework.http.converter.xml.SourceHttpMessageConverter" />
+				<beans:bean class="org.springframework.http.converter.xml.XmlAwareFormHttpMessageConverter" />
+				<beans:bean class="org.springframework.http.converter.xml.Jaxb2RootElementHttpMessageConverter" />
+				<beans:bean class="org.springframework.http.converter.StringHttpMessageConverter">
+					<beans:property name="supportedMediaTypes">
+						<beans:list>
+							<beans:value>text/plain;charset=UTF-8</beans:value>
+							<beans:value>application/json;charset=UTF-8</beans:value>
+							<beans:value>application/xml;charset=UTF-8</beans:value>
+						</beans:list>
+					</beans:property>
+				</beans:bean>
+				<!-- 
+					@ResponseBody 에서 String을 return 하면 StringHttpMessageConverter가 아니라
+					MappingJacksonHttpMessageConverter 가 이를 처리할려고 하기 때문에 Json 문자열을 만들어서 return 할 경우 문제가 발생한다
+					그래서 MappingJacksonHttpMessageConverter 사용을 하지 않는다
+				-->
+				<!-- beans:bean class="org.springframework.http.converter.json.MappingJacksonHttpMessageConverter" / -->		
+			</beans:list>
+		</beans:property>		
+	</beans:bean>
+	<beans:bean class="org.springframework.web.servlet.handler.MappedInterceptor">
+		<beans:constructor-arg index="0"><beans:null /></beans:constructor-arg>
+		<beans:constructor-arg index="1">
+			<beans:bean class="org.springframework.web.servlet.handler.ConversionServiceExposingInterceptor">
+				<beans:constructor-arg index="0" ref="conversionService"/>
+			</beans:bean>
+		</beans:constructor-arg>
+	</beans:bean>
+	<beans:bean class="org.springframework.web.servlet.mvc.HttpRequestHandlerAdapter" />
+	<!-- annotation-driven 대신 사용한 설정 끝 -->
+	
+	<beans:bean id="SmartUXInterceptor" class="com.dmi.smartux.common.interceptor.SmartUXInterceptor" />
+	
+	<beans:bean id="IptvInterceptor" class="com.dmi.smartux.common.interceptor.IptvInterceptor" />
+	
+	<!-- Resolves views selected for rendering by @Controllers to .jsp resources in the /WEB-INF/views directory -->
+	<!--
+	<beans:bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<beans:property name="prefix" value="/WEB-INF/views/" />
+		<beans:property name="suffix" value=".jsp" />
+	</beans:bean>
+	-->
+	
+	<!-- beans:bean class="org.springframework.web.servlet.view.ContentNegotiatingViewResolver" -->
+	<!-- 
+	Header에 Accept 항목이 없으면 defaultMediaType에 정해진 Type으로 셋팅한다(이 기능때문에 SmartUXContentNegotiatingViewResolver를 만들고 
+	defaultMediaType 프로퍼티를 추가했다, 근데 이 기능에 대한 테스트는 지금으로썬 할 방법이 없다
+	현재는 CUrl로 테스트해서 헤더 옵션을 안주었을때 */*로 리턴을 하기때문에 */*로 될때 defaultMediaType에 정해진 Type으로 셋팅했다) 
+	Header에 Accept 항목이 있으나 그 내부에 값이 없을 경우 defaultContentType에 정해진 Type으로 한다
+	 -->
+	<beans:bean class="com.dmi.smartux.common.view.SmartUXContentNegotiatingViewResolver">
+		<beans:property name="defaultMediaType" value="text/plain" />
+		<beans:property name="order" value="1" />
+		<beans:property name="favorPathExtension" value="false" />
+		<beans:property name="mediaTypes">
+			<beans:map>
+				<beans:entry key="xml" value="application/xml" />
+				<beans:entry key="json" value="application/json" />
+				<beans:entry key="text" value="text/plain" />
+			</beans:map>
+		</beans:property>
+		<!-- 
+		<beans:property name="viewResolvers">
+			<beans:list>
+				<beans:bean class="org.springframework.web.servlet.view.BeanNameViewResolver" />
+				<beans:bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+					<beans:property name="prefix" value="/WEB-INF/views/" />
+					<beans:property name="suffix" value=".jsp" />
+				</beans:bean>
+			</beans:list>
+		</beans:property>
+		-->
+		<beans:property name="defaultViews">
+			<beans:list>
+				<beans:bean class="org.springframework.web.servlet.view.xml.MarshallingView">
+					<beans:constructor-arg>
+						<beans:bean class="org.springframework.oxm.jaxb.Jaxb2Marshaller">
+							<beans:property name="classesToBeBound">
+								<beans:list>
+								<!-- 공통 시작 -->
+									<beans:value>com.dmi.smartux.common.vo.Result</beans:value>
+									<beans:value>com.dmi.smartux.common.vo.CUDResult</beans:value>
+									<beans:value>com.dmi.smartux.common.vo.ResultVO</beans:value>
+								<!-- 공통 끝 -->
+								
+								<!-- 김홍광 시작 -->
+								<!-- 김홍광 끝 -->
+								
+								<!-- 장대용 시작 -->
+									<beans:value>com.dmi.smartux.smartepg.vo.ThemeInfoVO</beans:value>
+									<beans:value>com.dmi.smartux.smartepg.vo.RealRatingInfoThemeVO</beans:value>
+									<beans:value>com.dmi.smartux.smartepg.vo.RealRatingInfoVO</beans:value>
+									<beans:value>com.dmi.smartux.mainpanel.vo.MainPanelVersionInfoVO</beans:value>
+									<beans:value>com.dmi.smartux.mainpanel.vo.MainPanelResult</beans:value>
+									<beans:value>com.dmi.smartux.mainpanel.vo.MainPanelInfoVO</beans:value>
+									<beans:value>com.dmi.smartux.mainpanel.vo.AlbumInfoVO</beans:value>
+								<!-- 장대용 끝 -->
+								
+								<!-- 옥동우 시작 -->
+									<beans:value>com.dmi.smartux.smartstart.vo.SmartStartItemListVO</beans:value>
+									<beans:value>com.dmi.smartux.smartstart.vo.GenreVodBestListVO</beans:value>
+									<beans:value>com.dmi.smartux.configuration.vo.ConfigurationListVO</beans:value>
+									<beans:value>com.dmi.smartux.admin.smartstart.vo.ItemListVO</beans:value>
+									<beans:value>com.dmi.smartux.admin.rank.vo.EcrmRankVO</beans:value>
+									<beans:value>com.dmi.smartux.smartstart.vo.SUXMAlbumListVO</beans:value>																									
+								<!-- 옥동우 끝 -->
+															
+								<!-- 김윤중 시작 -->
+								<beans:value>com.dmi.smartux.push.vo.PushResultVO</beans:value>
+								<beans:value>com.dmi.smartux.bonbang.vo.ReservedProgramVO</beans:value>
+								<beans:value>com.dmi.smartux.bonbang.vo.RegistrationIDVO</beans:value>
+								<beans:value>com.dmi.smartux.configuration.vo.YoutubeResultVO</beans:value>
+								<!-- 김윤중 끝 -->
+								
+								<!-- 샘플 시작 -->
+									<beans:value>com.dmi.smartux.sample.vo.Result</beans:value>
+									<beans:value>com.dmi.smartux.sample.vo.SampleVO</beans:value>
+									<beans:value>com.dmi.smartux.sample.vo.SampleVO2</beans:value>
+									<beans:value>com.dmi.smartux.sample.vo.ResultOne</beans:value>
+									<beans:value>com.dmi.smartux.sample.vo.EHCacheVO</beans:value>
+								<!-- 샘플 끝 -->
+								<!-- 이재승 시작 -->
+									<beans:value>com.dmi.smartux.noticeinfo.vo.CacheNoticeInfoListVo</beans:value>
+								<!-- 이재승 끝 -->
+								
+								<!-- 김정아 시작 -->
+									<beans:value>com.dmi.smartux.gpack.pack.vo.GpackPackInfoVO</beans:value>
+									<beans:value>com.dmi.smartux.gpack.category.vo.GpackCategoryResult</beans:value>
+									<beans:value>com.dmi.smartux.gpack.category.vo.GpackCategoryAlbumInfoVO</beans:value>
+								<!-- 김정아 끝 -->
+									
+								<!-- Gpack 시작 -->
+									<beans:value>com.dmi.smartux.gpack.pack.vo.GPackPackVersionVO</beans:value>
+									<beans:value>com.dmi.smartux.gpack.promotion.vo.GpackPromotionResult</beans:value>
+								<!-- Gpack 끝 -->
+								
+								<!-- 공지사항 시작 -->
+									<beans:value>com.dmi.smartux.noti.vo.NotiApiVO</beans:value>
+									<beans:value>com.dmi.smartux.noti.vo.NotiContentVO</beans:value>
+									<beans:value>com.dmi.smartux.noti.vo.NotiIdAndVersionVO</beans:value>
+									<beans:value>com.dmi.smartux.noti.vo.NotiListInfoVO</beans:value>
+									<beans:value>com.dmi.smartux.noti.vo.NotiListVO</beans:value>
+									<beans:value>com.dmi.smartux.noti.vo.PopupNotiVO</beans:value>
+									
+									<beans:value>com.dmi.smartux.notipop.vo.getNotiPopCacheVo</beans:value>
+									<beans:value>com.dmi.smartux.notipop.vo.getNotiPopEmergencyVo</beans:value>
+									<beans:value>com.dmi.smartux.notipop.vo.getNotiPopNotiListVo</beans:value>
+									<beans:value>com.dmi.smartux.notipop.vo.getNotiPopContListVo</beans:value>
+									<beans:value>com.dmi.smartux.quality.vo.getQualityServerVo</beans:value>
+								<!-- 공지사항 끝 -->
+								
+								<!-- [s] BbsStat -->
+									<beans:value>com.dmi.smartux.statbbs.vo.BbsStatResultVo</beans:value>
+								<!-- [e] BbsStat -->
+								
+								</beans:list>
+							</beans:property>
+							<beans:property name="marshallerProperties">
+        						<beans:map>
+            						<beans:entry><!-- 이 옵션을 주어 XML을 한줄로 쭉 출력하는 것이 아닌 개행하는 효과를 주어 보기 좋도록 한다 -->
+                						<beans:key>
+                    						<util:constant static-field="javax.xml.bind.Marshaller.JAXB_FORMATTED_OUTPUT" />
+               							</beans:key>
+              							<beans:value type="java.lang.Boolean">false</beans:value>
+            						</beans:entry>
+        						</beans:map>
+    						</beans:property>
+						</beans:bean>
+					</beans:constructor-arg>
+				</beans:bean>
+				<!-- beans:bean class="org.springframework.web.servlet.view.json.MappingJacksonJsonView" / -->
+				<beans:bean class="com.dmi.smartux.common.view.SmartUXMappingJacksonJsonView">
+					<!-- beans:property name="renderedAttributes" value="restRoot" / -->
+				</beans:bean>
+				<beans:bean class="com.dmi.smartux.common.view.TextPlainView">
+					<beans:property name="contentType" value="text/plain" />
+				</beans:bean>
+			</beans:list>
+		</beans:property>
+		<beans:property name="defaultContentType" value="text/plain" />
+		<beans:property name="jspextension" value=".do" /><!-- web page 형태로 보여줄 확장자를 지정해줘서 이 확장자로 온 경우엔 InternalResourceViewResolver로 이동하도록 한다 -->
+		<beans:property name="ignoreAcceptHeader" value="false" />
+	</beans:bean>
+	
+	<context:component-scan base-package="com.dmi.smartux">
+		<context:include-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+		<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Service"/>
+		<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Repository"/>
+	</context:component-scan>
+	
+	<beans:bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<beans:property name="order" value="2" />
+		<beans:property name="prefix" value="/WEB-INF/views/" />
+		<beans:property name="suffix" value=".jsp" />
+	</beans:bean>
+	
+	<!-- File Upload -->
+	<beans:bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+		<!-- beans:property name="maxInMemorySize" value="10240" / -->
+		<beans:property name="maxUploadSize" value="1024000000" /> <!-- 최대 업로드 크기(1기가) -->
+		<beans:property name="uploadTempDir" value="/tmpimgdir/" /> <!-- 임시로 업로드 되는 경로 -->
+	</beans:bean>
+	
+	<!-- AOP 등록 --> 
+	<!-- <aop:aspectj-autoproxy/>
+	<beans:bean id="ExcuteLogAspect" class="com.dmi.smartux.common.aop.ExcuteLogAspect" />
+	-->
+	<aop:aspectj-autoproxy/>
+	<beans:bean id="AuthenticationAspect" class="com.dmi.smartux.common.aop.AuthenticationAspect" />
+</beans:beans>

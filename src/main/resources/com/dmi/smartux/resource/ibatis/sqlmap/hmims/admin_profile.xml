@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="admin_profile">
+
+    <resultMap id="profileVOMap" class="com.dmi.smartux.admin.profile.vo.ProfileVO">
+        <result property="profileImgId" column="PROFILE_IMG_ID" />
+        <result property="profileMstId" column="PROFILE_MST_ID" />
+        <result property="profileImgName" column="PROFILE_IMG_NAME" />
+        <result property="profileImgUrl" column="PROFILE_IMG_URL" />
+        <result property="ord" column="ORD" />
+        <result property="regDate" column="REG_DATE" />
+        <result property="modDate" column="MOD_DATE" />
+        <result property="orgImgUrl" column="ORG_IMG_URL" />
+    </resultMap>
+    
+    <resultMap id="profileImgVOMap" class="com.dmi.smartux.admin.profile.vo.ProfileVO">
+        <result property="profileImgId" column="PROFILE_IMG_ID" />
+        <result property="profileMstId" column="PROFILE_MST_ID" />
+        <result property="profileImgName" column="PROFILE_IMG_NAME" />
+        <result property="profileImgUrl" column="PROFILE_IMG_URL" />
+        <result property="ord" column="ORD" />
+        <result property="regDate" column="REG_DATE" />
+        <result property="modDate" column="MOD_DATE" />
+        <result property="orgImgUrl" column="ORG_IMG_URL" />
+    </resultMap>
+
+    <select id="getProfileList" parameterClass="com.dmi.smartux.admin.profile.vo.ProfileVO" resultMap="profileVOMap">
+        SELECT  PROFILE_IMG_ID,
+                PROFILE_MST_ID,
+                PROFILE_IMG_NAME,
+                CASE WHEN PROFILE_IMG_URL IS NOT NULL THEN F_SERVER_URL('I')||'hdtv/img/'||PROFILE_IMG_URL ELSE NULL END AS PROFILE_IMG_URL,
+                PROFILE_IMG_URL AS ORG_IMG_URL,
+                TO_CHAR(TO_DATE(REG_DATE,'YYYY-MM-DD HH24:MI:SS'),'YYYY-MM-DD HH24:MI:SS')  AS REG_DATE,
+                TO_CHAR(TO_DATE(MOD_DATE,'YYYY-MM-DD HH24:MI:SS'),'YYYY-MM-DD HH24:MI:SS')  AS MOD_DATE,
+                ORD
+        FROM PT_CM_PROFILE_IMG
+        WHERE PROFILE_MST_ID = #profileMstId#
+        <isEmpty property="serviceType">
+            AND SERVICE_TYPE IS null
+        </isEmpty>
+        <isNotEmpty property="serviceType">
+            AND SERVICE_TYPE = #serviceType#
+        </isNotEmpty>
+        ORDER BY ORD, REG_DATE
+    </select>
+    
+    <select id="getProfileListCtn" parameterClass="com.dmi.smartux.admin.profile.vo.ProfileVO" resultClass="int">
+        SELECT  COUNT(PROFILE_MST_ID) AS CNT
+        FROM PT_CM_PROFILE_IMG
+        WHERE PROFILE_MST_ID = #profileMstId#
+        <isEmpty property="serviceType">
+            AND SERVICE_TYPE IS null
+        </isEmpty>
+        <isNotEmpty property="serviceType">
+            AND SERVICE_TYPE = #serviceType#
+        </isNotEmpty>
+    </select>
+
+    <select id="getProfile" parameterClass="string" resultMap="profileImgVOMap">
+        SELECT  PROFILE_IMG_ID,
+                PROFILE_MST_ID,
+                PROFILE_IMG_NAME,
+                CASE WHEN PROFILE_IMG_URL IS NOT NULL THEN F_SERVER_URL('I')||'hdtv/img/'||PROFILE_IMG_URL ELSE NULL END AS PROFILE_IMG_URL,
+                PROFILE_IMG_URL AS ORG_IMG_URL,
+                TO_CHAR(TO_DATE(REG_DATE,'YYYY-MM-DD HH24:MI:SS'),'YYYY-MM-DD HH24:MI:SS')  AS REG_DATE,
+                TO_CHAR(TO_DATE(MOD_DATE,'YYYY-MM-DD HH24:MI:SS'),'YYYY-MM-DD HH24:MI:SS')  AS MOD_DATE,
+                ORD
+        FROM PT_CM_PROFILE_IMG
+        WHERE PROFILE_IMG_ID = #profileImgId#
+    </select>
+    
+    <update id="updateSearch" parameterClass="map">
+        UPDATE PT_CM_PROFILE_IMG 
+        SET 
+            ORD = #orders#
+        WHERE PROFILE_MST_ID = #profileMstId#
+        AND PROFILE_IMG_ID = #seqs#
+    </update>
+
+    <insert id="insertProfile" parameterClass="com.dmi.smartux.admin.profile.vo.ProfileVO">
+        
+        INSERT INTO
+            PT_CM_PROFILE_IMG
+            (
+                PROFILE_IMG_ID,
+                PROFILE_MST_ID,
+                PROFILE_IMG_NAME,
+                PROFILE_IMG_URL,
+                SERVICE_TYPE,
+                REG_DATE,
+                MOD_DATE,
+                ORD
+            )
+        VALUES
+            (
+                (SELECT NVL(MAX(TO_NUMBER(PROFILE_IMG_ID) ),0)+1 FROM PT_CM_PROFILE_IMG),
+                #profileMstId#,
+                #profileImgName#,
+                #profileImgUrl#,
+                (SELECT SERVICE_TYPE FROM PT_CM_PROFILE_IMG_MST A WHERE A.PROFILE_MST_ID = #profileMstId#),
+                TO_CHAR (SYSDATE, 'yyyymmddHH24MISS'),
+                TO_CHAR (SYSDATE, 'yyyymmddHH24MISS'),
+                999
+            )
+    </insert>
+
+    
+
+    <delete id="deleteProfile" parameterClass="string">
+        DELETE FROM
+            PT_CM_PROFILE_IMG
+        WHERE PROFILE_IMG_ID=#profileImgId#
+    </delete>
+
+    <update id="updateProfile" parameterClass="com.dmi.smartux.admin.profile.vo.ProfileVO">
+        UPDATE
+            PT_CM_PROFILE_IMG
+        SET
+            PROFILE_IMG_NAME = #profileImgName#,
+            PROFILE_IMG_URL = #profileImgUrl#,
+            MOD_DATE = TO_CHAR (SYSDATE, 'yyyymmddHH24MISS')
+        WHERE PROFILE_IMG_ID = #profileImgId#
+        AND SERVICE_TYPE = (SELECT SERVICE_TYPE FROM PT_CM_PROFILE_IMG_MST A WHERE A.PROFILE_MST_ID = #profileMstId#)
+    </update>
+
+    
+    
+    
+</sqlMap>

@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="gpack_pack">
+	<typeAlias alias="packVO" type="com.dmi.smartux.admin.gpack.pack.vo.GPackPackVO"/>
+	
+	<resultMap id="packVOMap" class="com.dmi.smartux.admin.gpack.pack.vo.GPackPackVO"> 
+		<result property="pack_id"				column="PACK_ID" />
+		<result property="pack_nm"				column="PACK_NM" />
+		<result property="version"				column="VERSION" />
+		<result property="template_type"		column="TEMPLATE_TYPE" />
+		<result property="imcs_category_id"		column="IMCS_CATEGORY_ID" />
+		<result property="created"				column="CREATED" />
+		<result property="updated"				column="UPDATED" />
+		<result property="create_id"			column="CREATE_ID" />
+		<result property="update_id"			column="UPDATE_ID" />
+	</resultMap>
+	
+	<resultMap id="gpackPromotionByMap" class="com.dmi.smartux.admin.gpack.event.vo.GpackPromotionVO">
+		<result property="category_id"			column="CATEGORY_ID" />
+		<result property="promotion_video_gb"	column="PROMOTION_VIDEO_GB" />
+	</resultMap>
+	
+	<!-- 팩 상세 정보 조회  -->
+	<select id="getGpackPackDetail" parameterClass="packVO" resultClass="packVO">
+		SELECT
+			PACK_ID
+			, PACK_NM
+			, VERSION
+			, TEMPLATE_TYPE
+			, IMCS_CATEGORY_ID
+			, CREATED
+			, UPDATED
+			, CREATE_ID
+			, UPDATE_ID
+		FROM
+			PT_GP_PACK_INFO_TEMP
+		WHERE
+			PACK_ID = #pack_id#
+	</select>
+	
+	<!-- 팩 상세 정보 조회  -->
+	<select id="getGpackPackDetailBiz" parameterClass="packVO" resultClass="packVO">
+		SELECT
+			PACK_ID
+			, PACK_NM
+			, VERSION
+			, TEMPLATE_TYPE
+			, IMCS_CATEGORY_ID
+			, CREATED
+			, UPDATED
+			, CREATE_ID
+			, UPDATE_ID
+		FROM
+			PT_GP_PACK_INFO
+		WHERE
+			PACK_ID = #pack_id#
+	</select>
+	
+	<!-- 팩 수정  -->
+	<update id="updateGpackPack" parameterClass="packVO">
+		UPDATE PT_GP_PACK_INFO_TEMP
+		SET    PACK_NM = #pack_nm#,
+			   TEMPLATE_TYPE = #template_type#,
+		       VERSION = TO_CHAR(SYSDATE, 'YYYYMMDD') || LPAD(TO_NUMBER(CASE WHEN LENGTH(VERSION) <![CDATA[<]]> 9 THEN '0' ELSE SUBSTR(VERSION, 9, 3) END)+1, 3, '0'),
+		       UPDATED = SYSDATE,
+		       UPDATE_ID = #update_id#
+		WHERE  PACK_ID = #pack_id#
+	</update>
+	
+    
+    <!-- 팩 버전 구하기 -->
+    <select id="getGpackPackVersion" parameterClass="packVO" resultClass="string">
+	    SELECT TO_CHAR(SYSDATE, 'YYYYMMDD')||(
+		          CASE
+		            WHEN VERSION IS NULL THEN '001'
+		            WHEN LENGTH(VERSION) != 11 THEN '001'
+		            WHEN SUBSTR(VERSION, 0, 8) = TO_CHAR(SYSDATE, 'YYYYMMDD') THEN LPAD(TO_NUMBER(SUBSTR(VERSION, 9, 3))+1, 3, '0')
+		            ELSE '001'
+		          END) VERSION
+	      FROM PT_GP_PACK_INFO
+	     WHERE 1=1 
+	       AND PACK_ID = #pack_id# 
+    </select>
+    
+    
+    <!-- 즉시반영시 유효한 카테고리 여부 확인 (콘텐츠 정보가 있는지, 유효하면 1이상 값) -->
+    <select id="chkAvailableCategory" parameterClass="packVO" resultClass="int">
+    <![CDATA[
+		SELECT COUNT(*) AS CATEGORY_CHK
+		FROM PT_GP_CATEGORY_INFO_TEMP A
+		WHERE 1=1
+		  AND PACK_ID = #pack_id# 
+		  AND USE_YN = 'Y'
+		  AND CATEGORY_YN = 'Y'
+		  AND EXISTS (
+		    SELECT PACK_ID,
+		      CATEGORY_ID
+		    FROM PT_GP_AUTO_SET_INFO_TEMP
+		    WHERE 1=1
+		      AND USE_YN = 'Y'
+		      AND PACK_ID = A.PACK_ID
+		      AND CATEGORY_ID = A.CATEGORY_ID) 
+	]]>
+    </select>
+    
+    <!-- 
+    	즉시반영시 유효한 프로모션 여부 확인 (유효하지 않은 프로모션이 있을 경우 0이상 값)
+    	VAL_CHK - 하위 콘텐츠가 있는지 확인 (없으면 N, 체크할 필요없음)
+    	템플릿타입이 템플릿2이고, 플레이리스트 타입일 경우 플레이리스트 정보가 있는지 확인
+	 -->
+    <select id="chkAvailablePromotion" parameterClass="packVO" resultClass="int">
+    <![CDATA[
+		SELECT  NVL(SUM(DECODE(
+						(CASE 
+                              WHEN A.VAL_CHK = 'Y' 
+                                    AND PK.TEMPLATE_TYPE = 'TP002'  AND A.PROMOTION_VIDEO_GB = 'PV002'  
+				                	AND (SELECT COUNT(T.PLAYLIST_ID) FROM PT_GP_PLAYLIST_INFO_TEMP T WHERE T.USE_YN = 'Y' AND T.PACK_ID = A.PACK_ID AND T.CATEGORY_ID = A.CATEGORY_ID) <= 0
+                              THEN 'Y'
+                              ELSE 'N' END)
+			        	, 'Y' , 1 , 0
+		        		)), 0)  AS PROMOTION_CHK
+		FROM PT_GP_PACK_INFO_TEMP PK, 
+			 (
+			    SELECT IN_A.*, 
+                       (CASE WHEN IN_A.AUTO_YN = 'Y'
+			                        AND  ( SELECT COUNT(*) FROM PT_GP_AUTO_SET_INFO_TEMP 
+			              				WHERE 1=1 AND USE_YN = 'Y' AND PACK_ID = IN_A.PACK_ID AND CATEGORY_ID = IN_A.CATEGORY_ID
+			              			  )>0 
+                             THEN 'Y' 
+                             WHEN IN_A.AUTO_YN = 'N'
+			                        AND  ( SELECT COUNT(*) FROM PT_GP_CONTENTS_INFO_TEMP 
+			              				WHERE 1=1 AND USE_YN = 'Y' AND PACK_ID = IN_A.PACK_ID AND CATEGORY_ID = IN_A.CATEGORY_ID
+			              			  )>0 
+                             THEN 'Y' 
+                             ELSE 'N'
+                         END 
+                         ) VAL_CHK 
+			    FROM PT_GP_CATEGORY_INFO_TEMP IN_A
+			    WHERE 1=1
+			      AND IN_A.USE_YN = 'Y'
+			      AND IN_A.CATEGORY_YN = 'N'
+                  ) A
+		WHERE 1=1
+		  AND PK.PACK_ID = #pack_id# 
+		  AND PK.PACK_ID = A.PACK_ID (+)
+	]]>
+    </select>
+    
+	
+	<!-- 상용반영 -->
+	<insert id="insertGpackBizTable" parameterClass="packVO">
+        <![CDATA[
+        DECLARE BEGIN
+         
+			DELETE FROM PT_GP_PACK_INFO
+				  WHERE 1=1
+				    AND PACK_ID = #pack_id# ;
+			
+			DELETE FROM PT_GP_CATEGORY_INFO
+				  WHERE 1=1
+				    AND PACK_ID = #pack_id# ;
+			
+			DELETE FROM PT_GP_CONTENTS_INFO
+				  WHERE 1=1
+				    AND PACK_ID = #pack_id# ;
+			
+			DELETE FROM PT_GP_AUTO_SET_INFO
+				  WHERE 1=1
+				    AND PACK_ID = #pack_id# ;
+			
+			DELETE FROM PT_GP_PLAYLIST_INFO
+				  WHERE 1=1
+				    AND PACK_ID = #pack_id# ;
+			
+			INSERT 	INTO PT_GP_PACK_INFO
+			        (PACK_ID, PACK_NM, VERSION, TEMPLATE_TYPE, IMCS_CATEGORY_ID, CREATED, UPDATED, CREATE_ID, UPDATE_ID)
+			SELECT 	PACK_ID, PACK_NM, VERSION, TEMPLATE_TYPE, IMCS_CATEGORY_ID, CREATED, UPDATED, CREATE_ID, UPDATE_ID
+			  FROM 	PT_GP_PACK_INFO_TEMP A
+			 WHERE 	1=1
+			   AND 	A.PACK_ID = #pack_id# 
+			;
+			
+			INSERT 	INTO PT_GP_CATEGORY_INFO
+			        (PACK_ID, CATEGORY_ID, CATEGORY_NM, CATEGORY_COMMENT, CATEGORY_YN, PROMOTION_VIDEO_GB, PROMOTION_CHNL, AUTO_YN, 
+			         ORDERED, USE_YN, CREATED, UPDATED, CREATE_ID, UPDATE_ID)
+			SELECT  B.PACK_ID, B.CATEGORY_ID, B.CATEGORY_NM, B.CATEGORY_COMMENT, B.CATEGORY_YN, B.PROMOTION_VIDEO_GB, B.PROMOTION_CHNL, B.AUTO_YN, 
+					B.ORDERED, B.USE_YN, B.CREATED, B.UPDATED, B.CREATE_ID, B.UPDATE_ID
+			  FROM 	PT_GP_CATEGORY_INFO_TEMP B
+			 WHERE 	1=1
+			   AND 	B.PACK_ID = #pack_id# 
+			   AND 	B.USE_YN = 'Y'
+			   AND (
+				      (   B.AUTO_YN = 'Y' AND 
+				              EXISTS (SELECT PACK_ID, CATEGORY_ID FROM PT_GP_AUTO_SET_INFO_TEMP WHERE 1=1 AND USE_YN = 'Y' AND PACK_ID = B.PACK_ID AND CATEGORY_ID = B.CATEGORY_ID)
+				      )
+				      OR 
+				      (   B.AUTO_YN = 'N' AND 
+				              EXISTS (SELECT PACK_ID, CATEGORY_ID FROM PT_GP_CONTENTS_INFO_TEMP WHERE 1=1 AND USE_YN = 'Y' AND PACK_ID = B.PACK_ID AND CATEGORY_ID = B.CATEGORY_ID)
+				      )
+				   )
+				ORDER BY B.ORDERED, B.PACK_ID DESC, B.CATEGORY_ID DESC
+			;
+			
+			INSERT 	INTO PT_GP_CONTENTS_INFO
+			        (PACK_ID, CATEGORY_ID, CONTENTS_ID, CONTENTS_NM,
+					MOVEPATH_TYPE, MOVEPATH, DAL_TYPE, IMCS_CATEGORY_ID, ALBUM_ID,
+					IMG_PATH, IMG_FILE, ORDERED, USE_YN,
+					CREATED, UPDATED, CREATE_ID, UPDATE_ID)
+			SELECT  C.PACK_ID, C.CATEGORY_ID, C.CONTENTS_ID, C.CONTENTS_NM,
+					C.MOVEPATH_TYPE, C.MOVEPATH, C.DAL_TYPE, C.IMCS_CATEGORY_ID, C.ALBUM_ID,
+					C.IMG_PATH, C.IMG_FILE, C.ORDERED, C.USE_YN,
+					C.CREATED, C.UPDATED, C.CREATE_ID, C.UPDATE_ID
+			  FROM 	PT_GP_CONTENTS_INFO_TEMP C
+			 WHERE 	1=1 
+			   AND  C.PACK_ID = #pack_id#
+			   AND 	C.USE_YN = 'Y'
+			;	
+			
+			INSERT 	INTO PT_GP_PLAYLIST_INFO
+			        (PACK_ID, CATEGORY_ID, PLAYLIST_ID, PLAYLIST_NM,
+			         PREVIEW_IMCS_CATEGORY_ID, PREVIEW_IMCS_ALBUM_ID, FEATURE_IMCS_CATEGORY_ID, FEATURE_IMCS_ALBUM_ID,
+			         ORDERED, USE_YN, CREATED, UPDATED, CREATE_ID, UPDATE_ID)
+			SELECT   C.PACK_ID, C.CATEGORY_ID, C.PLAYLIST_ID, C.PLAYLIST_NM,
+			         C.PREVIEW_IMCS_CATEGORY_ID, C.PREVIEW_IMCS_ALBUM_ID, C.FEATURE_IMCS_CATEGORY_ID, C.FEATURE_IMCS_ALBUM_ID,
+			         C.ORDERED, C.USE_YN, C.CREATED, C.UPDATED, C.CREATE_ID, C.UPDATE_ID
+			  FROM 	PT_GP_PLAYLIST_INFO_TEMP C
+			 WHERE 	1=1 
+			   AND  C.PACK_ID = #pack_id#
+			   AND 	C.USE_YN = 'Y'
+			;	
+			
+			INSERT 	INTO PT_GP_AUTO_SET_INFO
+			        (PACK_ID, CATEGORY_ID, AUTO_SET_ID, IMCS_CATEGORY_ID, ORDERED, USE_YN, CREATED, UPDATED, CREATE_ID, UPDATE_ID)
+			SELECT   C.PACK_ID, C.CATEGORY_ID, C.AUTO_SET_ID, C.IMCS_CATEGORY_ID, C.ORDERED, C.USE_YN, C.CREATED, C.UPDATED, C.CREATE_ID, C.UPDATE_ID
+			  FROM 	PT_GP_AUTO_SET_INFO_TEMP C
+			 WHERE 	1=1 
+			   AND  C.PACK_ID = #pack_id#
+			   AND 	C.USE_YN = 'Y'
+			;
+		    
+        END;
+        ]]>
+    </insert>
+	
+	<!-- 팩 버전 업  -->
+	<update id="updateGpackPackVersion_Biz" parameterClass="packVO">
+		UPDATE PT_GP_PACK_INFO
+		SET    VERSION = NVL(#version#, TO_CHAR(SYSDATE, 'YYYYMMDD')||'001'),
+		       UPDATED = SYSDATE,
+		       UPDATE_ID = #update_id#
+		WHERE  PACK_ID = #pack_id#
+	</update>
+	
+	<select id="isPromotionByTemplate2" parameterClass="packVO" resultClass="int">
+		SELECT COUNT(*)
+		FROM PT_GP_CATEGORY_INFO_TEMP 
+		WHERE PACK_ID = #pack_id#
+		AND USE_YN = 'Y'
+		AND CATEGORY_YN = 'N'
+		AND PROMOTION_VIDEO_GB IN ( 'PV001', 'PV002')	
+	</select>
+	
+	<select id="getPromotionInfoBy" parameterClass="packVO" resultMap="gpackPromotionByMap">
+	  <![CDATA[
+		 SELECT C.CATEGORY_ID, C.PROMOTION_VIDEO_GB
+		 FROM PT_GP_CATEGORY_INFO_TEMP C, PT_GP_PACK_INFO_TEMP D
+		 WHERE 1=1
+		 AND C.PACK_ID = D.PACK_ID
+		 AND C.PACK_ID = #pack_id# 
+		 AND D.TEMPLATE_TYPE = 'TP002'
+		 AND C.CATEGORY_YN = 'N'
+		 AND C.USE_YN = 'Y'
+		 AND C.PROMOTION_VIDEO_GB <> 'PV003'
+	 ]]>
+	</select>
+	
+</sqlMap>

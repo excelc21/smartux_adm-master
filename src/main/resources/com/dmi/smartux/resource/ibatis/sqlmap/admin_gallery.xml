@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="admin_gallery">
+	<typeAlias alias="searchgalleryresultVo" type="com.dmi.smartux.admin.gallery.vo.SearchGalleryResultVo"/>
+	<typeAlias alias="selectgallerydetailVo" type="com.dmi.smartux.admin.gallery.vo.SelectGalleryDetailVo"/>
+	<typeAlias alias="insertgalleryprocVo" type="com.dmi.smartux.admin.gallery.vo.InsertGalleryProcVo"/>
+	<typeAlias alias="deletegalleryprocVo" type="com.dmi.smartux.admin.gallery.vo.DeleteGalleryProcVo"/>
+	<typeAlias alias="galleryrelationresultVo" type="com.dmi.smartux.admin.gallery.vo.GalleryRelationResultVo"/>
+	<typeAlias alias="galleryorderlistresultVo" type="com.dmi.smartux.admin.gallery.vo.GalleryOrderListResultVo"/>
+	<typeAlias alias="updategalleryorderprocVo" type="com.dmi.smartux.admin.gallery.vo.UpdateGalleryOrderProcVo"/>
+	<typeAlias alias="gallerycatelistparamVo" type="com.dmi.smartux.admin.gallery.vo.GalleryCateListParamVo"/>
+	
+	<select id="getGalleryCateList" parameterClass="gallerycatelistparamVo" resultClass="searchgalleryresultVo" remapResults="true">
+		SELECT   A.GALLERY_ID   AS ID ,
+		         A.P_GALLERY_ID AS PARENT ,
+		         A.GALLERY_NAME AS TEXT,
+		         (SELECT
+		                 CASE
+		                         WHEN COUNT(*) > 0
+		                         THEN 1
+		                         ELSE 0
+		                 END
+		         FROM    PT_UX_GALLERY
+		         WHERE   P_GALLERY_ID=A.GALLERY_ID AND DELETE_YN='N'
+				<isNotEmpty property="pop_type">
+		            <isNotEqual property="pop_type" compareValue="A">
+		                AND GALLERY_TYPE='D'
+		            </isNotEqual>
+		        </isNotEmpty>
+		         )
+		         AS HASCHILDREN ,
+				 A.GALLERY_TYPE AS TYPE ,
+				 A.USE_YN AS USE_YN
+				 <isNotEmpty property="view_type">
+		            <isEqual property="view_type" compareValue="P">
+		                ,0 AS COMPULSORYICON
+		            </isEqual>
+		        </isNotEmpty>
+		FROM     PT_UX_GALLERY A
+		<isNotEmpty prepend="WHERE" property="gallery_id">
+			A.P_GALLERY_ID = #gallery_id#
+		</isNotEmpty>
+		<isEmpty prepend="WHERE" property="gallery_id">
+			A.P_GALLERY_ID IS NULL
+		</isEmpty>
+		AND DELETE_YN='N'
+		<isNotEmpty property="view_type">
+            <isEqual property="view_type" compareValue="P">
+                AND USE_YN='Y'
+            </isEqual>
+        </isNotEmpty>
+		<isNotEmpty property="pop_type">
+            <isNotEqual property="pop_type" compareValue="A">
+                AND GALLERY_TYPE='D'
+            </isNotEqual>
+        </isNotEmpty>
+		ORDER BY A.ORD ASC, MOD_DT DESC
+	</select>
+
+	<select id="getGalleryDetail" resultClass="selectgallerydetailVo" parameterClass="String">
+		SELECT A.GALLERY_ID,
+		       A.P_GALLERY_ID,
+		       A.GALLERY_NAME,
+		       A.GALLERY_TYPE,
+		       A.THUMBNAIL,
+		       F_SERVER_URL('I') ||A.THUMBNAIL AS THUMBNAIL_URL,
+		       A.REPS_IMAGE,
+		       F_SERVER_URL('I') ||A.REPS_IMAGE AS REPS_IMAGE_URL,
+		       A.MOD_DT,
+		       A.USE_YN,
+		       B.CONTENT_TYPE,
+		       B.IMAGE,
+		       F_SERVER_URL('I') ||B.IMAGE AS IMAGE_URL,
+		       B.CATEGORY_ID,
+		       B.ALBUM_ID,
+		       B.SIMPLE_CONTENT,
+		       B.CONTENTS_SOURCE
+		FROM   PT_UX_GALLERY A,
+		       PT_UX_GALLERY_CONTENTS B
+		WHERE  A.GALLERY_ID=B.GALLERY_ID(+)
+		AND    A.GALLERY_ID=#galleryId#
+	</select>
+	
+	<insert id="insertGalleryMst" parameterClass="insertgalleryprocVo">
+		<selectKey keyProperty="gallery_id" resultClass="String">
+			SELECT TO_CHAR(LPAD(TO_NUMBER(SUBSTR(NVL(MAX(GALLERY_ID),'00'),2))+1,7,'0')) AS G_ID FROM PT_UX_GALLERY
+		</selectKey>
+	
+		INSERT INTO PT_UX_GALLERY (
+			GALLERY_ID,P_GALLERY_ID,GALLERY_NAME,GALLERY_TYPE,REPS_IMAGE,THUMBNAIL,REG_DT,REG_ID,MOD_DT,MOD_ID,ORD,USE_YN
+		)
+		VALUES (
+		  #gallery_id#,
+		  #p_gallery_id#,
+		  #gallery_name#,
+		  #gallery_type#,
+		  #reps_image#,
+		  #thumbnail#,
+		  TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS'),
+		  #reg_id#,
+		  TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS'),
+		  #reg_id#,
+		  0,
+		  #use_yn#
+		)
+	</insert>
+	
+	<insert id="insertGalleryDetail" parameterClass="insertgalleryprocVo">
+		INSERT INTO PT_UX_GALLERY_CONTENTS (
+			GALLERY_ID,CONTENT_TYPE,IMAGE,CATEGORY_ID,ALBUM_ID,SIMPLE_CONTENT,CONTENTS_SOURCE
+		) VALUES (
+			#gallery_id#,#content_type#,#image#,#category_id#,#album_id#,#simple_content#,#contents_source#
+		)
+	</insert>
+	
+	<update id="updateGalleryMst" parameterClass="insertgalleryprocVo">
+		UPDATE PT_UX_GALLERY
+		SET    GALLERY_NAME = #gallery_name#,
+		       REPS_IMAGE        = #reps_image#,
+		       THUMBNAIL        = #thumbnail#,
+		       MOD_DT       = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS'),
+		       MOD_ID       = #reg_id#,
+		       USE_YN       = #use_yn#
+		WHERE  GALLERY_ID   = #gallery_id#
+	</update>
+	
+	<update id="updateGalleryDetail" parameterClass="insertgalleryprocVo">
+		UPDATE PT_UX_GALLERY_CONTENTS
+		SET    CONTENT_TYPE    = #content_type#,
+		       IMAGE       = #image#,
+		       CATEGORY_ID     = #category_id#,
+		       ALBUM_ID        = #album_id#,
+		       SIMPLE_CONTENT  = #simple_content#,
+		       CONTENTS_SOURCE = #contents_source#
+		WHERE  GALLERY_ID      = #gallery_id#
+	</update>
+
+	<select id="getGalleryRelation" parameterClass="String" resultClass="galleryrelationresultVo">
+		SELECT
+		       (SELECT COUNT(*)
+		       FROM    PT_UX_GALLERY
+		       WHERE   P_GALLERY_ID=#gallery_id# AND DELETE_YN='N'
+		       )
+		       AS CNT,
+		       (SELECT P_GALLERY_ID
+		       FROM    PT_UX_GALLERY
+		       WHERE   GALLERY_ID=#gallery_id#
+		       )
+		       AS P_GALLERY_ID
+		FROM   DUAL
+	</select>
+
+	<update id="deleteGallery" parameterClass="deletegalleryprocVo">
+		UPDATE PT_UX_GALLERY
+		SET    DELETE_YN    ='Y',
+		       MOD_DT    = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS'),
+		       MOD_ID    = #mod_id#
+		WHERE  GALLERY_ID=#gallery_id#
+	</update>
+	
+	<select id="getGalleryOrderList" parameterClass="String" resultClass="galleryorderlistresultVo" >
+		SELECT   GALLERY_ID, GALLERY_NAME
+		FROM     PT_UX_GALLERY
+		<isNotEmpty prepend="WHERE">
+			P_GALLERY_ID = #pGalleryId#
+		</isNotEmpty>
+		<isEmpty prepend="WHERE">
+			P_GALLERY_ID IS NULL
+		</isEmpty>
+		AND DELETE_YN='N'
+		ORDER BY ORD ASC, MOD_DT DESC
+	</select>
+	
+	<update id="updateGalleryOrder" parameterClass="updategalleryorderprocVo">
+		UPDATE PT_UX_GALLERY
+		SET    ORD       =#ord#,
+		       MOD_ID    =#mod_id#,
+		       MOD_DT    =TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+		WHERE  GALLERY_ID=#gallery_id#
+	</update>
+	
+</sqlMap>

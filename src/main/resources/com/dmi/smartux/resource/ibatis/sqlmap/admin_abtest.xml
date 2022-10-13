@@ -1,0 +1,851 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<!-- 2021.04.16 AB테스트 MIMS -->
+<sqlMap namespace="admin_abtest">
+	<typeAlias alias="abTestVO" type="com.dmi.smartux.admin.abtest.vo.ABTestVO"/>
+	<typeAlias alias="abTestSearchVO" type="com.dmi.smartux.admin.abtest.vo.ABTestSearchVO"/>
+	<typeAlias alias="viewVO" type="com.dmi.smartux.admin.mainpanel.vo.ViewVO"/>
+	
+	<!-- 	2021.04.16 AB테스트 MIMS : AB테스트 목록 조회 -->
+	<select id="getABTestList" resultClass="abTestVO" parameterClass="string">
+		SELECT
+			T.TEST_ID AS TEST_ID
+			,V.MIMS_ID AS MIMS_ID
+		  	,V.ORG_MIMS_ID AS ORG_MIMS_ID
+		  	,V.VARIATION_ID AS VARIATION_ID
+		  	,V.MOD_ID AS MOD_ID
+		  	,V.MOD_NAME AS MOD_NAME
+		  	,PANEL.PANNEL_NM AS PANNEL_NM
+		  	,T.STATUS AS STATUS
+		  	,T.TEST_TYPE
+		  	,(SELECT A.MIMS_ID 
+            	FROM PT_UX_VARIATION_INFO A
+               WHERE A.TEST_ID = T.TEST_ID
+                 AND A.VARIATION_ID = 'O'|| T.TEST_ID) AS D_MIMS_ID
+		FROM 
+			PT_UX_ABTEST_INFO T
+  			,PT_UX_VARIATION_INFO V
+  			,PT_UX_AB_PANEL PANEL
+		WHERE
+			T.TEST_ID = V.TEST_ID
+  			AND V.MIMS_ID = PANEL.PANNEL_ID
+  			AND V.VARIATION_ID = #variation_id#
+	</select>
+	
+	<!-- 	2021.04.20 AB테스트 MIMS : 패널 목록 -->
+	<select id="getPanelList" parameterClass="abTestSearchVo" resultClass="hashmap">
+		SELECT
+		    P.PANNEL_ID
+		  	,P.PANNEL_NM
+      		,V.ORG_MIMS_ID
+		FROM
+		    SMARTUX.PT_UX_PANEL P,
+		    (SELECT ORG_MIMS_ID FROM PT_UX_VARIATION_INFO V GROUP BY ORG_MIMS_ID) V
+    	WHERE 
+    		V.ORG_MIMS_ID(+) = P.PANNEL_ID
+      		AND P.USE_YN = 'Y'
+      	<isNotEmpty property="findName">
+      		<isEqual property="findName" compareValue="pannel_id">
+      			<isNotEmpty property="findValue" prepend="AND">
+      				PANNEL_ID LIKE '%'||#findValue#||'%' 
+      			</isNotEmpty>
+      		</isEqual>
+      		<isEqual property="findName" compareValue="pannel_nm">
+      			<isNotEmpty property="findValue" prepend="AND">
+      				PANNEL_NM LIKE '%'||#findValue#||'%' 
+      			</isNotEmpty>
+      		</isEqual>
+      	</isNotEmpty>
+		ORDER BY PANNEL_ID
+	</select>
+	
+	<!-- 	2021.04.20 AB테스트 MIMS : AB테스트 정보 등록 -->
+	<insert id="insertABTestInfo" parameterClass="abTestVO">
+		INSERT INTO PT_UX_ABTEST_INFO
+		(
+			TEST_ID
+           	,STATUS
+           	,REG_DATE
+           	,MOD_DATE
+           	,TEST_TYPE
+		)
+		VALUES
+		(
+			#test_id#
+          	,#status#
+          	,TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+          	,TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+          	,#test_type#
+		)
+	</insert>
+	
+	<!-- 	2021.04.20 AB테스트 MIMS : AB테스트 Variation 정보 등록 -->
+	<insert id="insertABVariationInfo" parameterClass="abTestVO">
+		INSERT INTO PT_UX_VARIATION_INFO
+		(
+			TEST_ID
+			,VARIATION_ID
+			,MTYPE
+			,MIMS_ID
+			,ORG_MIMS_ID
+			,REG_DATE
+			,MOD_DATE
+		)
+		VALUES
+		(
+			#test_id#
+          	,#variation_id#
+          	,#mtype#
+          	,#mims_id#
+          	,#org_mims_id#
+          	,TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+          	,TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+		)
+	</insert>
+	
+	<!-- 2021.05.10 AB테스트 MIMS : AB테스트 수정한 지면정보 set -->
+	<update id="updateABVariationInfo" parameterClass="abTestVO">
+		UPDATE PT_UX_VARIATION_INFO 
+		SET 
+			MOD_ID = #mod_id#
+			,MOD_NAME = #mod_name#
+			,MOD_DATE = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+		WHERE
+			VARIATION_ID = #variation_id#
+	</update>
+	
+	<!-- 	2021.04.20 AB테스트 MIMS : AB테스트 패널정보 등록 -->
+	<insert id="insertABPanel" parameterClass="abTestVO">
+		<selectKey keyProperty="pannel_id" resultClass="String">
+			SELECT NVL2(MAX(PANNEL_ID), DECODE((SUBSTR(MAX(PANNEL_ID),2,4)), '999', CHR(ASCII((SUBSTR(MAX(PANNEL_ID),1,1)))+1), SUBSTR(MAX(PANNEL_ID),1,1))||LPAD(DECODE(SUBSTR(MAX(PANNEL_ID),2,4), '999', '0', SUBSTR(MAX(PANNEL_ID),2,4))+1,3,'0'), 'A001') AS PANNEL_ID FROM PT_UX_AB_PANEL
+		</selectKey>
+		INSERT INTO PT_UX_AB_PANEL 
+		(
+            PANNEL_ID
+            ,PANNEL_NM
+            ,USE_YN
+            ,VERSION
+            ,CREATED
+            ,UPDATED
+            ,CREATE_ID
+            ,UPDATE_ID
+            ,PANEL_UI_TYPE
+            ,PANEL_IMAGE
+            ,FOCUS_TYPE
+        ) 
+		(
+			SELECT
+				#pannel_id#
+				,PANNEL_NM
+            	,USE_YN
+            	,VERSION
+            	,SYSDATE
+            	,SYSDATE
+            	,#create_id# 
+            	,#update_id#
+            	,PANEL_UI_TYPE
+            	,PANEL_IMAGE
+            	,FOCUS_TYPE
+            FROM SMARTUX.PT_UX_PANEL
+            WHERE
+            	PANNEL_ID = #org_mims_id#
+            	AND USE_YN = 'Y'
+		)
+	</insert>
+	
+	<!-- 	2021.04.20 AB테스트 MIMS : AB테스트 패널정보 등록 -->
+	<insert id="insertABPanelTestD" parameterClass="abTestVO">
+		INSERT INTO PT_UX_AB_PANEL 
+		(
+            PANNEL_ID
+            ,PANNEL_NM
+            ,USE_YN
+            ,VERSION
+            ,CREATED
+            ,UPDATED
+            ,CREATE_ID
+            ,UPDATE_ID
+            ,PANEL_UI_TYPE
+            ,PANEL_IMAGE
+            ,FOCUS_TYPE
+        ) 
+		(
+			SELECT
+				#pannel_id#
+				,PANNEL_NM
+            	,USE_YN
+            	,VERSION
+            	,SYSDATE
+            	,SYSDATE
+            	,#create_id# 
+            	,#update_id#
+            	,PANEL_UI_TYPE
+            	,PANEL_IMAGE
+            	,FOCUS_TYPE
+            FROM SMARTUX.PT_UX_PANEL
+            WHERE
+            	PANNEL_ID = #org_mims_id#
+            	AND USE_YN = 'Y'
+		)
+	</insert>
+	
+	<!-- 	2021.04.20 AB테스트 MIMS : AB테스트 지면정보 등록 -->
+	<insert id="insertABPaper" parameterClass="abTestVO">
+		INSERT INTO PT_UX_AB_PANEL_TITLE_TEMP
+        (
+            PANNEL_ID
+			,TITLE_ID
+			,TITLE_NM
+			,P_TITLE_ID
+			,CATEGORY_ID
+			,CATEGORY_TYPE
+			,ALBUM_CNT
+			,UI_TYPE
+			,BG_IMG_FILE
+			,DESCRIPTION
+			,ORDERED
+			,USE_YN
+			,DEL_YN
+			,CREATED
+			,UPDATED
+			,CREATE_ID
+			,UPDATE_ID
+			,PAGE_TYPE
+			,PAGE_CODE
+			,TITLE_COLOR
+			,TITLE_BG_IMG_FILE
+			,CATEGORY_GB
+			,REPS_ALBUM_ID
+			,REPS_CATEGORY_ID
+			,TRAILER_VIEWING_TYPE
+			,REPS_TRAILER_VIEWING_TYPE
+			,LOCATION_CODE
+			,LOCATION_YN
+			,BG_IMG_FILE2
+			,BG_IMG_FILE3
+			,FOCUS_YN
+			,PAPER_UI_TYPE
+			,ABTEST_YN
+			, PRODUCT_CODE
+       		, PRODUCT_CODE_NOT  
+       		, SHOW_CNT 
+        )
+        (           
+            SELECT
+	            #pannel_id#
+				,PANNEL_ID || '_' || TITLE_ID
+				,TITLE_NM
+				,P_TITLE_ID
+				,CATEGORY_ID
+				,CATEGORY_TYPE
+				,ALBUM_CNT
+				,UI_TYPE
+				,BG_IMG_FILE
+				,DESCRIPTION
+				,ORDERED
+				,USE_YN
+				,'N'
+				,CREATED
+				,UPDATED
+				,#create_id#
+				,#update_id#
+				,PAGE_TYPE
+				,PAGE_CODE
+				,TITLE_COLOR
+				,TITLE_BG_IMG_FILE
+				,CATEGORY_GB
+				,REPS_ALBUM_ID
+				,REPS_CATEGORY_ID
+				,TRAILER_VIEWING_TYPE
+				,REPS_TRAILER_VIEWING_TYPE
+				,LOCATION_CODE
+				,LOCATION_YN
+				,BG_IMG_FILE2
+				,BG_IMG_FILE3
+				,FOCUS_YN
+				,PAPER_UI_TYPE
+				,#abtest_yn#
+				, PRODUCT_CODE
+        		, PRODUCT_CODE_NOT  
+        		, SHOW_CNT 
+            FROM SMARTUX.PT_UX_PANEL_TITLE_TEMP A
+            WHERE
+            	1=1 
+                AND A.PANNEL_ID = #org_mims_id#
+                <isNotEmpty property="org_title_id" prepend="AND">
+                	A.TITLE_ID = #org_title_id#
+                </isNotEmpty>
+                AND A.USE_YN = 'Y'
+        )
+	</insert>
+	
+	<!-- 2021.04.27 AB테스트 MIMS : AB테스트 variation 정보 조회 -->
+	<select id="getVariationInfo" parameterClass="String" resultClass="abTestVO">
+		SELECT
+			A.TEST_ID
+			, A.MIMS_ID
+  			, A.VARIATION_ID
+  			, B.TEST_TYPE
+		FROM 
+		PT_UX_VARIATION_INFO A,
+		PT_UX_ABTEST_INFO B
+		WHERE A.TEST_ID = B.TEST_ID
+		AND A.VARIATION_ID = #variation_id#
+	</select>
+	
+	<!-- 2021.04.27 AB테스트 MIMS : AB테스트 variation 정보 조회 -->
+	<select id="getMinVariationId" parameterClass="String" resultClass="abTestVO">
+		SELECT
+			MIN(VARIATION_ID) AS VARIATION_ID
+		FROM 
+		PT_UX_VARIATION_INFO
+		WHERE TEST_ID = #test_id#
+	</select>
+	
+	<!-- 	2021.04.23 AB테스트 MIMS : AB테스트 지면 목록 -->
+	<select id="getABTestPaperList" parameterClass="string" resultClass="viewVO">
+		SELECT
+			TITLE_ID
+			,TITLE_NM
+  			,PAGE_TYPE
+  			,PAPER_UI_TYPE
+  			,NVL(DEL_YN,'N') AS DEL_YN
+  			,USE_YN
+  			,CATEGORY_TYPE AS ALBUM_DESC
+  			,CATEGORY_ID
+  			,CATEGORY_GB
+  			,NVL(ABTEST_YN,'N') AS ABTEST_YN
+		FROM PT_UX_AB_PANEL_TITLE_TEMP
+		WHERE 
+			PANNEL_ID=#mims_id#
+		ORDER BY ORDERED
+	</select>
+	
+	<!-- 	2021.04.23 AB테스트 MIMS : AB테스트 오리지날 지면 목록 -->
+	<select id="getABTestOrgPaperList" parameterClass="map" resultClass="viewVO">
+		SELECT
+			TITLE_ID
+  			,TITLE_NM
+  			,PAGE_TYPE
+  			,PAPER_UI_TYPE
+  			,CATEGORY_TYPE AS ALBUM_DESC
+  			,CATEGORY_ID
+  			,CATEGORY_GB
+  			,PANNEL_ID
+		FROM UXUSER.PT_UX_AB_PANEL_TITLE_TEMP
+		WHERE 
+			PANNEL_ID= (SELECT MIMS_ID
+      					  FROM PT_UX_VARIATION_INFO
+		                 WHERE 1=1
+		                  AND TEST_ID = #test_id#
+		                  AND VARIATION_ID = #variation_id#
+                  )
+		ORDER BY ORDERED
+	</select>
+	
+	<!-- 	2021.04.27 AB테스트 MIMS : 지면 목록 삭제 -->
+	<delete id="deleteABTestPaperList" parameterClass="String">
+		DELETE FROM PT_UX_AB_PANEL_TITLE_TEMP 
+    	WHERE PANNEL_ID = #mims_id#
+	</delete>
+	
+	<!-- 순서변경 팝업 -->
+	<select id="getPaperOrder" parameterClass="map" resultClass="viewVO">
+		SELECT TITLE_ID, TITLE_NM, ORDERED, NVL(DEL_YN,'N') AS DEL_YN
+		FROM PT_UX_AB_PANEL_TITLE_TEMP
+		WHERE PANNEL_ID = #pannel_id#
+		<isEqual property="p_title_id" compareValue="-1">
+		AND P_TITLE_ID IS NULL
+		</isEqual>
+		<isNotEqual property="p_title_id" compareValue="-1">
+		AND P_TITLE_ID = #p_title_id#
+		</isNotEqual>
+		ORDER BY ORDERED
+	</select>
+	
+	<!--  순서변경 -->
+	<update id="updatePaperOrder" parameterClass="viewVO">
+		UPDATE PT_UX_AB_PANEL_TITLE_TEMP
+		SET ORDERED = #ordered#
+		, UPDATED = SYSDATE
+		, UPDATE_ID = #update_id#
+		WHERE PANNEL_ID = #pannel_id#
+		AND TITLE_ID = #title_id#
+	</update>
+	
+	<!-- 	2021.04.23 AB테스트 MIMS : 지면 목록 조회-->
+	<select id="getPaperList" parameterClass="abTestSearchVO" resultClass="viewVO">
+		SELECT
+			PAPER.TITLE_ID
+  			,PAPER.TITLE_NM
+			,PANEL.PANNEL_ID
+			,PANEL.PANNEL_NM
+		FROM 
+			SMARTUX.PT_UX_PANEL_TITLE_TEMP PAPER
+			,SMARTUX.PT_UX_PANEL PANEL
+		WHERE 
+			PAPER.PANNEL_ID = PANEL.PANNEL_ID
+			<isNotEmpty property="findName">
+	      		<isEqual property="findName" compareValue="title_id">
+	      			<isNotEmpty property="findValue" prepend="AND">
+	      				PAPER.TITLE_ID LIKE '%'||#findValue#||'%' 
+	      			</isNotEmpty>
+	      		</isEqual>
+	      		<isEqual property="findName" compareValue="title_nm">
+	      			<isNotEmpty property="findValue" prepend="AND">
+	      				PAPER.TITLE_NM LIKE '%'||#findValue#||'%' 
+	      			</isNotEmpty>
+	      		</isEqual>
+	      	</isNotEmpty>
+	      	
+	      	<isNotEmpty property="panel_id" prepend="AND">
+	      		PANEL.PANNEL_ID = #panel_id#
+	      	</isNotEmpty>
+		ORDER BY PAPER.ORDERED ASC
+	</select>
+	
+	
+	<!-- 	2021.05.04 AB테스트 MIMS : AB테스트 지면 count 확인 -->
+	<select id="selectPaperCount" parameterClass="viewVO" resultClass="int">
+		SELECT COUNT(*) 
+		FROM PT_UX_AB_PANEL_TITLE_TEMP
+		WHERE PANNEL_ID= #pannel_id#
+		AND TITLE_ID= #title_id#
+	</select>
+	
+	<!-- 	2021.05.04 AB테스트 MIMS : AB테스트 지면 order 최대값+1 -->
+	<select id="selectPaperMaxOrd" parameterClass="String" resultClass="int">
+		SELECT NVL(MAX(ORDERED)+1, 1)
+		FROM PT_UX_AB_PANEL_TITLE_TEMP
+		WHERE PANNEL_ID=#mims_id#
+	</select>
+	
+	<!-- 	2021.05.04 AB테스트 MIMS : AB테스트 지면 삭제 -->
+	<!-- <delete id="deleteABTestPaper" parameterClass="viewVO">
+		DELETE FROM PT_UX_AB_PANEL_TITLE_TEMP 
+    	WHERE TITLE_ID = #title_id#
+    		AND PANNEL_ID=#pannel_id#
+	</delete> -->
+	<update id="deleteABTestPaper" parameterClass="viewVO">
+		UPDATE PT_UX_AB_PANEL_TITLE_TEMP 
+		SET DEL_YN='Y'
+    	WHERE TITLE_ID = #title_id#
+    		AND PANNEL_ID=#pannel_id#
+	</update>
+	
+	<!-- 지면상세조회 -->
+	<select id="getPaperInfo" parameterClass="map" resultClass="viewVO">
+		SELECT PANNEL_ID, P_TITLE_ID, TITLE_ID, TITLE_NM, TITLE_COLOR, USE_YN, NVL(DEL_YN,'N') AS DEL_YN
+			, F_SERVER_URL_UX('${P.ImgSvIp.Code.Mims}','${P.ImgSv.No}','') AS IMG_URL
+			, TITLE_BG_IMG_FILE
+			, BG_IMG_FILE
+			, BG_IMG_FILE2
+			, BG_IMG_FILE3
+			, NVL(ABTEST_YN,'N') AS ABTEST_YN
+		FROM PT_UX_AB_PANEL_TITLE_TEMP
+		WHERE PANNEL_ID = #pannel_id#
+		AND TITLE_ID = #title_id#
+	</select>
+	
+	<!-- 동일지면이름 체크 -->
+	<select id="getPaperInfoTitleNmCnt" parameterClass="map" resultClass="int">
+		SELECT COUNT(TITLE_NM)
+		FROM PT_UX_AB_PANEL_TITLE_TEMP
+		WHERE PANNEL_ID = #panel_id# 
+		AND TITLE_NM = #title_nm#
+		<isEqual property="p_title_id" compareValue="-1">
+		AND P_TITLE_ID IS NULL
+		</isEqual>
+		<isNotEqual property="p_title_id" compareValue="-1">
+		AND P_TITLE_ID = #p_title_id#
+		</isNotEqual>
+	</select>
+	
+	<!-- 지면상세정보수정 -->
+	<update id="updatePaperInfo" parameterClass="map">
+		UPDATE PT_UX_AB_PANEL_TITLE_TEMP
+		SET TITLE_NM = #title_nm#,
+		TITLE_COLOR = #title_color#,
+		USE_YN = #use_yn#,
+		UPDATED = SYSDATE,
+		UPDATE_ID = #update_id#,
+		TITLE_BG_IMG_FILE = #title_bg_img_file#,
+		BG_IMG_FILE = #bg_img_file#,
+		BG_IMG_FILE2 = #bg_img_file2#,
+		BG_IMG_FILE3 = #bg_img_file3#,
+		ABTEST_YN = #abtest_yn#
+		WHERE PANNEL_ID = #pannel_id#
+		AND TITLE_ID = #title_id#
+	</update>
+	
+	<!-- panel_id와 title_id 값을 이용해서 UI_TYPE 컬럼과 DESCRIPTION 값을 조회한다 -->
+	<select id="getPaperDataType" parameterClass="map" resultClass="viewVO">
+   		SELECT A.UI_TYPE AS UI_TYPE, A.DESCRIPTION AS DESCRIPTION, A.PAGE_TYPE AS PAGE_TYPE, A.PAGE_CODE AS PAGE_CODE, NVL(A.CATEGORY_GB, 'I20') AS CATEGORY_GB
+   			 , A.REPS_ALBUM_ID
+		     , A.REPS_CATEGORY_ID
+		     , (CASE WHEN A.CATEGORY_TYPE IN ('CONT_LINK', 'WISH', 'AHOME_04', 'AHOME_05', 'BANNER', 'VLIST', 'HLIST', 'GALLERY', 'HOTVOD') THEN CATEGORY_ID
+		        ELSE ''
+		        END) AS CATEGORY_CODE
+		     , (CASE WHEN A.CATEGORY_TYPE IN ('CONT_LINK', 'WISH', 'AHOME_04', 'AHOME_05') AND A.CATEGORY_ID IS NOT NULL 
+		             THEN (SELECT B.CATEGORY_NAME FROM VODUSER.PT_VO_CATEGORY B WHERE B.CATEGORY_ID = A.CATEGORY_ID)
+		             WHEN A.CATEGORY_TYPE = 'BANNER' AND A.CATEGORY_ID IS NOT NULL 
+		             THEN (SELECT ADS_NM FROM SMARTUX.PT_HDTV_ADS_MASTER WHERE ADS_ID = A.CATEGORY_ID)
+		             WHEN A.CATEGORY_TYPE = 'HLIST' AND A.CATEGORY_ID IS NOT NULL
+                     THEN (SELECT CATEGORY_NAME FROM SMARTUX.PT_HDTV_HV_CATEGORY WHERE HV_CATEGORY_ID = A.CATEGORY_ID)
+                     WHEN A.CATEGORY_TYPE = 'VLIST' AND A.CATEGORY_ID IS NOT NULL
+                     THEN (SELECT CATEGORY_NAME FROM VODUSER.PT_VO_CATEGORY WHERE CATEGORY_ID = A.CATEGORY_ID)
+                     WHEN A.CATEGORY_TYPE = 'HOTVOD' AND A.CATEGORY_ID IS NOT NULL
+                     THEN (SELECT CATEGORY_NAME FROM SMARTUX.PT_UX_HV_CATEGORY WHERE HV_CATEGORY_ID = A.CATEGORY_ID)
+		        ELSE ''
+		        END) AS CATEGORY_DES
+		     , NVL(TRAILER_VIEWING_TYPE, 'NONE') AS TRAILER_VIEWING_TYPE
+		     , NVL(REPS_TRAILER_VIEWING_TYPE, 'NONE') AS REPS_TRAILER_VIEWING_TYPE
+             , LOCATION_CODE
+             , LOCATION_YN
+             , PAPER_UI_TYPE
+             , NVL(DEL_YN,'N') AS DEL_YN
+             , TITLE_NM
+             , NVL(ABTEST_YN,'N') AS ABTEST_YN
+             , PRODUCT_CODE  
+             , PRODUCT_CODE_NOT        
+             , SHOW_CNT    
+		FROM PT_UX_AB_PANEL_TITLE_TEMP A
+		WHERE A.PANNEL_ID = #pannel_id#
+		AND A.TITLE_ID = #title_id#
+   	</select>
+   	
+   	<!-- 지면데이터수정 -->
+   	<update id="updatePaperDataType" parameterClass="map">
+		UPDATE PT_UX_AB_PANEL_TITLE_TEMP
+		SET CATEGORY_ID = #category_id#
+		, CATEGORY_TYPE = #category_type#
+		, ALBUM_CNT = #album_cnt#
+		, UI_TYPE = #ui_type#
+		, PAGE_TYPE = #page_type#
+		, PAGE_CODE = #page_code#
+		, DESCRIPTION = #description#
+		, CATEGORY_GB = #category_gb#
+		, UPDATED = SYSDATE
+		, UPDATE_ID = #update_id#
+		, REPS_ALBUM_ID = #reps_album_id# 
+		, REPS_CATEGORY_ID = #reps_category_id#
+		, TRAILER_VIEWING_TYPE = #trailer_viewing_type#
+		, REPS_TRAILER_VIEWING_TYPE = #reps_trailer_viewing_type#
+		, LOCATION_CODE = #location_code#
+		, LOCATION_YN = #location_yn#	
+        , PAPER_UI_TYPE = #paper_ui_type#
+        , ABTEST_YN = #abtest_yn#
+        , PRODUCT_CODE = #product_code#         
+        , PRODUCT_CODE_NOT = #product_code_not#         
+        , SHOW_CNT = #show_cnt#         
+		WHERE PANNEL_ID = #pannel_id#
+		AND TITLE_ID = #title_id#
+	</update>
+	
+	<!-- 	2021.05.13 AB테스트 MIMS : AB테스트 지면 최종완료 상태 수정 -->
+	<update id="updateABTestStatus" parameterClass="abTestVO">
+		UPDATE PT_UX_ABTEST_INFO 
+		SET 
+			STATUS = #status#
+			,MOD_DATE = TO_CHAR(SYSDATE, 'YYYYMMDDHH24MISS')
+		WHERE
+			TEST_ID = #test_id#
+	</update>
+	
+	<!-- 	2021.05.13 AB테스트 MIMS : AB테스트 지면 최종완료 상태 조회 -->
+	<select id="getABTestStatus" parameterClass="abTestVO" resultClass="abTestVO">
+		SELECT STATUS, MOD_DATE 
+		FROM PT_UX_ABTEST_INFO 
+		WHERE
+			TEST_ID = #test_id#
+	</select>
+	
+	<!-- 	2021.05.13 PT_UX_AB_PANEL_TITLE 테이블에서 panel_id에 해당하는 패널 것 삭제 -->
+	<delete id="deleteABTestPanelTitle" parameterClass="string">
+		DELETE PT_UX_AB_PANEL_TITLE
+		WHERE PANNEL_ID = #pannel_id#         
+	</delete>
+	
+	<!-- 	2021.05.13 PT_UX_AB_PANEL_TITLE_TEMP 테이블에서 panel_id에 해당하는 패널 것을 PT_UX_AB_PANEL_TITLE 테이블에 등록 -->
+	<insert id="insertABTestPanelTitle" parameterClass="map">
+		INSERT INTO PT_UX_AB_PANEL_TITLE(
+					PANNEL_ID
+					,TITLE_ID
+					,TITLE_NM
+					,TITLE_COLOR
+					,P_TITLE_ID
+					,CATEGORY_ID
+					,CATEGORY_TYPE
+					,ALBUM_CNT
+					,UI_TYPE
+					,BG_IMG_FILE
+					,DESCRIPTION
+					,ORDERED
+					,USE_YN
+					,DEL_YN
+					,VERSION
+					,CREATED
+					,UPDATED
+					,PAGE_TYPE
+					,PAGE_CODE
+					,CREATE_ID
+					,UPDATE_ID
+					,TITLE_BG_IMG_FILE
+					,CATEGORY_GB
+					,REPS_ALBUM_ID
+					,REPS_CATEGORY_ID
+					,TRAILER_VIEWING_TYPE
+					,REPS_TRAILER_VIEWING_TYPE
+					,BG_IMG_FILE2
+					,LOCATION_CODE
+					,LOCATION_YN 
+					,FOCUS_YN 
+					,BG_IMG_FILE3 
+					,PAPER_UI_TYPE
+					,ABTEST_YN
+					,PRODUCT_CODE
+					,PRODUCT_CODE_NOT
+					,SHOW_CNT)
+		SELECT PANNEL_ID
+					,TITLE_ID
+					,TITLE_NM
+					,TITLE_COLOR
+					,P_TITLE_ID
+					,CATEGORY_ID
+					,CATEGORY_TYPE
+					,ALBUM_CNT
+					,UI_TYPE
+					,BG_IMG_FILE
+					,DESCRIPTION
+					,ORDERED
+					,USE_YN
+					,DEL_YN,' '
+					,SYSDATE
+					,SYSDATE
+					,PAGE_TYPE
+					,PAGE_CODE
+					,'$create_id$'
+					,'$create_id$'
+					,TITLE_BG_IMG_FILE
+					,CATEGORY_GB
+					,REPS_ALBUM_ID
+					,REPS_CATEGORY_ID
+					,TRAILER_VIEWING_TYPE
+					,REPS_TRAILER_VIEWING_TYPE
+					,BG_IMG_FILE2
+					,LOCATION_CODE
+					,LOCATION_YN 
+					,FOCUS_YN 
+					,BG_IMG_FILE3  
+					,PAPER_UI_TYPE
+					,ABTEST_YN
+					,PRODUCT_CODE
+					,PRODUCT_CODE_NOT
+					,SHOW_CNT
+		FROM PT_UX_AB_PANEL_TITLE_TEMP WHERE pannel_id = #pannel_id#
+	</insert>
+	
+	<!-- 	2021.05.13 PT_UX_AB_PANEL 테이블에 Version 업데이트 -->
+	<update id="updateABTestPanelVersion" parameterClass="map">
+		UPDATE PT_UX_AB_PANEL
+		SET VERSION = #version#
+		, UPDATED = SYSDATE
+		, UPDATE_ID = #update_id#
+	</update>
+	
+	<!-- 	2021.05.13 PT_UX_AB_PANEL_TITLE 테이블에 Version 업데이트 -->
+	<update id="updateABTestPanelTitleVersion" parameterClass="map">
+		UPDATE PT_UX_AB_PANEL_TITLE
+		SET VERSION = #version#
+		, UPDATED = SYSDATE
+		, UPDATE_ID = #update_id#
+	</update>
+	
+	<select id="getDmimsIdVariationInfo" parameterClass="String" resultClass="abTestVO">
+		SELECT A.MIMS_ID, A.VARIATION_ID
+          FROM PT_UX_VARIATION_INFO A
+         WHERE 1=1
+           AND A.VARIATION_ID = (SELECT 'O' || TEST_ID 
+                                   FROM PT_UX_VARIATION_INFO
+                                  WHERE VARIATION_ID =  #variation_id#)
+	</select>
+	
+	<!-- 지면상세정보수정 -->
+	<update id="updatePaperInfoDMims" parameterClass="map">
+		UPDATE PT_UX_AB_PANEL_TITLE_TEMP
+		SET ABTEST_YN = #abtest_yn#
+		WHERE PANNEL_ID = #pannel_id#
+		AND TITLE_ID = #title_id#
+	</update>
+	
+	<select id="getOrgMimsIdVariationInfo" parameterClass="abTestVO" resultClass="abTestVO">
+		SELECT B.TEST_ID, A.TEST_TYPE, B.VARIATION_ID, B.MIMS_ID, B.ORG_MIMS_ID
+          FROM PT_UX_ABTEST_INFO A,
+               PT_UX_VARIATION_INFO B
+         WHERE A.TEST_ID = B.TEST_ID
+           AND B.ORG_MIMS_ID= #org_mims_id#
+           <isNotEmpty prepend="AND" property="testType_list">
+			<iterate prepend="A.TEST_TYPE IN " property="testType_list" open="(" close=")" conjunction=",">
+		        #testType_list[]#
+     		</iterate>
+		</isNotEmpty>
+	</select>
+	
+	<!-- 	기존 경로 : /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/admin_mainpanel.xml -->
+	<insert id="insertPanelTitleTemp" parameterClass="map">
+		INSERT INTO PT_UX_AB_PANEL_TITLE_TEMP(PANNEL_ID, TITLE_ID, TITLE_NM, TITLE_COLOR, P_TITLE_ID, ORDERED, USE_YN, CREATE_ID, UPDATE_ID, TITLE_BG_IMG_FILE, BG_IMG_FILE, BG_IMG_FILE2, BG_IMG_FILE3, DEL_YN, ABTEST_YN)
+		VALUES(
+			#pannel_id#, 
+			#title_id#, 
+			#title_nm#, 
+			#title_color#,
+			DECODE(#p_title_id#, '-1', NULL, #p_title_id#), 
+			(
+				SELECT NVL(MAX(ORDERED), 0) + 1 
+				FROM PT_UX_AB_PANEL_TITLE_TEMP 
+				WHERE PANNEL_ID = #pannel_id#
+				<isEqual property="p_title_id" compareValue="-1">
+				AND P_TITLE_ID IS NULL
+				</isEqual>
+				<isNotEqual property="p_title_id" compareValue="-1">
+				AND P_TITLE_ID = #p_title_id#
+				</isNotEqual>
+			),
+			#use_yn#,
+			#create_id#, 
+			#update_id#,
+			#title_bg_img_file#,
+			#bg_img_file#,
+			#bg_img_file2#,
+			#bg_img_file3#,
+			'N',
+			'N' )
+	</insert>
+	
+	<select id="getAbPanelTitleTempInfo" parameterClass="map" resultClass="abTestVO">
+		SELECT  B.TEST_ID, A.TEST_TYPE, B.VARIATION_ID, B.MIMS_ID, B.ORG_MIMS_ID, C.PANNEL_ID, C.TITLE_ID,  C.ABTEST_YN
+		FROM PT_UX_ABTEST_INFO A,
+		     PT_UX_VARIATION_INFO B,
+		     PT_UX_AB_PANEL_TITLE_TEMP C
+		WHERE A.TEST_ID = B.TEST_ID
+		AND B.ORG_MIMS_ID= #org_mims_id#
+		AND C.PANNEL_ID = B.MIMS_ID
+		AND C.TITLE_ID =#title_id#
+		<isNotEmpty property="test_type">
+		AND A.TEST_TYPE = #test_type#
+		</isNotEmpty>
+	</select>
+	
+	<select id="getAbPanelTitleTempInfoList" parameterClass="abTestVO" resultClass="abTestVO">
+		SELECT  B.TEST_ID, A.TEST_TYPE, B.VARIATION_ID, B.MIMS_ID, B.ORG_MIMS_ID, C.PANNEL_ID, C.TITLE_ID,  C.ABTEST_YN, C.TITLE_NM
+		FROM PT_UX_ABTEST_INFO A,
+		     PT_UX_VARIATION_INFO B,
+		     PT_UX_AB_PANEL_TITLE_TEMP C
+		WHERE A.TEST_ID = B.TEST_ID
+		AND B.ORG_MIMS_ID= #org_mims_id#
+		AND C.PANNEL_ID = B.MIMS_ID
+		<isNotEmpty prepend="AND" property="titleId_list">
+			<iterate prepend="C.TITLE_ID IN " property="titleId_list" open="(" close=")" conjunction=",">
+		        #titleId_list[]#
+     		</iterate>
+		</isNotEmpty>
+		<isNotEmpty prepend="AND" property="testType_list">
+			<iterate prepend="A.TEST_TYPE IN " property="testType_list" open="(" close=")" conjunction=",">
+		        #testType_list[]#
+     		</iterate>
+		</isNotEmpty>
+		<isNotEmpty property="abtest_yn">
+		AND C.ABTEST_YN = #abtest_yn#
+		AND C.USE_YN ='Y'
+        AND C.DEL_YN ='N'
+		</isNotEmpty>
+	</select>
+	
+	<!-- 	기존 경로 : /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/admin_mainpanel.xml -->
+	<update id="updatePanelTitleTemp" parameterClass="map">
+		UPDATE PT_UX_AB_PANEL_TITLE_TEMP
+		SET TITLE_NM = #title_nm#,
+		TITLE_COLOR = #title_color#,
+		USE_YN = #use_yn#,
+		UPDATED = SYSDATE,
+		UPDATE_ID = #update_id#,
+		TITLE_BG_IMG_FILE = #title_bg_img_file#,
+		BG_IMG_FILE = #bg_img_file#,
+		BG_IMG_FILE2 = #bg_img_file2#,
+		BG_IMG_FILE3 = #bg_img_file3#
+		WHERE PANNEL_ID = #pannel_id#
+		AND TITLE_ID = #title_id#
+	</update>
+	
+	<!-- 	기존 경로 : /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/admin_mainpanel.xml -->
+	<update id="updatePanelTitleTempCategorySetNull" parameterClass="map">
+		UPDATE PT_UX_AB_PANEL_TITLE_TEMP
+		SET CATEGORY_ID = NULL,
+		CATEGORY_TYPE = NULL,
+		ALBUM_CNT = NULL,
+		UI_TYPE = NULL,
+		<!-- BG_IMG_FILE = NULL, -->
+		<!-- TITLE_BG_IMG_FILE = NULL, -->
+		DESCRIPTION = NULL,
+		UPDATED = SYSDATE,
+		UPDATE_ID = #update_id#
+		WHERE PANNEL_ID = #pannel_id#
+		AND TITLE_ID = #p_title_id#
+	</update>
+	
+	<!-- 	기존 경로 : /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/admin_mainpanel.xml -->
+	<update id="updateCategory" parameterClass="map">
+		UPDATE PT_UX_AB_PANEL_TITLE_TEMP
+		SET CATEGORY_ID = #category_id#
+		, CATEGORY_TYPE = #category_type#
+		, ALBUM_CNT = #album_cnt#
+		, UI_TYPE = #ui_type#
+		, PAGE_TYPE = #page_type#
+		, PAGE_CODE = #page_code#
+		, DESCRIPTION = #description#
+		, CATEGORY_GB = #category_gb#
+		, UPDATED = SYSDATE
+		, UPDATE_ID = #update_id#
+		, REPS_ALBUM_ID = #reps_album_id# 
+		, REPS_CATEGORY_ID = #reps_category_id#
+		, TRAILER_VIEWING_TYPE = #trailer_viewing_type#
+		, REPS_TRAILER_VIEWING_TYPE = #reps_trailer_viewing_type#
+		, LOCATION_CODE = #location_code#
+		, LOCATION_YN = #location_yn#	
+<!-- 2019.11.04 : PAPER_UI_TYPE [지면UI타입 추가] Start - 이태광 -->             
+        , PAPER_UI_TYPE = #paper_ui_type#
+<!-- 2019.11.04 : PAPER_UI_TYPE [지면UI타입 추가] End - 이태광 --> 
+		, PRODUCT_CODE = #product_code# 		
+        , PRODUCT_CODE_NOT = #product_code_not# 		
+        , SHOW_CNT = #show_cnt# 			
+		WHERE PANNEL_ID = #pannel_id#
+		AND TITLE_ID = #title_id#
+	</update>
+	
+	<!-- 지면 삭제시 자기 것과 자기의 하위것을 모두 지운다 -->
+	<!-- 	기존 경로 : /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/admin_mainpanel.xml -->
+	<delete id="deletePanelTitleTemp" parameterClass="map">
+		DELETE FROM PT_UX_AB_PANEL_TITLE_TEMP
+		WHERE PANNEL_ID = #pannel_id#
+		AND(TITLE_ID = #title_id#
+			OR TITLE_ID IN(
+				SELECT TITLE_ID
+				FROM PT_UX_AB_PANEL_TITLE_TEMP
+				WHERE PANNEL_ID = #pannel_id#
+				START WITH P_TITLE_ID = #title_id#
+				CONNECT BY PRIOR TITLE_ID = P_TITLE_ID
+				AND PRIOR PANNEL_ID = PANNEL_ID
+			)
+		)
+	</delete>
+	
+	<!-- 	기존 경로 : /smartux_adm/src/main/resources/com/dmi/smartux/resource/ibatis/sqlmap/admin_mainpanel.xml -->
+	<update id="changePanelTitleTempOrderJob" parameterClass="viewVO">
+		UPDATE PT_UX_AB_PANEL_TITLE_TEMP
+		SET ORDERED = #ordered#
+		, UPDATED = SYSDATE
+		, UPDATE_ID = #update_id#
+		WHERE PANNEL_ID = #pannel_id#
+		AND TITLE_ID = #title_id#
+	</update>
+</sqlMap>

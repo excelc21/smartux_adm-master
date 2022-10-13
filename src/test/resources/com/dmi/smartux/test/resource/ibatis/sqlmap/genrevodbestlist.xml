@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org/DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="test_smartstart">
+
+	<!-- 백업 테이블 create  -->
+	<statement id="create_bestvod_backup_table">
+		CREATE TABLE PT_UX_BEST_VOD_BACKUP (
+		  RANKING           NUMBER(5)             NULL, 
+		  CONTENTS_ID       VARCHAR2(20)          NULL, 
+		  ADI_PRODUCT_ID    VARCHAR2(20)          NULL, 
+		  ASSET_NAME        VARCHAR2(100)         NULL, 
+		  PPV_YN            VARCHAR2(1)           NULL, 
+		  GENRE             VARCHAR2(100)         NULL
+		)
+	</statement>
+	
+	<!-- 기존 테이블의 기존 데이터를 백업 테이블에 insert -->
+	<insert id="insert_bestvod_backup_table" >
+		INSERT INTO PT_UX_BEST_VOD_BACKUP
+		SELECT * FROM PT_UX_BEST_VOD WHERE GENRE = '영화'
+	</insert>
+	
+	<!-- 기존 테이블의 기존 데이터 삭제 -->
+	<delete id="delete_org_bestvod_data" >
+		DELETE FROM PT_UX_BEST_VOD WHERE GENRE = '영화'
+	</delete>
+	
+	<!-- 테스트 데이터를 기존 테이블에 insert-->
+	<insert id="insert_test_data_to_org_bestvod_table1" >
+		INSERT INTO PT_UX_BEST_VOD( RANKING, CONTENTS_ID, ADI_PRODUCT_ID, ASSET_NAME, PPV_YN, GENRE )
+		VALUES(
+			'1'
+			, 'M01081LA70PPV00'
+    		, 'M01081LA70PPV00000'
+    		, '생 날선생_TEST1'
+			, 'N'
+    		, '영화'
+		)
+	</insert>
+	
+	<insert id="insert_test_data_to_org_bestvod_table2" >
+		INSERT INTO PT_UX_BEST_VOD( RANKING, CONTENTS_ID, ADI_PRODUCT_ID, ASSET_NAME, PPV_YN, GENRE )
+		VALUES(
+			'2'
+			, 'M01081LA39PPV00'
+    		, 'M01081LA39PPV00000'
+    		, '밀리언 달러 베이비_TEST2'
+			, 'N'
+    		, '영화'
+		)
+	</insert>
+	
+	<insert id="insert_test_data_to_org_bestvod_table3" >
+		INSERT INTO PT_UX_BEST_VOD( RANKING, CONTENTS_ID, ADI_PRODUCT_ID, ASSET_NAME, PPV_YN, GENRE )
+		VALUES(
+			'3'
+			, 'M01086DA17PPV00'
+    		, 'M01081LA70PPV00000'
+    		, 'M01086DA17PPV00000_TEST3'
+			, 'N'
+    		, '영화'
+		)
+	</insert>
+	
+	<insert id="insert_test_data_to_org_bestvod_table4" >
+		INSERT INTO PT_UX_BEST_VOD( RANKING, CONTENTS_ID, ADI_PRODUCT_ID, ASSET_NAME, PPV_YN, GENRE )
+		VALUES(
+			'4'
+			, 'M01083LA06PPV00'
+    		, 'M01083LA06PPV00000'
+    		, '우리 동네_TEST4'
+			, 'N'
+    		, '영화'
+		)
+	</insert>
+	
+	<insert id="insert_test_data_to_org_bestvod_table5" >
+		INSERT INTO PT_UX_BEST_VOD( RANKING, CONTENTS_ID, ADI_PRODUCT_ID, ASSET_NAME, PPV_YN, GENRE )
+		VALUES(
+			'5'
+			, 'M01084IA13PPV00'
+    		, 'M01084IA13PPV00000'
+    		, 'ⓦ해리포터와 비밀의 방(우리말)_TEST5'
+			, 'N'
+    		, '영화'
+		)
+	</insert>
+	
+	<!-- 기존 테이블의 테스트 데이터 삭제 -->
+	<delete id="delete_test_bestvod_data" >
+		DELETE FROM PT_UX_BEST_VOD WHERE GENRE = '영화'
+	</delete>
+	
+	<!-- 백업 테이블에 보관된 데이터를 기존 테이블에 insert -->
+	<insert id="insert_bestvod_to_org_table" >
+		INSERT INTO PT_UX_BEST_VOD
+		SELECT * FROM PT_UX_BEST_VOD_BACKUP WHERE GENRE = '영화'
+	</insert>
+	
+	<!-- 백업 테이블 drop  -->
+	<statement id="drop_bestvod_backup_table">
+		DROP TABLE PT_UX_BEST_VOD_BACKUP
+	</statement>
+		
+</sqlMap>
